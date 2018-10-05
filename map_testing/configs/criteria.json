@@ -1,0 +1,31 @@
+{
+    "general": {
+        "required": 25
+    },
+    "criteria": {
+        "balance": {
+            "max": 10,
+            "required": 6
+        },
+        "flow": {
+            "max": 10,
+            "required": 4
+        },
+        "creativity": {
+            "max": 10,
+            "required": 4
+        },
+        "playability": {
+            "max": 10,
+            "required": 6
+        },
+        "fun": {
+            "max": 5,
+            "required": null
+        },
+        "design": {
+            "max": 3,
+            "required": null
+        }
+    }
+}

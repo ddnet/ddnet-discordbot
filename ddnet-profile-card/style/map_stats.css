@@ -1,0 +1,140 @@
+@font-face {
+    font-family: 'Robot-Light';
+    src: url('../fonts/Roboto-Light.ttf');
+}
+
+@font-face {
+    font-family: 'Roboto-Medium';
+    src: url('../fonts/Roboto-Medium.ttf');
+}
+
+html,body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Roboto-Light', sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.5px;
+    color: white;
+}
+
+#card {
+    width: 800px;
+    height: 500px;
+}
+
+.content-wrapper {
+    position: absolute;
+    width: 734px;
+    height: 436px;
+    margin: 32px;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 12px;
+}
+
+#name {
+    display: inline-block;
+    height: 50px;
+    margin: 16px;
+    padding: 0 20px;
+    background-color: rgba(150, 150, 150, 0.3);
+    border-radius: 30px;
+    font-family: 'Roboto-Medium';
+    font-size: 38px;
+    line-height: 50px;
+}
+
+.mapper {
+    display: inherit;
+    font-size: 88%;
+}
+
+span.delimiter {
+    color: rgb(185, 185, 185);
+}
+
+#stats-wrapper {
+    display: flex;
+    flex-direction: row;
+}
+
+.info-wrapper {
+    height: 300px;
+    max-width: 275px;
+    width: 100%;
+    padding: 16px;
+    border-right: 3px solid white;
+    text-align: center;
+}
+
+.details {
+    font-family: 'Roboto-Medium';
+    line-height: 38px;
+}
+
+span.difficulty {
+    font-family: 'Roboto-Medium';
+    font-size: 48px;
+}
+
+.extra-details {
+    height: 57px;
+    margin: 0 20px;
+    padding: 16px 0;
+    border-bottom: 3px solid white;
+}
+
+span.finishes {
+    font-family: 'Roboto-Medium';
+    font-size: 24px;
+}
+
+span.finishes-text {
+    font-size: 20px;
+}
+
+span.released {
+    font-family: 'Roboto-Medium';
+    font-size: 16px;
+}
+
+span.released-text {
+    font-size: 14px;
+}
+
+.tiles {
+    padding: 16px;
+}
+
+img.tile {
+    width: 40px;
+    height: auto;
+    margin: 5px;
+}
+
+.top-ranks {
+    padding: 0 16px;
+}
+
+#ranks-table {
+    font-size: 24px;
+    line-height: 29px;
+}
+
+td.rank {
+    text-align: left;
+}
+
+td.time {
+    width: 3em;
+    text-align: right;
+}
+
+td.playername {
+    text-align: left;
+    padding-left: 16px;
+    font-family: 'Roboto-Medium';
+}
