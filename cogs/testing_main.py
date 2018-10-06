@@ -518,7 +518,7 @@ class TestingMain:
                 if s[1] >= week_ago and msg_new not in content:
                     content += msg_new
 
-                if s[1] <= week_ago and s[1] >= month_ago and msg_week not in content:
+                if week_ago >= s[1] >= month_ago and msg_week not in content:
                     content += msg_week
 
                 if s[1] <= month_ago and msg_month not in content:
