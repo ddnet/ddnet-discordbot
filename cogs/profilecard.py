@@ -609,7 +609,7 @@ class Profilecard:
 
         self.generate_map_profile(*stats, *top_ranks, tiles)
         cmd = f'/root/.nvm/versions/node/v10.6.0/bin/node /root/discordbot/{DIR_PATH}/' \
-              f'render_profile.js 800 500 map_profile'
+              'render_profile.js 800 500 map_profile'
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         (output, err) = p.communicate()
         p_status = p.wait()

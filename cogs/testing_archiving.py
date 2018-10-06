@@ -107,8 +107,8 @@ class Archiving:
         def process_user_mention(groups):
             user = guild.get_member(int(groups[0]))
             try:
-                roles = ['generic' if r.name == '@everyone' else r.name for r in user.roles][
-                        ::-1]  # Replace '@everyone' role with 'generic'. Reverse list so that the highest role is on top
+                # Replace '@everyone' role with 'generic'. Reverse list so that the highest role is on top
+                roles = ['generic' if r.name == '@everyone' else r.name for r in user.roles][::-1]
             except:
                 roles = ['generic']
 

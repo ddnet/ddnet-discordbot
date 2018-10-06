@@ -123,8 +123,8 @@ class TestingMain:
             msg = f'Hey, your message in <#{CHAN_SUBMIT_MAPS}> was deleted because it wasn\'t a map submission. ' \
                   'If you want to discuss a map, please do so in its individual channel <:happy:395753933089406976>'
 
-            recent_messages = [m.content for m in
-                               await user.history(after=message.created_at - timedelta(days=1)).flatten()]
+            history = await user.history(after=message.created_at - timedelta(days=1)).flatten()
+            recent_messages = [m.content for m in history]
             if msg not in recent_messages:
                 return await user.send(msg)
 
