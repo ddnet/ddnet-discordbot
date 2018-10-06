@@ -1,0 +1,6 @@
+discord.py
+requests
+colorthief
+msgpack
+fuzzywuzzy
+pymysql

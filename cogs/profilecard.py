@@ -16,26 +16,28 @@ from discord.ext import commands
 
 from .utils.misc import load_json, write_json
 
-#DDNet guild IDs
+# DDNet guild IDs
 GUILD_DDNET = 252358080522747904
 CHAN_ANNOUNCEMENTS = 420565311863914496
 
 DIR_PATH = 'ddnet-profile-card'
 MSGPACK_FILE_PATH = f'{DIR_PATH}/msgpack/players.msgpack'
 
+
 def reload_data():
     with open(MSGPACK_FILE_PATH, 'rb') as inp:
         unpacker = msgpack.Unpacker(inp, use_list=False)
-        server_types = unpacker.unpack()                #`(type, ..)`
-        stats_maps = unpacker.unpack()                  #`{type: ((map, points, finishes), ..), ..}`
-        total_points = unpacker.unpack()                #`points`
-        stats_points = unpacker.unpack()                #`((player, points), ..)`
-        stats_weekly_points = unpacker.unpack()         #`((player, points), ..)`
-        stats_monthly_points = unpacker.unpack()        #`((player, points), ..)`
-        stats_teamranks = unpacker.unpack()             #`((player, points), ..)`
-        stats_ranks = unpacker.unpack()                 #`((player, points), ..)`
-        stats_servers = unpacker.unpack()               #`{type: (points, ((player, points), ..)), ..}`
-        stats_players = unpacker.unpack()               #`{player: ({map: (teamrank, rank, finishes, timestamp, time in sec), ..}, {location: finishes, ..}), ..}`
+        server_types = unpacker.unpack()  # `(type, ..)`
+        stats_maps = unpacker.unpack()  # `{type: ((map, points, finishes), ..), ..}`
+        total_points = unpacker.unpack()  # `points`
+        stats_points = unpacker.unpack()  # `((player, points), ..)`
+        stats_weekly_points = unpacker.unpack()  # `((player, points), ..)`
+        stats_monthly_points = unpacker.unpack()  # `((player, points), ..)`
+        stats_teamranks = unpacker.unpack()  # `((player, points), ..)`
+        stats_ranks = unpacker.unpack()  # `((player, points), ..)`
+        stats_servers = unpacker.unpack()  # `{type: (points, ((player, points), ..)), ..}`
+        stats_players = unpacker.unpack()  # `{player: ({map: (teamrank, rank, finishes, timestamp,
+        # time in sec), ..}, {location: finishes, ..}), ..}`
 
     del server_types
     del total_points
@@ -46,9 +48,11 @@ def reload_data():
 
     return stats_maps, stats_points, stats_teamranks, stats_ranks, stats_players
 
+
 def normalize_name(name):
     name = re.sub(r'\W', '_', name)
     return re.sub(r'[^\x00-\x7F]', '__', name)
+
 
 class Profilecard:
     def __init__(self, bot):
@@ -105,10 +109,10 @@ class Profilecard:
     async def reload_msgpack(self):
         while not self.bot.is_closed():
             stamp = os.stat(MSGPACK_FILE_PATH).st_mtime
-            #msgpack file is updated every 30 minutes
+            # msgpack file is updated every 30 minutes
             if stamp != self._cached_stamp:
                 self._cached_stamp = stamp
-                (   
+                (
                     self.stats_maps,
                     self.stats_points,
                     self.stats_teamranks,
@@ -125,7 +129,7 @@ class Profilecard:
             ('teamrank', self.stats_teamranks),
             ('rank', self.stats_ranks)
         ]
-        
+
         player = player.encode()
         player_stats = {}
         similar_names = []
@@ -145,7 +149,7 @@ class Profilecard:
                     type_stats = (rank, points)
                     break
 
-                if name not in similar_names and len(similar_names) <= 7:   #Don't spam name suggestions
+                if name not in similar_names and len(similar_names) <= 7:  # Don't spam name suggestions
                     if name.lower() == player.lower():
                         similar_names.append(name.decode())
                         continue
@@ -216,19 +220,19 @@ class Profilecard:
                 '<link rel="stylesheet" type="text/css" href="style/style.css" media="screen">'
                 '</head>'
                 '<body>'
-               f'<div id="card" class="background-{background}">'
+                f'<div id="card" class="background-{background}">'
                 '<div class="box">'
                 '<div class="badges name">'
-               f'<img src="flags/{flag}.svg" class="flag"/> {escape(player)}</div>'
+                f'<img src="flags/{flag}.svg" class="flag"/> {escape(player)}</div>'
                 '<div class="stats">'
                 '<div class="global-points">'
-               f'<span class="rank points">#{points_rank}</span>'
+                f'<span class="rank points">#{points_rank}</span>'
                 '</br>'
-               f'<span class="score">{points_score}</span> points'
+                f'<span class="score">{points_score}</span> points'
                 '</div>'
                 '<div class="ranks">'
-               f'<div class="team-rank">{teamrank_span}</div>'
-               f'<div class="rank">{rank_span}</div>'
+                f'<div class="team-rank">{teamrank_span}</div>'
+                f'<div class="rank">{rank_span}</div>'
                 '</div>'
                 '</div>'
                 '</div>'
@@ -269,7 +273,7 @@ class Profilecard:
         self.generate_player_profile(player, stats, flag)
         cmd = f'/root/.nvm/versions/node/v10.6.0/bin/node /root/discordbot/{DIR_PATH}/render_profile.js 800 266 profile'
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-        (output, err) = p.communicate()  
+        (output, err) = p.communicate()
         p_status = p.wait()
 
         img = discord.File(fp=f'{DIR_PATH}/profile.png', filename=f'profile_{normalize_name(player)}.png')
@@ -290,7 +294,7 @@ class Profilecard:
                 release_date = details['release_date']
                 break
 
-            if name not in similar_names and len(similar_names) <= 7:   #Don't spam name suggestions
+            if name not in similar_names and len(similar_names) <= 7:  # Don't spam name suggestions
                 if sorted(name.lower()) == sorted(map_name):
                     similar_names.append(name)
                     continue
@@ -318,7 +322,7 @@ class Profilecard:
         for player, map_stats in self.stats_players.items():
             for name, data in map_stats[0].items():
                 if name == map_name:
-                    if 1 <= data[1] <= 30:  #There are actually invalid rank 0s
+                    if 1 <= data[1] <= 30:  # There are actually invalid rank 0s
                         ranks.append((player.decode(), data[4]))
 
                     if data[0] == 1:
@@ -330,8 +334,8 @@ class Profilecard:
             team_time = teamrank[0][1]
             team_players = [t[0] for t in teamrank]
 
-        ranks = sorted(ranks, key=lambda x: x[0])                #Sort based on name
-        ranks = sorted(ranks, key=lambda x: x[1])                #Sort based on finish time
+        ranks = sorted(ranks, key=lambda x: x[0])  # Sort based on name
+        ranks = sorted(ranks, key=lambda x: x[1])  # Sort based on finish time
 
         out = []
         rank = 0
@@ -355,8 +359,9 @@ class Profilecard:
             return None
 
         map_tiles = self.map_details[map_name]['tiles']
-        tiles_negative = ['NPH_START', 'NPC_START', 'HIT_START']    #no-player-hook|no-player-colission|no-hammer-hit
-        tiles_special = ['EHOOK_START', 'SUPER_START', 'JETPACK_START', 'WALLJUMP']       #endless-hook|super-jump|jetpack|walljump
+        tiles_negative = ['NPH_START', 'NPC_START', 'HIT_START']  # no-player-hook|no-player-colission|no-hammer-hit
+        tiles_special = ['EHOOK_START', 'SUPER_START', 'JETPACK_START',
+                         'WALLJUMP']  # endless-hook|super-jump|jetpack|walljump
         tiles_weapon = ['WEAPON_SHOTGUN', 'WEAPON_GRENADE', 'WEAPON_RIFLE', 'POWERUP_NINJA']
         map_tiles_negative = [t for t in tiles_negative if t in map_tiles]
         map_tiles_special = [t for t in tiles_special if t in map_tiles]
@@ -364,7 +369,8 @@ class Profilecard:
 
         return [*map_tiles_negative, *map_tiles_special, *map_tiles_weapon]
 
-    def generate_map_profile(self, map_name, mapper, release_date, server_type, points, finishes, top_teamranks, top_ranks, tiles=None):
+    def generate_map_profile(self, map_name, mapper, release_date, server_type, points, finishes, top_teamranks,
+                             top_ranks, tiles=None):
         def get_stars(difficulty):
             return '★' * difficulty + '☆' * max(5 - difficulty, 0)
 
@@ -386,14 +392,13 @@ class Profilecard:
 
                 table += ('<tr>'
                           '<td class="rank colored">#1T</td>'
-                         f'<td class="time">{"%02d:%02d" % divmod(time, 60)}</td>'
-                         f'<td class="playername"><div id="team-rank">{names}</div></td>'
+                          f'<td class="time">{"%02d:%02d" % divmod(time, 60)}</td>'
+                          f'<td class="playername"><div id="team-rank">{names}</div></td>'
                           '</tr>')
-
 
             for rank, time, name in top_ranks:
                 table += f'<tr><td class="rank colored">#{rank}</td><td class="time">{"%02d:%02d" % divmod(time, 60)}</td>' \
-                            f'<td class="playername">{escape(name)}</td></tr>'
+                         f'<td class="playername">{escape(name)}</td></tr>'
 
             table += '</table>'
             div += f'{table}</div>'
@@ -406,14 +411,14 @@ class Profilecard:
                 Pg = .587
                 Pb = .114
 
-                p = sqrt(Pr * r**2 + Pg * g**2 + Pb * b**2)
+                p = sqrt(Pr * r ** 2 + Pg * g ** 2 + Pb * b ** 2)
 
                 if r == g and r == b:
                     h = 0
                     s = 0
                     return h, s, p
 
-                if r >= g and r >= b:   #r is largest
+                if r >= g and r >= b:  # r is largest
                     if b >= g:
                         h = 6 / 6 - 1 / 6 * (b - g) / (r - g)
                         s = 1 - g / r
@@ -421,7 +426,7 @@ class Profilecard:
                         h = 0 / 6 + 1 / 6 * (g - b) / (r - b)
                         s = 1 - b / r
 
-                elif g >= r and g >= b:  #g is largest
+                elif g >= r and g >= b:  # g is largest
                     if r >= b:
                         h = 2 / 6 - 1 / 6 * (r - b) / (g - b)
                         s = 1 - b / g
@@ -429,7 +434,7 @@ class Profilecard:
                         h = 2 / 6 + 1 / 6 * (b - r) / (g - r)
                         s = 1 - r / g
 
-                else:                   #b is largest
+                else:  # b is largest
                     if g >= r:
                         h = 4 / 6 - 1 / 6 * (g - r) / (b - r)
                         s = 1 - r / b
@@ -447,47 +452,47 @@ class Profilecard:
                 minOverMax = 1 - S
 
                 if minOverMax > 0:
-                    if H < 1 / 6:  #R>G>B
+                    if H < 1 / 6:  # R>G>B
                         H = 6 * (H - 0 / 6)
                         part = 1 + H * (1 / minOverMax - 1)
-                        B = P / sqrt(Pr / minOverMax / minOverMax + Pg * part**2 + Pb)
+                        B = P / sqrt(Pr / minOverMax / minOverMax + Pg * part ** 2 + Pb)
                         R = (B) / minOverMax
                         G = (B) + H * ((R) - (B))
-                    elif H < 2 / 6:  #G>R>B
+                    elif H < 2 / 6:  # G>R>B
                         H = 6 * (-H + 2 / 6)
                         part = 1 + H * (1 / minOverMax - 1)
-                        B = P / sqrt(Pg / minOverMax / minOverMax + Pr * part**2 + Pb)
+                        B = P / sqrt(Pg / minOverMax / minOverMax + Pr * part ** 2 + Pb)
                         G = (B) / minOverMax
                         R = (B) + H * ((G) - (B))
-                    elif H < 3 / 6:   #G>B>R
+                    elif H < 3 / 6:  # G>B>R
                         H = 6 * (H - 2 / 6)
                         part = 1 + H * (1 / minOverMax - 1)
-                        R = P / sqrt(Pg / minOverMax / minOverMax + Pb * part**2 + Pr)
+                        R = P / sqrt(Pg / minOverMax / minOverMax + Pb * part ** 2 + Pr)
                         G = (R) / minOverMax
                         B = (R) + H * ((G) - (R))
-                    elif H < 4 / 6: # B>G>R
+                    elif H < 4 / 6:  # B>G>R
                         H = 6 * (-H + 4 / 6)
-                        part = 1 + H * (1 / minOverMax -1)
-                        R = P / sqrt(Pb / minOverMax / minOverMax + Pg * part**2 + Pr)
+                        part = 1 + H * (1 / minOverMax - 1)
+                        R = P / sqrt(Pb / minOverMax / minOverMax + Pg * part ** 2 + Pr)
                         B = (R) / minOverMax
                         G = (R) + H * ((B) - (R))
-                    elif H < 5 / 6:   # B>R>G
+                    elif H < 5 / 6:  # B>R>G
                         H = 6 * (H - 4 / 6)
-                        part = 1 + H * (1 / minOverMax -1)
-                        G = P / sqrt(Pb / minOverMax / minOverMax + Pr * part**2 + Pg)
+                        part = 1 + H * (1 / minOverMax - 1)
+                        G = P / sqrt(Pb / minOverMax / minOverMax + Pr * part ** 2 + Pg)
                         B = (G) / minOverMax
                         R = (G) + H * ((B) - (G))
-                    else: # R>B>G
+                    else:  # R>B>G
                         H = 6 * (-H + 6 / 6)
-                        part = 1 + H * (1 / minOverMax -1)
-                        G = P / sqrt(Pr / minOverMax / minOverMax + Pb * part**2 + Pg)
+                        part = 1 + H * (1 / minOverMax - 1)
+                        G = P / sqrt(Pr / minOverMax / minOverMax + Pb * part ** 2 + Pg)
                         R = (G) / minOverMax
                         B = (G) + H * ((R) - (G))
 
                 return R, G, B
 
             color_thief = ColorThief(f'{DIR_PATH}/{thumbnail_url}')
-            r, g, b = color_thief.get_color(quality=1)  #Get dominant color
+            r, g, b = color_thief.get_color(quality=1)  # Get dominant color
             h, s, p = rgb_to_hsp(r, g, b)
 
             if p < 150:
@@ -545,27 +550,27 @@ class Profilecard:
                 '<link rel="stylesheet" type="text/css" href="style/map_stats.css" media="screen">'
                 '<style>'
                 '.background {'
-               f'background-image: url({thumbnail_url}); background-size: cover;'
+                f'background-image: url({thumbnail_url}); background-size: cover;'
                 '}\n'
                 '.colored {'
-               f'color: rgb{colors};'
+                f'color: rgb{colors};'
                 '}'
                 '</style>'
                 '</head>'
                 '<body>'
                 '<div id="card" class="background">'
                 '<div class="content-wrapper">'
-               f'{title}'
+                f'{title}'
                 '<div id="stats-wrapper">'
-               f'<div class="info-wrapper">'
+                f'<div class="info-wrapper">'
                 '<div class="details">'
-               f'{server_type.upper()}</br>'
-               f'<span class="difficulty">{stars}</span>'
+                f'{server_type.upper()}</br>'
+                f'<span class="difficulty">{stars}</span>'
                 '</div>'
-               f'<div class="extra-details colored">{finish_span}{release_span}</div>'
-               f'<div id="tiles" class="tiles">{tiles_div}</div>'
+                f'<div class="extra-details colored">{finish_span}{release_span}</div>'
+                f'<div id="tiles" class="tiles">{tiles_div}</div>'
                 '</div>'
-               f'{ranks}'
+                f'{ranks}'
                 '</div>'
                 '<script src="adjust_font_size.js"></script>'
                 '</body>'
@@ -603,9 +608,10 @@ class Profilecard:
         tiles = self.get_map_tiles(map_name)
 
         self.generate_map_profile(*stats, *top_ranks, tiles)
-        cmd = f'/root/.nvm/versions/node/v10.6.0/bin/node /root/discordbot/{DIR_PATH}/render_profile.js 800 500 map_profile'
+        cmd = f'/root/.nvm/versions/node/v10.6.0/bin/node /root/discordbot/{DIR_PATH}/' \
+              f'render_profile.js 800 500 map_profile'
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-        (output, err) = p.communicate()  
+        (output, err) = p.communicate()
         p_status = p.wait()
 
         img = discord.File(fp=f'{DIR_PATH}/map_profile.png', filename=f'map_profile_{normalize_name(map_name)}.png')
@@ -629,8 +635,10 @@ class Profilecard:
         insert = {'mapper': ''.join(mapper_deformated), 'release_date': message.created_at.isoformat()}
 
         try:
-            urllib.request.urlretrieve(f'https://ddnet.tw/ranks/maps/{normalize_name(map_name)}.png', f'{DIR_PATH}/map_thumbnails/{normalize_name(map_name)}.png')
-            urllib.request.urlretrieve(f'https://ddnet.tw/ranks/maps/{map_name}.msgpack', f'{DIR_PATH}/msgpack/{map_name}.msgpack')
+            urllib.request.urlretrieve(f'https://ddnet.tw/ranks/maps/{normalize_name(map_name)}.png',
+                                       f'{DIR_PATH}/map_thumbnails/{normalize_name(map_name)}.png')
+            urllib.request.urlretrieve(f'https://ddnet.tw/ranks/maps/{map_name}.msgpack',
+                                       f'{DIR_PATH}/msgpack/{map_name}.msgpack')
             with open(f'{DIR_PATH}/msgpack/{map_name}.msgpack', 'rb') as inp:
                 unpacker = msgpack.Unpacker(inp)
                 width = unpacker.unpack()

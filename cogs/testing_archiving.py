@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import re
 import os
 import json
@@ -15,6 +14,7 @@ GUILD_DDNET = 252358080522747904
 DIR = '/var/www/testing-log/resources/logs'
 FILE_DIR = f'{DIR}/files'
 
+
 def download_file(url, path):
     r = requests.get(url, stream=True)
     if r.status_code == 200:
@@ -22,11 +22,13 @@ def download_file(url, path):
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
 
+
 class SetEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, set):
             return list(obj)
         return json.JSONEncoder.default(self, obj)
+
 
 class Archiving:
     def __init__(self, bot):
@@ -105,12 +107,14 @@ class Archiving:
         def process_user_mention(groups):
             user = guild.get_member(int(groups[0]))
             try:
-                roles = ['generic' if r.name == '@everyone' else r.name for r in user.roles][::-1] #Replace '@everyone' role with 'generic'. Reverse list so that the highest role is on top
+                roles = ['generic' if r.name == '@everyone' else r.name for r in user.roles][
+                        ::-1]  # Replace '@everyone' role with 'generic'. Reverse list so that the highest role is on top
             except:
                 roles = ['generic']
-            
+
             if user and user.avatar and not os.path.isfile(user.avatar + '.png'):
-                download_file(user.avatar_url_as(format='png', static_format='png'), f'{FILE_DIR}/avatars/{str(user.avatar)}.png')
+                download_file(user.avatar_url_as(format='png', static_format='png'),
+                              f'{FILE_DIR}/avatars/{str(user.avatar)}.png')
 
             return {
                 'user-mention': {
@@ -193,14 +197,6 @@ class Archiving:
                 'processor': process_role_mention,
                 'regex': r'<@&(\d+)>'
             }
-            #{
-                #'processor': process_url,
-                #'regex': r'(\b(?:(?:https?|ftp|file)://|www\.|ftp\.)(?:\([-a-zA-Z0-9+&@#/%?=~_|!:,\.\[\];]*\)|[-a-zA-Z0-9+&@#/%?=~_|!:,\.\[\];])*(?:\([-a-zA-Z0-9+&@#/%?=~_|!:,\.\[\];]*\)|[-a-zA-Z0-9+&@#/%=~_|$]))'
-            #},
-            #{
-                #'processor': process_markdown,
-                #'regex': r'([~_\*]+)(?=\S)(.+?)(?<=\S)([~_\*]+)+'
-            #}
         ]
 
         if not ctx.message.guild or ctx.message.guild.id != 252358080522747904:
@@ -210,7 +206,8 @@ class Archiving:
 
         guild = ctx.guild
         channel = ctx.channel
-        channel_name = channel.name[2:] #Strip the first 2 characters since they are status symbols, which aren't needed in the log list
+        # Strip the first 2 characters since they are status symbols, which aren't needed in the log list
+        channel_name = channel.name[2:]
         channel_topic = str(channel.topic).replace('**', '')
         options = [':zero:', ':one:', ':two:', ':three:', ':four:', ':five:', ':six:', ':seven:', ':eight:', ':nine:']
 
@@ -227,18 +224,21 @@ class Archiving:
         }
 
         channel_messages = await channel.history(limit=None).flatten()
-        channel_messages = sorted(channel_messages, key=lambda m: m.created_at) #Sort messages based on creation date since it doesn't seem to realiably do so by default
+        # Sort messages based on creation date since it doesn't seem to realiably do so by default
+        channel_messages = sorted(channel_messages, key=lambda m: m.created_at)
         messages = []
         txt_output = ''
         for message in channel_messages:
             user = message.author
             try:
-                roles = ['generic' if r.name == '@everyone' else r.name for r in user.roles][::-1] #Replace '@everyone' role with 'generic'. Reverse list so that the highest role is on top
+                # Replace '@everyone' role with 'generic'. Reverse list so that the highest role is on top
+                roles = ['generic' if r.name == '@everyone' else r.name for r in user.roles][::-1]
             except:
                 roles = ['generic']
 
             if user.avatar and not os.path.isfile(user.avatar + '.png'):
-                download_file(user.avatar_url_as(format='png', static_format='png'), f'{FILE_DIR}/avatars/{str(user.avatar)}.png')
+                download_file(user.avatar_url_as(format='png', static_format='png'),
+                              f'{FILE_DIR}/avatars/{str(user.avatar)}.png')
 
             current_message = {
                 'author': {
@@ -270,15 +270,16 @@ class Archiving:
                                 else:
                                     del message_content[key]
 
-                                #If there are capturing groups, send those. If not, send the whole matched string
+                                # If there are capturing groups, send those. If not, send the whole matched string
                                 processed_match = regex['processor'](
                                     match.groups() if match.groups() else match.group(0)
                                 )
-                                #False positives or fails if someone used a weird, unsymmetrical markdown combination. Either add an exception or add it manually
+                                # False positives or fails if someone used a weird, unsymmetrical markdown combination.
+                                # Either add an exception or add it manually
                                 if not processed_match:
                                     return await ctx.message.author.send(
                                         match.groups() if match.groups() else match.group(0)
-                                        )
+                                    )
 
                                 message_content.insert(key, processed_match)
                                 key += 1
@@ -294,7 +295,8 @@ class Archiving:
                 extension = os.path.splitext(attachment.filename)
                 await attachment.save(f'{FILE_DIR}/attachments/{str(attachment.id)}.{extension[1][1:]}')
 
-                if attachment.height:   #Only images have a `height` attribute (also `witdh`)
+                # Only images have a `height` attribute (also `witdh`)
+                if attachment.height:
                     current_message['content'].append(process_image(attachment))
                 else:
                     current_message['content'].append(process_file(attachment))
@@ -307,7 +309,9 @@ class Archiving:
                     match = re.search(r'<(:.*?:)(\d*)>', emoji)
 
                     if match:
-                        reactions['reactions'].append(process_custom_reaction(match.group(1), match.group(2), reaction.count))
+                        reactions['reactions'].append(process_custom_reaction(match.group(1),
+                                                                              match.group(2),
+                                                                              reaction.count))
                     else:
                         reactions['reactions'].append(process_reaction(reaction))
 
@@ -331,14 +335,15 @@ class Archiving:
             jsonfile.write(output)
 
         txt_output = ('================================================'
-                     f'\nMap Testing - #{channel_name}'
-                     f'\n{channel_topic}'
-                     f'\n{datetime.datetime.utcnow()}'
-                     '\n================================================'
-                     f'\n\n{txt_output}')
+                      f'\nMap Testing - #{channel_name}'
+                      f'\n{channel_topic}'
+                      f'\n{datetime.datetime.utcnow()}'
+                      '\n================================================'
+                      f'\n\n{txt_output}')
 
         with open(f'{DIR}/txt/{channel_name}.txt', 'w', encoding='utf-8') as txtfile:
             txtfile.write(txt_output)
+
 
 def setup(bot):
     bot.add_cog(Archiving(bot))

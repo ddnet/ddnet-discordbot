@@ -1,6 +1,5 @@
 import sys
 import traceback
-import os
 import datetime
 import logging
 import contextlib
@@ -9,6 +8,7 @@ import discord
 from discord.ext import commands
 
 from cogs.utils.credentials import DISCORDBOT_TOKEN
+
 
 @contextlib.contextmanager
 def setup_logging():
@@ -33,6 +33,7 @@ def setup_logging():
             hdlr.close()
             log.removeHandler(hdlr)
 
+
 initial_extensions = [
     'cogs.member_log',
     'cogs.profilecard',
@@ -40,6 +41,7 @@ initial_extensions = [
     'cogs.testing_archiving',
     'cogs.testing_moderation'
 ]
+
 
 class DDNet(commands.Bot):
     def __init__(self):
@@ -84,6 +86,7 @@ class DDNet(commands.Bot):
 
     def run(self):
         super().run(DISCORDBOT_TOKEN, reconnect=True)
+
 
 bot = DDNet()
 

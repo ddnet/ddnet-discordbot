@@ -4,10 +4,11 @@ import discord
 
 from .utils.misc import escape_markdown, format_size
 
-#DDNet guild IDs
+# DDNet guild IDs
 GUILD_DDNET = 252358080522747904
 CHAN_JOIN_LEAVE = 255191476315750401
 CHAN_LOG = 364164149359411201
+
 
 class MemberLog:
     def __init__(self, bot):
@@ -22,8 +23,8 @@ class MemberLog:
             return
 
         msg = f'📥 {member.mention}, Welcome to <:ddnet:395756335892922379> ' \
-               '**DDraceNetwork\'s Discord**! Please make sure to read <#311192969493348362>. ' \
-               'Have a great time here <:happy:395753933089406976>'
+              '**DDraceNetwork\'s Discord**! Please make sure to read <#311192969493348362>. ' \
+              'Have a great time here <:happy:395753933089406976>'
         join_leave = self.bot.get_channel(CHAN_JOIN_LEAVE)
         await join_leave.send(msg)
 
@@ -81,11 +82,14 @@ class MemberLog:
             description += f'\n[Attachment: {attachment.filename} ({filesize}{unit})]({attachment.url})'
 
         embed = discord.Embed(description=description, color=0xDD2E44)
-        embed.set_author(name=f'{message.author} | ID: {message.id}', icon_url=message.author.avatar_url_as(format='png'))
-        footer = f'Sent: {message.created_at.strftime("%m/%d/%Y %I:%M %p")} | Deleted: {deleted_at.strftime("%m/%d/%Y %I:%M %p")}'
+        embed.set_author(name=f'{message.author} | ID: {message.id}',
+                         icon_url=message.author.avatar_url_as(format='png'))
+        footer = f'Sent: {message.created_at.strftime("%m/%d/%Y %I:%M %p")} | ' \
+                 f'Deleted: {deleted_at.strftime("%m/%d/%Y %I:%M %p")}'
         embed.set_footer(text=footer)
         log_channel = self.bot.get_channel(CHAN_LOG)
         await log_channel.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(MemberLog(bot))
