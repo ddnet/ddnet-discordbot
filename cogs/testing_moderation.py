@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from cogs.utils import misc, testing
 
-#DDNet guild IDs
+# DDNet guild IDs
 GUILD_DDNET = 252358080522747904
 CAT_MAP_TESTING = 449352010072850443
 CAT_EVALUATED_MAPS = 462954029643989003
@@ -24,11 +24,13 @@ MSG_OPT = 458735654021627935
 MSG_MRS_EMBED = 459473712341712906
 MSG_UNSCHD_EMBED = 497484373902360576
 
+
 def has_map_file(message: discord.Message):
     if message.attachments and misc.get_extension(message.attachments[0].filename) == '.map':
         return True
 
     return False
+
 
 class TestingModeration:
     def __init__(self, bot):
@@ -52,13 +54,13 @@ class TestingModeration:
             if channel_ids:
                 await self.process_scheduled_maps(channel_ids)
 
-            #if weekday == 0 and hour == 10:
-                #testing_schedule = testing.get_schedule()
-                #await self.process_scheduled_maps(testing_schedule[:3])
-                #await self.announce_schedule()
+            # if weekday == 0 and hour == 10:
+            # testing_schedule = testing.get_schedule()
+            # await self.process_scheduled_maps(testing_schedule[:3])
+            # await self.announce_schedule()
 
-            #if weekday == 4 and hour == 10:
-                #await self.reminder()
+            # if weekday == 4 and hour == 10:
+            # await self.reminder()
 
             await asyncio.sleep(3600)
 
@@ -75,7 +77,7 @@ class TestingModeration:
         await channel.edit(name=name, topic=topic, position=0, category=evaluated_maps)
 
         msg = 'The map scored **all required points**! It only needs to be checked by a ' \
-             f'<@&{ROLE_TESTER}> now to be released <:happy:395753933089406976>'
+              f'<@&{ROLE_TESTER}> now to be released <:happy:395753933089406976>'
         await channel.send(msg)
 
     async def decline_map(self, channel_id, reasons=None):
@@ -121,7 +123,7 @@ class TestingModeration:
             msg += f'**overall** ({self.criteria_total_required} required)'
 
         msg += ' and, therefore, won\'t be released. However, feel free to rework it to improve ' \
-            'low rated criteria, or simply start a new map <:heartw:395753947396046850>'
+               'low rated criteria, or simply start a new map <:heartw:395753947396046850>'
 
         await channel.send(msg)
 
@@ -153,12 +155,12 @@ class TestingModeration:
 
         for c_id in channel_ids:
             ratings = testing.get_ratings(self.criteria, c_id, mrs_ids)[0]
-            #Maps should only be processed if every criteria has been evaluated
+            # Maps should only be processed if every criteria has been evaluated
             if None in ratings:
                 continue
 
             if (sum(ratings) >= self.criteria_total_required and
-                all(r >= t for r, t in zip(ratings, criteria_required) if t)):
+                    all(r >= t for r, t in zip(ratings, criteria_required) if t)):
                 await self.approve_map(c_id)
 
             else:
@@ -210,7 +212,7 @@ class TestingModeration:
 
             msg += '! You have time to do so until Monday <:happy:395753933089406976>'
             user = self.bot.get_user(m_id)
-            try: #Fails if the user has blocked the bot
+            try:  # Fails if the user has blocked the bot
                 await user.send(msg)
             except discord.Forbidden(f'{user} has blocked the bot', msg):
                 pass
@@ -238,7 +240,7 @@ class TestingModeration:
 
         detail_msg = await channel.history(reverse=True).get(author=self.bot.user)
         match = re.search(r'\*\*"(.*)"\*\* by (.*)', detail_msg.content)
-        if  match:
+        if match:
             map_name = match.group(1)
             mappers = match.group(2)
 
@@ -321,7 +323,7 @@ class TestingModeration:
         if not ddnet_member:
             return
 
-        #Check role on DDNet guild since the command is expected to be executed in DMs
+        # Check role on DDNet guild since the command is expected to be executed in DMs
         if not any(r.id == ROLE_ADMIN for r in ddnet_member.roles):
             return
 
@@ -344,7 +346,8 @@ class TestingModeration:
                 embed_desc = msg.embeds[0].description.split('\n')
                 if re.search(r'\*\*"%s"\*\*' % map_name, embed_desc[1]):
                     embed_desc[0] = date_string
-                    embed = discord.Embed(title=date.strftime('%A'), description='\n'.join(embed_desc), color=msg.embeds[0].color)
+                    embed = discord.Embed(title=date.strftime('%A'), description='\n'.join(embed_desc),
+                                          color=msg.embeds[0].color)
                     await msg.edit(embed=embed)
                     return await message.add_reaction('👌')
 
@@ -372,7 +375,6 @@ class TestingModeration:
         rls_embed = discord.Embed(title=date.strftime('%A'), description='\n'.join(rls_embed_desc), color=color)
         await info_chan.send(embed=rls_embed)
         await message.add_reaction('👌')
-
 
     @commands.command(pass_context=True)
     @commands.has_any_role('Admin', 'Tester')
@@ -415,17 +417,21 @@ class TestingModeration:
             return
 
         roles_ids = [r.id for r in [*before.roles, *after.roles]]
-        if roles_ids.count(ROLE_MRS) != 1:                                                                                      #Check if MRS role was added or removed
+        if roles_ids.count(ROLE_MRS) != 1:  # Check if MRS role was added or removed
             return
 
         info_channel = self.bot.get_channel(CHAN_TESTING_INFO)
         embed_message = await info_channel.get_message(MSG_MRS_EMBED)
-        embed = discord.Embed(title='Map Release Squad', description='\255', color=0xEB4444, timestamp=datetime.utcnow())      #ASCII code 255 represents a non-breaking space (empty character)
+        # ASCII code 255 represents a non-breaking space (empty character)
+        embed = discord.Embed(title='Map Release Squad', description='\255', color=0xEB4444,
+                              timestamp=datetime.utcnow())
         embed.set_footer(text="Last Updated")
 
         mrs = discord.utils.get(before.guild.roles, id=ROLE_MRS)
-        mrs_members = sorted(mrs.members, key=lambda x: x.display_name.lower())                                                 #Sort MRS members case-insensitive based on `display_name`
-        mrs_members = [[m.mention for m in mrs_members][x:x + 5] for x in range(0, len(mrs_members), 5)]                        #Split list every 5 members
+        # Sort MRS members case-insensitive based on `display_name`
+        mrs_members = sorted(mrs.members, key=lambda x: x.display_name.lower())
+        mrs_members = [[m.mention for m in mrs_members][x:x + 5] for x in
+                       range(0, len(mrs_members), 5)]  # Split list every 5 members
         for f in mrs_members:
             embed.add_field(name='\255', value='\n'.join(f), inline=True)
 
@@ -556,6 +562,7 @@ class TestingModeration:
                 schedule_pos = testing.get_schedule_pos(c.id)
                 topic = testing.update_ratings_prompt(self.criteria, ratings, rater_count, schedule_pos)
                 await c.edit(topic=topic)
+
 
 def setup(bot):
     bot.add_cog(TestingModeration(bot))

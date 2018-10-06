@@ -16,11 +16,14 @@ database = {
     'charset': 'utf8mb4'
 }
 
+
 def get_criteria():
     return load_json('map_testing/configs/criteria.json')
 
+
 def get_server_types():
     return load_json('map_testing/configs/server-types.json')
+
 
 def register_map(name, mapper, channel_id, submission_msg_id):
     con = pymysql.connect(**database)
@@ -34,6 +37,7 @@ def register_map(name, mapper, channel_id, submission_msg_id):
     finally:
         con.close()
 
+
 def get_ratings(criteria, channel_id, user_id):
     criteria_list = [c for c in criteria]
 
@@ -41,18 +45,23 @@ def get_ratings(criteria, channel_id, user_id):
     try:
         with con.cursor() as cur:
             if isinstance(user_id, int):
-                query = 'SELECT {} FROM ratings WHERE channel_id = %s AND user_id = %s;'.format(', '.join(criteria_list))
+                query = 'SELECT {} FROM ratings WHERE channel_id = %s AND user_id = %s;'.format(
+                    ', '.join(criteria_list))
                 cur.execute(query, (channel_id, user_id))
                 ratings = cur.fetchone()
 
             if isinstance(user_id, list):
-                query = 'SELECT {} FROM ratings WHERE channel_id = %s AND user_id IN %s;'.format(', '.join(criteria_list))
+                query = 'SELECT {} FROM ratings WHERE channel_id = %s AND user_id IN %s;'.format(
+                    ', '.join(criteria_list))
                 cur.execute(query, (channel_id, user_id))
                 ratings = cur.fetchall()
 
-                ratings = [[r[n] for r in ratings if r[n] is not None] for n in range(len(criteria_list))]  #Group ratings by criterion and filter None values
-                rater_count = len(max(ratings, key=len))                                                    #Get number of ratings for the criterion with the most ratings
-                ratings = [round_properly(sum(r) / len(r)) if r else None for r in ratings]                 #Calculate average criteria scores
+                ratings = [[r[n] for r in ratings if r[n] is not None] for n in
+                           range(len(criteria_list))]  # Group ratings by criterion and filter None values
+                rater_count = len(
+                    max(ratings, key=len))  # Get number of ratings for the criterion with the most ratings
+                ratings = [round_properly(sum(r) / len(r)) if r else None for r in
+                           ratings]  # Calculate average criteria scores
                 ratings = (ratings, rater_count)
 
         con.commit()
@@ -61,6 +70,7 @@ def get_ratings(criteria, channel_id, user_id):
         con.close()
 
     return ratings
+
 
 def submit_ratings(submission, channel_id, user_id):
     con = pymysql.connect(**database)
@@ -72,7 +82,8 @@ def submit_ratings(submission, channel_id, user_id):
             if cur.rowcount == 0:
                 criteria = [s[0] for s in submission]
                 ratings = [str(s[1]) for s in submission]
-                query = 'INSERT INTO ratings(channel_id, user_id, {}) VALUES(%s, %s, {});'.format(', '.join(criteria), ', '.join(ratings))
+                query = 'INSERT INTO ratings(channel_id, user_id, {}) VALUES(%s, %s, {});'.format(', '.join(criteria),
+                                                                                                  ', '.join(ratings))
 
             if cur.rowcount == 1:
                 insert = [f'{s[0]} = {s[1]}' for s in submission]
@@ -84,6 +95,7 @@ def submit_ratings(submission, channel_id, user_id):
 
     finally:
         con.close()
+
 
 def format_submission(criteria, submission):
     output = []
@@ -111,12 +123,14 @@ def format_submission(criteria, submission):
 
     return output
 
+
 def upload_map(name, path):
     headers = {'X-DDNet-Token': DDNET_UPLOAD_TOKEN}
     params = {'map_name': name}
     files = {'file': open(path, 'rb')}
     r = requests.post(DDNET_UPLOAD_URL, data=params, headers=headers, files=files)
     return r.status_code
+
 
 def update_schedule_process(channel_id, date=None):
     con = pymysql.connect(**database)
@@ -134,6 +148,7 @@ def update_schedule_process(channel_id, date=None):
     finally:
         con.close()
 
+
 def get_process(date):
     con = pymysql.connect(**database)
     try:
@@ -148,6 +163,7 @@ def get_process(date):
         con.close()
 
     return [r[0] for r in results]
+
 
 def update_schedule(pos, channel_id, date=None):
     con = pymysql.connect(**database)
@@ -165,6 +181,7 @@ def update_schedule(pos, channel_id, date=None):
     finally:
         con.close()
 
+
 def get_schedule():
     con = pymysql.connect(**database)
     try:
@@ -179,6 +196,7 @@ def get_schedule():
         con.close()
 
     return [r[0] for r in results]
+
 
 def get_full_schedule():
     con = pymysql.connect(**database)
@@ -195,8 +213,10 @@ def get_full_schedule():
 
     return [(r[0], r[1]) for r in results]
 
+
 def get_schedule_pos(channel_id):
     return get_schedule().index(channel_id)
+
 
 def update_ratings_prompt(criteria, ratings, votes, schedule_pos):
     ratings_string = ''

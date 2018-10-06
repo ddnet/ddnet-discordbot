@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from .utils import misc, testing
 
-#DDNet guild IDs
+# DDNet guild IDs
 GUILD_DDNET = 252358080522747904
 CAT_MAP_TESTING = 449352010072850443
 CAT_EVALUATED_MAPS = 462954029643989003
@@ -22,8 +22,10 @@ MSG_OPT = 458735654021627935
 
 FILE_PATH = 'map_testing/map_files/{}.{}'
 
+
 def is_staff(user: discord.Member):
     return any(r.id in [ROLE_ADMIN, ROLE_TESTER, ROLE_MRS] for r in user.roles)
+
 
 def is_testing_channel(channel: discord.TextChannel):
     if not channel.category_id:
@@ -31,11 +33,13 @@ def is_testing_channel(channel: discord.TextChannel):
 
     return channel.category_id in [CAT_MAP_TESTING, CAT_EVALUATED_MAPS]
 
+
 def has_map_file(message: discord.Message):
     if message.attachments and message.attachments[0].filename.endswith('.map'):
         return True
 
     return False
+
 
 def map_details(server_types, message: discord.Message):
     regex = r'("|\'|`|``)(.+)\1 +by +(.+) +\[([a-zA-Z0-9\*: ]+)\]'
@@ -56,12 +60,14 @@ def map_details(server_types, message: discord.Message):
         if re.search(r'%s' % server['name'].lower(), m.group(4).lower()):
             return name, mapper, (server['name'], server['emoji'])
 
+
 def is_duplicate(name, message: discord.Message):
     sanitized_name = misc.sanitize_channel_name(name)
     evaluated_maps = misc.get(message.guild.categories, CAT_EVALUATED_MAPS)
     testing_chans = [*message.channel.category.channels, *evaluated_maps.channels]
     duplicate = discord.utils.find(lambda t: sanitized_name in [t.name[1:], t.name[2:]], testing_chans)
     return True if duplicate else False
+
 
 class TestingMain:
     def __init__(self, bot):
@@ -98,9 +104,9 @@ class TestingMain:
                 if not details:
                     await self.status_emoji(message, '❓')
                     msg = f'Hey, your map submission in <#{CHAN_SUBMIT_MAPS}> doesn\'t cointain ' \
-                           'correctly formated details about the map. ' \
-                           'Please, edit the message to include the map\'s details ' \
-                           'as follows: `"<map-name>" by <mappers> [<server-type>]`'
+                          'correctly formated details about the map. ' \
+                          'Please, edit the message to include the map\'s details ' \
+                          'as follows: `"<map-name>" by <mappers> [<server-type>]`'
                     return await user.send(msg)
 
                 if is_duplicate(details[0], message):
@@ -115,9 +121,10 @@ class TestingMain:
             await message.delete()
 
             msg = f'Hey, your message in <#{CHAN_SUBMIT_MAPS}> was deleted because it wasn\'t a map submission. ' \
-                   'If you want to discuss a map, please do so in its individual channel <:happy:395753933089406976>'
+                  'If you want to discuss a map, please do so in its individual channel <:happy:395753933089406976>'
 
-            recent_messages = [m.content for m in await user.history(after=message.created_at - timedelta(days=1)).flatten()]
+            history = await user.history(after=message.created_at - timedelta(days=1)).flatten()
+            recent_messages = [m.content for m in history]
             if msg not in recent_messages:
                 return await user.send(msg)
 
@@ -253,7 +260,8 @@ class TestingMain:
                     overwrites[u] = perms_default
 
             map_channel_name = f'{server_type[1]}{map_file.filename.replace(".map", "")}'
-            map_channel = await message.guild.create_text_channel(name=map_channel_name, overwrites=overwrites, category=message.channel.category)
+            map_channel = await message.guild.create_text_channel(name=map_channel_name, overwrites=overwrites,
+                                                                  category=message.channel.category)
             map_message_file = discord.File(fp=FILE_PATH.format(map_file.id, 'map'), filename=map_file.filename)
             map_message = await map_channel.send(content=msg, file=map_message_file)
             await map_message.pin()
@@ -261,7 +269,8 @@ class TestingMain:
 
             try:
                 await misc.render_thumbnail(FILE_PATH.format(map_file.id, 'map'))
-                await map_channel.send(file=discord.File(FILE_PATH.format(map_file.id, 'map.png'), filename=map_file.filename.replace('.map', '.png')))
+                await map_channel.send(file=discord.File(FILE_PATH.format(map_file.id, 'map.png'),
+                                                         filename=map_file.filename.replace('.map', '.png')))
             except:
                 pass
 
@@ -289,7 +298,7 @@ class TestingMain:
         r = testing.upload_map(map_file.filename.replace(".map", ""), FILE_PATH.format(map_file.id, 'map'))
 
         desc = f'**``{map_file.filename}`` approved by <@{user.id}>**\n' \
-        f'[Map file: {map_file.filename} ({"".join(misc.format_size(map_file.size))})]({map_file.url})'
+               f'[Map file: {map_file.filename} ({"".join(misc.format_size(map_file.size))})]({map_file.url})'
         embed = discord.Embed(description=desc, color=0x77B255, timestamp=datetime.utcnow())
         embed.set_author(name=f'{user} | {map_file.id}', icon_url=user.avatar_url_as(format='png'))
         log_channel = self.bot.get_channel(CHAN_LOG)
@@ -352,36 +361,41 @@ class TestingMain:
             schedule_pos = testing.get_schedule_pos(c.id)
             topic = testing.update_ratings_prompt(self.criteria, ratings, rater_count, schedule_pos)
             await c.edit(topic=topic)
-            #if not None in ratings and c.topic[0] != '⭐':
-                #self.add_job(ratings, rater_count, c)
-                #await ctx.send(f'{c.name}: process')
-
+            # if not None in ratings and c.topic[0] != '⭐':
+            # self.add_job(ratings, rater_count, c)
+            # await ctx.send(f'{c.name}: process')
 
     def add_job(self, ratings, rater_count, channel: discord.TextChannel = None):
         criteria_required = [t['required'] for t in self.criteria.values()]
 
         pos_cond_1_check = [True for r, t in zip(ratings, criteria_required) if t and r >= t + 2]
-        pos_cond_1 = True if pos_cond_1_check.count(True) >= 2 else False                                                       #2 or more scores greater than or equal to required score + 2
-        pos_cond_2 = all(r >= t + 1 for r, t in zip(ratings, criteria_required) if t)                                           #All scores greater than or equal to required score + 1
+        # 2 or more scores greater than or equal to required score + 2
+        pos_cond_1 = True if pos_cond_1_check.count(True) >= 2 else False
+        # All scores greater than or equal to required score + 1
+        pos_cond_2 = all(r >= t + 1 for r, t in zip(ratings, criteria_required) if t)
 
-        neg_cond_1 = any(r <= t - 3 for r, t in zip(ratings, criteria_required) if t)                                           #1 or more scores less than or equal to required score - 3
+        # 1 or more scores less than or equal to required score - 3
+        neg_cond_1 = any(r <= t - 3 for r, t in zip(ratings, criteria_required) if t)
         neg_cond_2_check = [True for r, t in zip(ratings, criteria_required) if t and r <= t - 2]
-        neg_cond_2 = True if neg_cond_2_check.count(True) >= 2 else False                                                       #2 or more scores less than or equal to required score - 2
-        neg_cond_3 = any(r <= t - 2 for r, t in zip(ratings, criteria_required) if t)                                           #1 or more scores less than or equal to required score - 2
+        # 2 or more scores less than or equal to required score - 2
+        neg_cond_2 = True if neg_cond_2_check.count(True) >= 2 else False
+        # 1 or more scores less than or equal to required score - 2
+        neg_cond_3 = any(r <= t - 2 for r, t in zip(ratings, criteria_required) if t)
         neg_cond_4_check = [True for r, t in zip(ratings, criteria_required) if t and r <= t - 1]
-        neg_cond_4 = True if neg_cond_4_check.count(True) >= 2 else False                                                       #2 or more scores less than or equal to required score - 1
+        # 2 or more scores less than or equal to required score - 1
+        neg_cond_4 = True if neg_cond_4_check.count(True) >= 2 else False
 
         if ((rater_count >= 3 and sum(ratings) >= self.criteria_total_required + 10 and pos_cond_1 and pos_cond_2) or
-            (rater_count >= 4 and sum(ratings) >= self.criteria_total_required + 5 and pos_cond_2) or
-            (rater_count >= 2 and sum(ratings) <= self.criteria_total_required - 10 and (neg_cond_1 or neg_cond_2)) or
-            (rater_count >= 3 and sum(ratings) <= self.criteria_total_required - 5 and (neg_cond_3 or neg_cond_4))):
+                (rater_count >= 4 and sum(ratings) >= self.criteria_total_required + 5 and pos_cond_2) or
+                (rater_count >= 2 and sum(ratings) <= self.criteria_total_required - 10 and (
+                        neg_cond_1 or neg_cond_2)) or
+                (rater_count >= 3 and sum(ratings) <= self.criteria_total_required - 5 and (neg_cond_3 or neg_cond_4))):
 
             if channel:
                 if datetime.utcnow() < (channel.created_at + timedelta(days=6)):
                     date = channel.created_at + timedelta(weeks=1)
                 else:
                     date = datetime.utcnow() + timedelta(days=1)
-
 
             date = date.replace(minute=0, second=0, microsecond=0)
             testing.update_schedule_process(channel.id, date)
@@ -504,7 +518,7 @@ class TestingMain:
                 if s[1] >= week_ago and msg_new not in content:
                     content += msg_new
 
-                if s[1] <= week_ago and s[1] >= month_ago and msg_week not in content:
+                if week_ago >= s[1] >= month_ago and msg_week not in content:
                     content += msg_week
 
                 if s[1] <= month_ago and msg_month not in content:
@@ -532,7 +546,7 @@ class TestingMain:
         for c in channel.category.channels:
             if c.id in [CHAN_TESTING_INFO, CHAN_SUBMIT_MAPS]:
                 continue
-            
+
             ratings, rater_count = testing.get_ratings(self.criteria, c.id, mrs_ids)
             schedule_pos = testing.get_schedule_pos(c.id)
             topic = testing.update_ratings_prompt(self.criteria, ratings, rater_count, schedule_pos)
@@ -565,6 +579,7 @@ class TestingMain:
                 await before.edit(topic=topic)
             except:
                 pass
+
 
 def setup(bot):
     bot.add_cog(TestingMain(bot))
