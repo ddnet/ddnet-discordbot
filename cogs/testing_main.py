@@ -369,21 +369,21 @@ class TestingMain:
         criteria_required = [t['required'] for t in self.criteria.values()]
 
         pos_cond_1_check = [True for r, t in zip(ratings, criteria_required) if t and r >= t + 2]
-        pos_cond_1 = True if pos_cond_1_check.count(
-            True) >= 2 else False  # 2 or more scores greater than or equal to required score + 2
-        pos_cond_2 = all(r >= t + 1 for r, t in zip(ratings, criteria_required) if
-                         t)  # All scores greater than or equal to required score + 1
+        # 2 or more scores greater than or equal to required score + 2
+        pos_cond_1 = True if pos_cond_1_check.count(True) >= 2 else False
+        # All scores greater than or equal to required score + 1
+        pos_cond_2 = all(r >= t + 1 for r, t in zip(ratings, criteria_required) if t)
 
         # 1 or more scores less than or equal to required score - 3
         neg_cond_1 = any(r <= t - 3 for r, t in zip(ratings, criteria_required) if t)
         neg_cond_2_check = [True for r, t in zip(ratings, criteria_required) if t and r <= t - 2]
-        neg_cond_2 = True if neg_cond_2_check.count(
-            True) >= 2 else False  # 2 or more scores less than or equal to required score - 2
-        neg_cond_3 = any(r <= t - 2 for r, t in zip(ratings, criteria_required) if
-                         t)  # 1 or more scores less than or equal to required score - 2
+        # 2 or more scores less than or equal to required score - 2
+        neg_cond_2 = True if neg_cond_2_check.count(True) >= 2 else False
+        # 1 or more scores less than or equal to required score - 2
+        neg_cond_3 = any(r <= t - 2 for r, t in zip(ratings, criteria_required) if t)
         neg_cond_4_check = [True for r, t in zip(ratings, criteria_required) if t and r <= t - 1]
-        neg_cond_4 = True if neg_cond_4_check.count(
-            True) >= 2 else False  # 2 or more scores less than or equal to required score - 1
+        # 2 or more scores less than or equal to required score - 1
+        neg_cond_4 = True if neg_cond_4_check.count(True) >= 2 else False
 
         if ((rater_count >= 3 and sum(ratings) >= self.criteria_total_required + 10 and pos_cond_1 and pos_cond_2) or
                 (rater_count >= 4 and sum(ratings) >= self.criteria_total_required + 5 and pos_cond_2) or
