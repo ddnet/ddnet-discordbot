@@ -258,9 +258,9 @@ class Profilecard:
 
         found, stats = self.get_player_rank_stats(player)
         if not found:
-            msg = f'Can\'t find player `{player}` <:oop:395753983379243028>'
+            msg = f'Can\'t find player `{player.replace('`', '\`')}` <:oop:395753983379243028>'
             if stats:
-                names = [f'`{name}`' for name in stats]
+                names = [f'`{name.replace('`', '\`')}`' for name in stats]
                 msg += ' Did you mean..\n' + ', '.join(names)
 
             return await ctx.send(msg)
@@ -587,9 +587,9 @@ class Profilecard:
 
         found, stats = self.get_map_details(map_name)
         if not found:
-            msg = f'Can\'t find map `{map_name}` <:oop:395753983379243028>'
+            msg = f'Can\'t find map `{map_name.replace('`', '\`')}` <:oop:395753983379243028>'
             if stats:
-                names = [f'`{name}`' for name in stats]
+                names = [f'`{name.replace('`', '\`')}`' for name in stats]
                 msg += ' Did you mean..\n' + ', '.join(names)
 
             return await ctx.send(msg)
