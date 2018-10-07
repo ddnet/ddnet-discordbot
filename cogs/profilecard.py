@@ -278,6 +278,7 @@ class Profilecard:
                 player = f'{player} '
 
             msg = f'Can\'t find player ``{player}`` <:oop:395753983379243028>'
+
             if stats:
                 names = []
                 for name in stats:
@@ -619,7 +620,14 @@ class Profilecard:
             return await ctx.send('Error')
 
         if not found:
+            if map_name[0] == '`':
+                map_name = f' {map_name}'
+
+            if map_name[-1] == '`':
+                map_name = f'{map_name} '
+
             msg = f'Can\'t find map ``{map_name}`` <:oop:395753983379243028>'
+
             if stats:
                 names = []
                 for name in stats:
