@@ -172,9 +172,13 @@ class Profilecard:
 
         return True, player_stats
 
+
     def get_player_flag(self, player):
         # AUS, BRA, CAN, CHL, CHN, FRA, GER, GER2, IRN, KSA, RUS, USA, ZAF
         locations = self.stats_players[player.encode()][1]
+        if b'' in locations:
+            del locations[b'']
+
         if not locations:
             return 'UNK'
 
