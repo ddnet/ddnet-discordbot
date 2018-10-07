@@ -195,8 +195,8 @@ class Profilecard:
         if not max_location:
             return 'UNK'
 
-        available_flags = [n.split('.')[0] for n in os.listdir('ddnet-profile-card/flags')]
-        if max_location not in available_flags:
+        available_flags = os.listdir('ddnet-profile-card/flags')
+        if f'{max_location}.svg' not in available_flags:
             return 'UNK'
 
         return max_location
@@ -261,7 +261,11 @@ class Profilecard:
         player = ' '.join(player) if player else ctx.message.author.display_name
         match = re.search(r'<@!?([0-9]+)>', player)
         if match:
-            user = self.bot.get_user(int(match.group(1)))
+            if ctx.guild:
+                user = ctx.guild.get_member(int(match.group(1)))
+            else:
+                user = self.bot.get_user(int(match.group(1)))
+
             if user:
                 player = player.replace(match.group(0), user.display_name)
             else:
@@ -587,7 +591,7 @@ class Profilecard:
         with open(f'{DIR_PATH}/map_profile.html', 'w', encoding='utf-8') as html_file:
             html_file.write(html)
 
-    @commands.command(name='mapprofile', pass_context=True)
+    @commands.command(name='map', pass_context=True)
     async def map_profile(self, ctx, *map_name):
         if not map_name:
             return await ctx.send('You need to specify a map')
