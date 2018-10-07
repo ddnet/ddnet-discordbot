@@ -174,11 +174,10 @@ class Profilecard:
 
     def get_player_flag(self, player):
         locations = self.stats_players[player.encode()][1]
-        locations = {l.decode(): f for l, f in locations.items()}
         if not locations:
             return 'UNK'
 
-        eur_locations = ['GER', 'GER2', 'FRA']
+        eur_locations = [b'GER', b'GER2', b'FRA']
         eur_finishes = 0
         for l in eur_locations:
             if l in locations:
@@ -186,9 +185,21 @@ class Profilecard:
                 del locations[l]
 
         if eur_finishes:
-            locations['EUR'] = eur_finishes
+            locations[b'EUR'] = eur_finishes
 
-        return max(locations, key=locations.get)
+        # Sort alphabetically to have consistent results
+        locations = {l.decode(): f for l, f in sorted(locations.items())}
+        max_location = max(locations, key=locations.get)
+
+        # There are rare cases of really old ranks not having a server location code
+        if not max_location:
+            return 'UNK'
+
+        available_flags = [n.split('.')[0] for n in os.listdir('ddnet-profile-card/flags')]
+        if max_location not in available_flags:
+            return 'UNK'
+
+        return max_location
 
     def generate_player_profile(self, player, stats, flag):
         def get_background(score):
