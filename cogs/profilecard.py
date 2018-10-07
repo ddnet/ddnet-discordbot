@@ -173,6 +173,7 @@ class Profilecard:
         return True, player_stats
 
     def get_player_flag(self, player):
+        # AUS, BRA, CAN, CHL, CHN, FRA, GER, GER2, IRN, KSA, RUS, USA, ZAF
         locations = self.stats_players[player.encode()][1]
         if not locations:
             return 'UNK'
@@ -188,12 +189,9 @@ class Profilecard:
             locations[b'EUR'] = eur_finishes
 
         # Sort alphabetically to have consistent results
-        locations = {l.decode(): f for l, f in sorted(locations.items())}
+        locations = {l: f for l, f in sorted(locations.items())}
         max_location = max(locations, key=locations.get)
-
-        # There are rare cases of really old ranks not having a server location code
-        if not max_location:
-            return 'UNK'
+        max_location = max_location.decode()
 
         available_flags = os.listdir('ddnet-profile-card/flags')
         if f'{max_location}.svg' not in available_flags:
@@ -273,9 +271,23 @@ class Profilecard:
 
         found, stats = self.get_player_rank_stats(player)
         if not found:
-            msg = 'Can\'t find player `{}` <:oop:395753983379243028>'.format(player.replace('`', '\`'))
+            if player[0] == '`':
+                player = f' {player}'
+
+            if player[-1] == '`':
+                player = f'{player} '
+
+            msg = f'Can\'t find player ``{player}`` <:oop:395753983379243028>'
             if stats:
-                names = ['`{}`'.format(name.replace('`', '\`')) for name in stats]
+                names = ['``{}``'.format(name) for name in stats]
+                for name in stats:
+                    if name[0] == '`':
+                        name = f' {name}'
+                    
+                    if name[-1] == '`':
+                        name = f'{name} '
+
+                    
                 msg += ' Did you mean..\n' + ', '.join(names)
 
             return await ctx.send(msg)
@@ -602,9 +614,9 @@ class Profilecard:
 
         found, stats = self.get_map_details(map_name)
         if not found:
-            msg = 'Can\'t find map `{}` <:oop:395753983379243028>'.format(map_name.replace('`', '\`'))
+            msg = 'Can\'t find map `{}` <:oop:395753983379243028>'.format(map_name.replace('`', '\\`'))
             if stats:
-                names = ['`{}`'.format(name.replace('`', '\`')) for name in stats]
+                names = ['`{}`'.format(name.replace('`', '\\`')) for name in stats]
                 msg += ' Did you mean..\n' + ', '.join(names)
 
             return await ctx.send(msg)
