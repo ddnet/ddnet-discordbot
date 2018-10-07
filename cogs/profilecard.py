@@ -149,18 +149,18 @@ class Profilecard:
                     type_stats = (rank, points)
                     break
 
-                if name not in similar_names and len(similar_names) <= 7:  # Don't spam name suggestions
+                if len(similar_names) <= 7:  # Don't spam name suggestions
                     if name.lower() == player.lower():
-                        similar_names.append(name.decode())
+                        similar_names.append(name)
                         continue
 
                     if sorted(name) == sorted(player):
-                        similar_names.append(name.decode())
+                        similar_names.append(name)
                         continue
 
                     ratio = fuzz.ratio(name, player)
                     if ratio >= 85:
-                        similar_names.append(name.decode())
+                        similar_names.append(name)
 
             else:
                 if stats_type == 'points':
@@ -279,15 +279,17 @@ class Profilecard:
 
             msg = f'Can\'t find player ``{player}`` <:oop:395753983379243028>'
             if stats:
-                names = ['``{}``'.format(name) for name in stats]
+                names = []
                 for name in stats:
+                    name = name.decode()
                     if name[0] == '`':
                         name = f' {name}'
-                    
+
                     if name[-1] == '`':
                         name = f'{name} '
 
-                    
+                    names.append(f'``{name}``')
+
                 msg += ' Did you mean..\n' + ', '.join(names)
 
             return await ctx.send(msg)
@@ -318,7 +320,7 @@ class Profilecard:
                 release_date = details['release_date']
                 break
 
-            if name not in similar_names and len(similar_names) <= 7:  # Don't spam name suggestions
+            if len(similar_names) <= 7:  # Don't spam name suggestions
                 if sorted(name.lower()) == sorted(map_name):
                     similar_names.append(name)
                     continue
@@ -613,16 +615,24 @@ class Profilecard:
         map_name = ' '.join(map_name)
 
         found, stats = self.get_map_details(map_name)
+        if found is None:
+            return await ctx.send('Error')
+
         if not found:
-            msg = 'Can\'t find map `{}` <:oop:395753983379243028>'.format(map_name.replace('`', '\\`'))
+            msg = f'Can\'t find map ``{map_name}`` <:oop:395753983379243028>'
             if stats:
-                names = ['`{}`'.format(name.replace('`', '\\`')) for name in stats]
+                names = []
+                for name in stats:
+                    if name[0] == '`':
+                        name = f' {name}'
+
+                    if name[-1] == '`':
+                        name = f'{name} '
+
+                    names.append(f'``{name}``')
                 msg += ' Did you mean..\n' + ', '.join(names)
 
             return await ctx.send(msg)
-
-        if found is None:
-            return await ctx.send('Error')
 
         map_name = stats[0]
         top_ranks = self.get_map_top_ranks(map_name)
