@@ -245,17 +245,14 @@ class Profilecard:
 
     @commands.command(pass_context=True)
     async def profile(self, ctx, *player):
-        if ctx.guild and ctx.guild.id == GUILD_DDNET:
-            return
-
         await ctx.trigger_typing()
 
-        player = ' '.join(player) if player else ctx.message.author.name
+        player = ' '.join(player) if player else ctx.message.author.display_name
         match = re.search(r'<@!?([0-9]+)>', player)
         if match:
             user = self.bot.get_user(int(match.group(1)))
             if user:
-                player = user.name
+                player = player.replace(match.group(0), user.display_name)
             else:
                 return await ctx.send('Can\'t see the mentioned user <:oop:395753983379243028>')
 
@@ -581,9 +578,6 @@ class Profilecard:
 
     @commands.command(name='mapprofile', pass_context=True)
     async def map_profile(self, ctx, *map_name):
-        if ctx.guild and ctx.guild.id == GUILD_DDNET:
-            return
-
         if not map_name:
             return await ctx.send('You need to specify a map')
 
