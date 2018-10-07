@@ -195,8 +195,8 @@ class Profilecard:
         if not max_location:
             return 'UNK'
 
-        available_flags = [n.split('.')[0] for n in os.listdir('ddnet-profile-card/flags')]
-        if max_location not in available_flags:
+        available_flags = os.listdir('ddnet-profile-card/flags')
+        if f'{max_location}.svg' not in available_flags:
             return 'UNK'
 
         return max_location
