@@ -28,7 +28,7 @@ def reload_data():
     with open(MSGPACK_FILE_PATH, 'rb') as inp:
         unpacker = msgpack.Unpacker(inp, use_list=False)
         server_types = unpacker.unpack()  # `(type, ..)`
-        stats_maps = unpacker.unpack()  # `{type: ((map, points, finishes), ..), ..}`
+        stats_maps = unpacker.unpack()  # `{type: ((map, points, finishers), ..), ..}`
         total_points = unpacker.unpack()  # `points`
         stats_points = unpacker.unpack()  # `((player, points), ..)`
         stats_weekly_points = unpacker.unpack()  # `((player, points), ..)`
@@ -176,13 +176,11 @@ class Profilecard:
     def get_player_flag(self, player):
         # AUS, BRA, CAN, CHL, CHN, FRA, GER, GER2, IRN, KSA, RUS, USA, ZAF
         locations = self.stats_players[player.encode()][1]
-        if b'' in locations:
-            del locations[b'']
-
         if not locations:
             return 'UNK'
 
-        eur_locations = [b'GER', b'GER2', b'FRA']
+        # Finishes without country code are actually GER ones
+        eur_locations = [b'', b'GER', b'GER2', b'FRA']
         eur_finishes = 0
         for l in eur_locations:
             if l in locations:
@@ -340,9 +338,9 @@ class Profilecard:
         map_name_formated = map_name.encode()
         similar_names = []
         for server_type, data in self.stats_maps.items():
-            for name, points, finishes in data:
+            for name, points, finishers in data:
                 if name == map_name_formated:
-                    return True, (map_name, mapper, release_date, server_type.decode(), points, finishes)
+                    return True, (map_name, mapper, release_date, server_type.decode(), points, finishers)
 
         return None, None
 
@@ -400,7 +398,7 @@ class Profilecard:
 
         return [*map_tiles_negative, *map_tiles_special, *map_tiles_weapon]
 
-    def generate_map_profile(self, map_name, mapper, release_date, server_type, points, finishes, top_teamranks,
+    def generate_map_profile(self, map_name, mapper, release_date, server_type, points, finishers, top_teamranks,
                              top_ranks, tiles=None):
         def get_stars(difficulty):
             return '★' * difficulty + '☆' * max(5 - difficulty, 0)
@@ -557,9 +555,9 @@ class Profilecard:
             title += '</div>'
             return title
 
-        def get_finish_span(finishes):
-            text = 'FINISH' if finishes == 1 else 'FINISHES'
-            return f'<span class="finishes">{finishes}</span><span class="finishes-text"> {text}</span>'
+        def get_finishers_span(finishers):
+            text = 'FINISHER' if finishers == 1 else 'FINISHERS'
+            return f'<span class="finishers">{finishers}</span><span class="finishers-text"> {text}</span>'
 
         def format_release_date(release_date):
             date = datetime.strptime(release_date, '%Y-%m-%dT%H:%M:%S')
@@ -570,7 +568,7 @@ class Profilecard:
         title = get_title(map_name, mapper)
         difficulty = self.get_difficulty(server_type, points)
         stars = get_stars(difficulty)
-        finish_span = get_finish_span(finishes)
+        finish_span = get_finishers_span(finishers)
         release_span = format_release_date(release_date) if release_date else ''
         tiles_div = get_tiles_div(tiles) if tiles else ''
         ranks = get_ranks_table(top_teamranks, top_ranks)
