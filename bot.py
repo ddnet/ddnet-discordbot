@@ -40,7 +40,7 @@ initial_extensions = [
     'cogs.testing_main',
     'cogs.testing_archiving',
     'cogs.testing_moderation',
-    'cogs.twstatus'
+    'cogs.tw_status'
 ]
 
 
