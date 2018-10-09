@@ -39,7 +39,8 @@ initial_extensions = [
     'cogs.profilecard',
     'cogs.testing_main',
     'cogs.testing_archiving',
-    'cogs.testing_moderation'
+    'cogs.testing_moderation',
+    'cogs.twstatus'
 ]
 
 
