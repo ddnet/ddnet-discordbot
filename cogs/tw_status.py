@@ -1,6 +1,7 @@
 import json
 import asyncio
 from datetime import datetime
+import socket
 
 import discord
 from discord.ext import commands
@@ -40,24 +41,23 @@ class TwStatus:
     async def on_ready(self):
         await self.ddnet_status()
 
-
     async def get_ddnet_servers(self, servers):
         out = []
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         for name, addresses in servers.items():
             count = 0
             player_count = 0
             for addr in addresses:
                 ip, port = addr.split(':')
                 server = ServerHandler(ip, int(port), False, 2)
-                request = await server.get_info()
+                request = await server.get_info(sock, False)
                 if request:
                     count += 1
                     player_count += request.client_count
 
             out.append((name, (count, len(addresses)), player_count))
-
+        sock.close()
         return out
-
 
     async def ddnet_status(self):
         info_chan = None
