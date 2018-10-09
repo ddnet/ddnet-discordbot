@@ -1,11 +1,13 @@
 import json
 import asyncio
+import re
 from datetime import datetime
 import socket
+from typing import Tuple, List
 
 import discord
 from discord.ext import commands
-from twstatus import ServerHandler
+from twstatus import ServerHandler, ServerInfo
 
 CHAN_INFO = 392853737099624449
 MSG_STATUS = 421364843161976833
@@ -25,6 +27,7 @@ def format_score(score, pure=False):
 class TwStatus:
     def __init__(self, bot):
         self.bot = bot
+        self.servers = List[Tuple[str, int, ServerInfo]]
         with open('tw-status/info', 'r', encoding='utf-8') as inp:
             self.info = json.load(inp)
         self.country_codes = {
@@ -44,6 +47,7 @@ class TwStatus:
     async def get_ddnet_servers(self, servers):
         out = []
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        svlist = []
         for name, addresses in servers.items():
             count = 0
             player_count = 0
@@ -53,9 +57,12 @@ class TwStatus:
                 request = await server.get_info(sock, False)
                 if request:
                     count += 1
+                    # Save the servers info with each address and port, useful for other commands later on.
+                    svlist.append(((ip, port), request))
                     player_count += request.client_count
 
             out.append((name, (count, len(addresses)), player_count))
+        self.servers = svlist
         sock.close()
         return out
 
@@ -93,6 +100,37 @@ class TwStatus:
 
             await embed_msg.edit(embed=embed)
             await asyncio.sleep(360)
+
+    @commands.command(pass_context=True)
+    async def find(self, ctx, *player):
+        player = ' '.join(player) if player else ctx.message.author.display_name
+        match = re.search(r'<@!?([0-9]+)>', player)
+        if match:
+            if ctx.guild:
+                user = ctx.guild.get_member(int(match.group(1)))
+            else:
+                user = self.bot.get_user(int(match.group(1)))
+
+            if user:
+                player = player.replace(match.group(0), user.display_name)
+            else:
+                return await ctx.send('Can\'t see the mentioned user <:oop:395753983379243028>')
+
+        for sv in self.servers:
+            address: str = sv[0]
+            port: int = sv[1]
+            info: ServerInfo = sv[2]
+
+            for ply in info.players:
+                if ply.name == player:
+                    return await ctx.send(
+                        f"Found {player} playing on {str(info)}.\n"
+                        f"Map: {info.map}\n"
+                        f"Address: {address}:{port}"
+                    )
+
+        return await ctx.send(f"Couldn't find {player} anywhere. <:oop:395753983379243028>")
+
 
 
 def setup(bot):
