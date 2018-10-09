@@ -58,7 +58,7 @@ class TwStatus:
                 if request:
                     count += 1
                     # Save the servers info with each address and port, useful for other commands later on.
-                    svlist.append(((ip, port), request))
+                    svlist.append((ip, port, request))
                     player_count += request.client_count
 
             out.append((name, (count, len(addresses)), player_count))
