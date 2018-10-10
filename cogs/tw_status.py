@@ -40,9 +40,8 @@ class TwStatus:
             'CAN': 'ca',
             'CHN': 'cn'
         }
+        self.bg_task = self.bot.loop.create_task(self.ddnet_status())
 
-    async def on_ready(self):
-        await self.ddnet_status()
 
     async def get_ddnet_servers(self, servers):
         out = []
@@ -67,13 +66,9 @@ class TwStatus:
         return out
 
     async def ddnet_status(self):
-        info_chan = None
-        while info_chan is None:
-            try:
-                info_chan = self.bot.get_channel(CHAN_INFO)
-                embed_msg = await info_chan.get_message(MSG_STATUS)
-            except:
-                pass
+        await self.bot.wait_until_ready()
+        info_chan = self.bot.get_channel(CHAN_INFO)
+        embed_msg = await info_chan.get_message(MSG_STATUS)
 
         while not self.bot.is_closed():
             servers = {s['name']: s['servers']['DDNet'] for s in self.info['servers']}
@@ -99,7 +94,7 @@ class TwStatus:
                 embed.add_field(name='\255', value='\255')
 
             await embed_msg.edit(embed=embed)
-            await asyncio.sleep(360)
+            await asyncio.sleep(120)
 
     @commands.command(pass_context=True)
     async def find(self, ctx, *player):
