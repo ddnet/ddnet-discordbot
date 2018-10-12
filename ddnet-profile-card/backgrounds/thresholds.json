@@ -1,6 +1,10 @@
 [
     {
         "points": 0,
+        "background": "stronghold"
+    },
+    {
+        "points": 1,
         "background": "kobra_4"
     },
     {
@@ -13,7 +17,7 @@
     },
     {
         "points": 3000,
-        "background": "offpanic"
+        "background": "intothenight"
     },
     {
         "points": 4000,
@@ -21,11 +25,11 @@
     },
     {
         "points": 5000,
-        "background": "nostalgia"
+        "background": "sweet_shot"
     },
     {
         "points": 6000,
-        "background": "bamboozled"
+        "background": "nostalgia"
     },
     {
         "points": 7000,
@@ -44,15 +48,23 @@
         "background": "narcissistic"
     },
     {
-        "points": 12500,
+        "points": 12000,
         "background": "aurora"
     },
     {
-        "points": 15000,
+        "points": 13000,
+        "background": "nameless"
+    },
+    {
+        "points": 14000,
         "background": "heartcore"
     },
     {
-        "points": 17500,
+        "points": 16000,
+        "background": "back_in_the_days_3"
+    },
+    {
+        "points": 18000,
         "background": "justice_2"
     }
 ]
