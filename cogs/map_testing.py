@@ -102,7 +102,7 @@ class MapTesting(commands.Cog):
 
     def format_map_details(self, details):
         # Format: `"<name>" by <mapper> [<server>]`
-        format_re = r'^("|\'|`|``)((?!\1).+)\1 +by +(.+) +\[(.+)\]$'
+        format_re = r'^([\"\'])(.+)\1 +by +(.+) +\[(.+)\]$'
         match = re.search(format_re, details)
         if not match:
             return None
