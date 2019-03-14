@@ -7,7 +7,7 @@ from typing import Union
 import discord
 from discord.ext import commands
 
-from utils.misc import humanize_list, load_json, sanitize, shell
+from utils.misc import humanize_list, sanitize, shell
 
 DIR = 'data/map-testing'
 
