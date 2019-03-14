@@ -212,12 +212,12 @@ class MapTesting(commands.Cog):
             attachment = message.attachments[0]
             filename = attachment.filename
 
-        # TODO: Implement this with discord.utils.get
-        if channel == self.submit_chan and not any(str(r.emoji) == '☑' for r in message.reactions):
-            return
-
         # Handle map submissions
         if str(emoji) == '☑' and self.is_staff(channel, user) and self.has_map_file(message):
+            # TODO: Implement this with discord.utils.get
+            if channel == self.submit_chan and not any(str(r.emoji) == '☑' for r in message.reactions):
+                return
+
             await message.clear_reactions()
             await message.add_reaction('🔄')
 
@@ -272,20 +272,21 @@ class MapTesting(commands.Cog):
             await self.log_chan.send(embed=embed)
 
         # Handle adding map testing user permissions
-        elif str(emoji) == '✅':
+        if str(emoji) == '✅':
             # General permissions
             if channel == self.tinfo_chan:
                 await user.add_roles(self.testing_role)
 
             # Individual channel permissions
             if channel == self.submit_chan:
-                map_chan = self.get_map_channel(attachment.filename[:-4])
+                map_chan = self.get_map_channel(filename[:-4])
                 if map_chan:
                     await map_chan.set_permissions(user, read_messages=True)
                 else:
                     await message.remove_reaction(emoji, user)
 
 
+    @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
         # Handle removing map testing user permissions
         if str(payload.emoji) != '✅':
