@@ -159,7 +159,7 @@ class MapTesting(commands.Cog):
                 if error:
                     await self.send_error(author, error)
 
-                await message.add_reaction( '❗' if error else '☑')
+                await message.add_reaction('❗' if error else '☑')
 
             # Delete messages that aren't submissions
             elif not self.is_staff(channel, author):
@@ -228,18 +228,18 @@ class MapTesting(commands.Cog):
             if channel == self.submit_chan:
                 name, mapper, server = self.format_map_details(message.content)
                 emoji = SERVER_TYPES[server]
-                overwrites = {message.author: discord.PermissionOverwrite(read_messages=True)}
                 mapper = [f"**{m}**" for m in mapper]
                 topic = f'**"{name}"** by {humanize_list(mapper)} [{server}]'
 
-                map_chan = await self.mt_cat.create_text_channel(name=emoji + filename[:-4], overwrites=overwrites, topic=topic)
+                map_chan = await self.mt_cat.create_text_channel(name=emoji + filename[:-4], topic=topic)
 
                 # Remaining initial permissions are set via category synchronisation:
                 # - @everyone role: read_messages=False
-                # - Tester role:    manage_channels, read_messages=True, manage_messages=True,
-                #                   manage_roles=True
+                # - Tester role:    manage_channels=True, read_messages=True,
+                #                   manage_messages=True, manage_roles=True
                 # - testing role:   read_messages = True
                 # - Bot user:       read_messages=True, manage_messages=True
+                await map_chan.set_permissions(message.author, read_messages=True)
 
                 await message.clear_reactions()
                 await message.add_reaction('✅')
@@ -251,12 +251,10 @@ class MapTesting(commands.Cog):
                 if platform == 'linux':
                     await attachment.save(f'{DIR}/maps/{filename}')
 
-                    # TODO: Move this to an external script
-                    cmd = f'{DIR}/../tools/render_map/render_map {DIR}/maps/{filename} --size 1280 ' \
-                          f'&& mv {DIR}/maps/{filename}.png {DIR}/thumbnails/{filename[:-4]}.png'
-
-                    _, err = await shell(cmd, self.bot.loop)
-                    if not err:
+                    _, err = await shell(f'{DIR}/generate_thumbnail.sh {filename}', self.bot.loop)
+                    if err:
+                        print(err)
+                    else:
                         thumbnail = discord.File(f'{DIR}/thumbnails/{filename[:-4]}.png')
                         await map_chan.send(file=thumbnail)
 
