@@ -1,7 +1,4 @@
-git+https://github.com/Rapptz/discord.py@rewrite
-requests
-colorthief
-msgpack
-fuzzywuzzy
-pymysql
-twstatus.py
+aiohttp
+emoji
+git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py
+uvloop
