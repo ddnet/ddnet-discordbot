@@ -267,7 +267,7 @@ class MapTesting(commands.Cog):
             await message.add_reaction('🆙' if resp == 200 else '❌')
 
             # Log it
-            desc = f'``{filename}`` | {message.id}'
+            desc = f'``{filename}`` [Message]({message.jump_url})'
             embed = discord.Embed(title='Map approved', description=desc, color=0x77B255, timestamp=datetime.utcnow())
             embed.set_author(name=f'{user} → #{channel}', icon_url=user.avatar_url_as(format='png'))
             await self.log_chan.send(embed=embed)
