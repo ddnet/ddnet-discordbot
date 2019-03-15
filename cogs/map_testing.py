@@ -57,7 +57,7 @@ class MapTesting(commands.Cog):
 
     @property
     def testing_role(self):
-        return discord.utils.get(self.bot.guild.roles, name='testing')
+        return discord.utils.get(self.guild.roles, name='testing')
 
 
     async def upload_file(self, asset_type, file, filename):
@@ -168,7 +168,9 @@ class MapTesting(commands.Cog):
         elif self.is_testing_chan(channel):
             # Accept map updates
             if self.has_map_file(message):
-                await message.add_reaction('☑')
+                if author != self.bot.user:
+                    await message.add_reaction('☑')
+
                 await message.pin()
 
             # Delete spammy bot system messages
@@ -246,6 +248,7 @@ class MapTesting(commands.Cog):
 
                 file = discord.File(buf.getvalue(), filename=filename)
                 message = await map_chan.send(message.author.mention, file=file)
+                await message.add_reaction('🔄')
 
                 # Generate the thumbnail
                 if platform == 'linux':
@@ -257,8 +260,6 @@ class MapTesting(commands.Cog):
                     else:
                         thumbnail = discord.File(f'{DIR}/thumbnails/{filename[:-4]}.png')
                         await map_chan.send(file=thumbnail)
-
-                await message.add_reaction('🔄')
 
             # Upload the map to DDNet test servers
             resp = await self.upload_file('map', buf, filename[:-4])
