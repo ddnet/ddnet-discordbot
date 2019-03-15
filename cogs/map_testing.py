@@ -194,7 +194,7 @@ class MapTesting(commands.Cog):
             # Process map channels on release
             webhook = discord.utils.get(await channel.webhooks(), name='DDNet')
             if author.id == webhook.id:
-                map_url_re = r'\[(.+)\]\(https://ddnet.tw/maps/\?map=.+\)'
+                map_url_re = r'\[(.+)\]\(<https://ddnet\.tw/maps/\?map=.+?>\)'
                 match = re.search(map_url_re, message.content)
                 name = sanitize(match.group(1), channel_name=True)
                 map_chan = self.get_map_channel(name)
