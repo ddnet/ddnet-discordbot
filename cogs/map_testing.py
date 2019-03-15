@@ -23,6 +23,12 @@ SERVER_TYPES = {
     'Race':         '🏁',
 }
 
+STATUS = [
+    '📆', # READY
+    '🔥', # RELEASED
+    '❌' # DECLINED
+]
+
 
 class MapTesting(commands.Cog):
     def __init__(self, bot):
@@ -38,6 +44,10 @@ class MapTesting(commands.Cog):
     @property
     def em_cat(self):
         return discord.utils.get(self.guild.categories, name='Evaluated Maps')
+
+    @property
+    def announce_chan(self):
+        return discord.utils.get(self.guild.channels, name='announcements')
 
 
     @property
@@ -95,9 +105,12 @@ class MapTesting(commands.Cog):
         return channel.permissions_for(user).manage_channels and not user.bot
 
 
-    def is_testing_chan(self, channel: discord.TextChannel):
-        return isinstance(channel, discord.TextChannel) \
-            and channel.category in (self.mt_cat, self.em_cat)
+    def is_testing_channel(self, channel: discord.TextChannel, map_channel=False):
+        testing_channel = isinstance(channel, discord.TextChannel) and channel.category in (self.mt_cat, self.em_cat)
+        if map_channel:
+            testing_channel = testing_channel and channel not in (self.tinfo_chan, self.submit_chan)
+
+        return testing_channel
 
 
     def format_map_details(self, details):
@@ -132,7 +145,7 @@ class MapTesting(commands.Cog):
             return 'Your map submission doesn\'t cointain correctly formated details.'
         elif sanitize(details[0], True, False) != filename:
             return 'Name and filename of your map submission don\'t match.'
-        elif not details[2] in SERVER_TYPES:
+        elif details[2] not in SERVER_TYPES:
             return 'The server type of your map submission is not valid.'
         elif duplicate_chan:
             return f'A channel for the map you submitted already exists: {duplicate_chan.mention}'
@@ -165,7 +178,7 @@ class MapTesting(commands.Cog):
             elif not self.is_staff(channel, author):
                 await message.delete()
 
-        elif self.is_testing_chan(channel):
+        if self.is_testing_channel(channel, map_channel=True):
             # Accept map updates
             if self.has_map_file(message):
                 if author != self.bot.user:
@@ -176,6 +189,17 @@ class MapTesting(commands.Cog):
             # Delete spammy bot system messages
             if message.type is discord.MessageType.pins_add and author == self.bot.user:
                 await message.delete()
+
+        if channel == self.announce_chan:
+            # Process map channels on release
+            webhook = discord.utils.get(await channel.webhooks(), name='DDNet')
+            if author.id == webhook.id:
+                map_url_re = r'\[(.+)\]\(https://ddnet.tw/maps/\?map=.+\)'
+                match = re.search(map_url_re, message.content)
+                name = sanitize(match.group(1), channel_name=True)
+                map_chan = self.get_map_channel(name)
+                if map_chan:
+                    await self.move_map_channel(map_chan, state=1)
 
 
     @commands.Cog.listener()
@@ -203,7 +227,7 @@ class MapTesting(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
-        if not self.is_testing_chan(channel):
+        if not self.is_testing_channel(channel):
             return
 
         guild = channel.guild
@@ -230,7 +254,7 @@ class MapTesting(commands.Cog):
             if channel == self.submit_chan:
                 name, mapper, server = self.format_map_details(message.content)
                 emoji = SERVER_TYPES[server]
-                mapper = [f"**{m}**" for m in mapper]
+                mapper = [f'**{m}**' for m in mapper]
                 topic = f'**"{name}"** by {humanize_list(mapper)} [{server}]'
 
                 map_chan = await self.mt_cat.create_text_channel(name=emoji + filename[:-4], topic=topic)
@@ -306,6 +330,71 @@ class MapTesting(commands.Cog):
             map_chan = self.get_map_channel(message.attachments[0].filename[:-4])
             if map_chan:
                 await map_chan.set_permissions(user, overwrite=None)
+
+
+    async def move_map_channel(self, channel: discord.TextChannel, state):
+        try:
+            pre_state = STATUS.index(channel.name[0])
+        except ValueError:
+            pre_state = -1
+
+        name = channel.name[1:] if pre_state >= 0 else channel.name
+
+        if state == -1:
+            pos = self.mt_cat.channels[-1].position
+            await channel.edit(name=name, position=pos, category=self.mt_cat)
+        else:
+            # Get the channel we want to move our channel above
+            pre_chan = discord.utils.find(lambda c: STATUS.index(c.name[0]) >= state, self.em_cat.channels)
+            if pre_chan:
+                # Handle moving up and down appropriately (still goes wrong sometimes; due to Discord inaccuracy?)
+                pos = pre_chan.position if 0 >= pre_state > state else pre_chan.position - 1
+            else:
+                try:
+                    # If there is no channel to place over, set it to the back
+                    pos = self.em_cat.channels[-1].position
+                except IndexError:
+                    pos = 0
+
+            await channel.edit(name=STATUS[state] + name, position=pos, category=self.em_cat)
+
+
+    # TODO: Implement this using the commands.check interface
+    def testing_mod_check(self, ctx):
+        return self.is_testing_channel(ctx.channel, map_channel=True) and self.is_staff(ctx.channel, ctx.author)
+
+
+    @commands.command(pass_context=True)
+    async def reset(self, ctx):
+        if not self.testing_mod_check(ctx):
+            return
+
+        if ctx.channel.name[0] not in STATUS:
+            return
+
+        await self.move_map_channel(ctx.channel, state=-1)
+
+
+    @commands.command(pass_context=True)
+    async def ready(self, ctx):
+        if not self.testing_mod_check(ctx):
+            return
+
+        if ctx.channel.name[0] == STATUS[0]:
+            return
+
+        await self.move_map_channel(ctx.channel, state=0)
+
+
+    @commands.command(pass_context=True)
+    async def decline(self, ctx):
+        if not self.testing_mod_check(ctx):
+            return
+
+        if ctx.channel.name[0] == STATUS[2]:
+            return
+
+        await self.move_map_channel(ctx.channel, state=2)
 
 
 def setup(bot):
