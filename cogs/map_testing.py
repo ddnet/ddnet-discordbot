@@ -17,7 +17,6 @@ SERVER_TYPES = {
     'Brutal':       '💪',
     'Insane':       '💀',
     'Dummy':        '♿',
-    'DDmaX':        '🌈',
     'Oldschool':    '👴',
     'Solo':         '⚡',
     'Race':         '🏁',
@@ -115,19 +114,16 @@ class MapTesting(commands.Cog):
 
     def format_map_details(self, details):
         # Format: `"<name>" by <mapper> [<server>]`
-        format_re = r'^([\"\'])(.+)\1 +by +(.+) +\[(.+)\]$'
+        format_re = r'^\"(.+)\" +by +(.+) +\[(.+)\]$'
         match = re.search(format_re, details)
         if not match:
             return None
 
-        _, name, mapper, server = match.groups()
+        name, mapper, server = match.groups()
         mapper = re.split(r', | , | & | and ', mapper)
-        try:
-            server = [s for s in SERVER_TYPES.keys() if s.lower() == server.lower()][0]
-        except IndexError:
-            pass
+        server = server.capitalize() if server.capitalize() in SERVER_TYPES else server
 
-        return name, mapper, server
+        return (name, mapper, server)
 
 
     def get_map_channel(self, name):
