@@ -23,6 +23,7 @@ config = ConfigParser()
 config.read('config.ini')
 
 initial_extensions = (
+    'cogs.admin',
     'cogs.guild_log',
     'cogs.map_testing'
 )
