@@ -186,16 +186,15 @@ class MapTesting(commands.Cog):
             if message.type is discord.MessageType.pins_add and author == self.bot.user:
                 await message.delete()
 
-        if channel == self.announce_chan:
+        # Webhooks are separate with a distinct discriminator of 0000
+        if channel == self.announce_chan and author.discriminator == '0000':
             # Process map channels on release
-            webhook = discord.utils.get(await channel.webhooks(), name='DDNet')
-            if author.id == webhook.id:
-                map_url_re = r'\[(.+)\]\(<https://ddnet\.tw/maps/\?map=.+?>\)'
-                match = re.search(map_url_re, message.content)
-                name = sanitize(match.group(1), channel_name=True)
-                map_chan = self.get_map_channel(name)
-                if map_chan:
-                    await self.move_map_channel(map_chan, state=1)
+            map_url_re = r'\[(.+)\]\(<https://ddnet\.tw/maps/\?map=.+?>\)'
+            match = re.search(map_url_re, message.content)
+            name = sanitize(match.group(1), channel_name=True)
+            map_chan = self.get_map_channel(name)
+            if map_chan:
+                await self.move_map_channel(map_chan, state=1)
 
 
     @commands.Cog.listener()
