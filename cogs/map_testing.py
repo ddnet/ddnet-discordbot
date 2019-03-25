@@ -239,7 +239,7 @@ class MapTesting(commands.Cog):
             if channel == self.submit_chan and not any(str(r.emoji) == '☑' for r in message.reactions):
                 return
 
-            reaction = [r for r in message.reactions if str(r.emoji) == '☑'][0]
+            users = [await r.users.flatten() for r in message.reactions if str(r.emoji) == '☑'][0]
             await message.clear_reactions()
             await message.add_reaction('🔄')
 
@@ -262,8 +262,9 @@ class MapTesting(commands.Cog):
                 # - testing role:   read_messages = True
                 # - Bot user:       read_messages=True, manage_messages=True
                 await map_chan.set_permissions(message.author, read_messages=True)
-                async for _user in reaction.users():
-                    await map_chan.set_permissions(_user, read_messages=True)
+                for _user in users:
+                    if not map_chan.permissions_for(_user).read_messages:
+                        await map_chan.set_permissions(_user, read_messages=True)
 
                 await message.clear_reactions()
                 await message.add_reaction('✅')
