@@ -239,6 +239,7 @@ class MapTesting(commands.Cog):
             if channel == self.submit_chan and not any(str(r.emoji) == '☑' for r in message.reactions):
                 return
 
+            reaction = [r for r in message.reactions if str(r.emoji) == '☑'][0]
             await message.clear_reactions()
             await message.add_reaction('🔄')
 
@@ -261,6 +262,8 @@ class MapTesting(commands.Cog):
                 # - testing role:   read_messages = True
                 # - Bot user:       read_messages=True, manage_messages=True
                 await map_chan.set_permissions(message.author, read_messages=True)
+                async for _user in reaction.users():
+                    await map_chan.set_permissions(_user, read_messages=True)
 
                 await message.clear_reactions()
                 await message.add_reaction('✅')
@@ -294,14 +297,15 @@ class MapTesting(commands.Cog):
         # Handle adding map testing user permissions
         if str(emoji) == '✅':
             # General permissions
-            if channel == self.tinfo_chan:
+            if channel == self.tinfo_chan and self.testing_role not in user.roles:
                 await user.add_roles(self.testing_role)
 
             # Individual channel permissions
             if channel == self.submit_chan:
                 map_chan = self.get_map_channel(filename[:-4])
                 if map_chan:
-                    await map_chan.set_permissions(user, read_messages=True)
+                    if not map_chan.permissions_for(user).read_messages:
+                        await map_chan.set_permissions(user, read_messages=True)
                 else:
                     await message.remove_reaction(emoji, user)
 
@@ -316,14 +320,14 @@ class MapTesting(commands.Cog):
         user = channel.guild.get_member(payload.user_id)
 
         # General permissions
-        if channel == self.tinfo_chan:
+        if channel == self.tinfo_chan and self.testing_role in user.roles:
             await user.remove_roles(self.testing_role)
 
         # Individual channel permissions
         if channel == self.submit_chan:
             message = await channel.get_message(payload.message_id)
             map_chan = self.get_map_channel(message.attachments[0].filename[:-4])
-            if map_chan:
+            if map_chan and map_chan.permissions_for(user).read_messages:
                 await map_chan.set_permissions(user, overwrite=None)
 
 
