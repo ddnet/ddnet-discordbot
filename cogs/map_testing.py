@@ -239,7 +239,7 @@ class MapTesting(commands.Cog):
             if channel == self.submit_chan and not any(str(r.emoji) == '☑' for r in message.reactions):
                 return
 
-            users = [await r.users.flatten() for r in message.reactions if str(r.emoji) == '☑'][0]
+            users = [await r.users().flatten() for r in message.reactions if str(r.emoji) == '☑'][0]
             await message.clear_reactions()
             await message.add_reaction('🔄')
 
