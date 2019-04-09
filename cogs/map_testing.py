@@ -149,13 +149,6 @@ class MapTesting(commands.Cog):
             return ''
 
 
-    async def send_error(self, user: discord.User, error):
-        # Only message users if they weren't already notified recently
-        history = await user.history(after=datetime.utcnow() - timedelta(days=1)).flatten()
-        if not any(m.author.bot and m.content == error for m in history):
-            await user.send(error)
-
-
     @commands.Cog.listener()
     async def on_message(self, message):
         channel = message.channel
@@ -166,7 +159,7 @@ class MapTesting(commands.Cog):
             if self.has_map_file(message):
                 error = self.check_map_submission(message)
                 if error:
-                    await self.send_error(author, error)
+                    await author.send(error)
 
                 await message.add_reaction('❗' if error else '☑')
 
@@ -213,7 +206,7 @@ class MapTesting(commands.Cog):
 
         error = self.check_map_submission(message)
         if error:
-            await self.send_error(message.author, error)
+            await message.author.send(error)
 
         await message.clear_reactions()
         await message.add_reaction('❗' if error else '☑')
