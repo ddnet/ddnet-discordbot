@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
 from sys import platform
 from typing import Union
