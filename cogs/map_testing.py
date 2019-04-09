@@ -205,7 +205,7 @@ class MapTesting(commands.Cog):
         if not (int(data['channel_id']) == self.submit_chan.id and self.has_map_file(data)):
             return
 
-        message = await self.submit_chan.get_message(payload.message_id)
+        message = await self.submit_chan.fetch_message(payload.message_id)
         # Ignore already approved submissions
         # TODO: Implement this with discord.utils.get
         if any(str(r.emoji) == '✅' for r in message.reactions):
@@ -228,7 +228,7 @@ class MapTesting(commands.Cog):
         guild = channel.guild
         user = guild.get_member(payload.user_id)
         emoji = payload.emoji
-        message = await channel.get_message(payload.message_id)
+        message = await channel.fetch_message(payload.message_id)
         if message.attachments:
             attachment = message.attachments[0]
             filename = attachment.filename
@@ -326,7 +326,7 @@ class MapTesting(commands.Cog):
 
         # Individual channel permissions
         if channel == self.submit_chan:
-            message = await channel.get_message(payload.message_id)
+            message = await channel.fetch_message(payload.message_id)
             map_chan = self.get_map_channel(message.attachments[0].filename[:-4])
             if map_chan and map_chan.permissions_for(user).read_messages:
                 await map_chan.set_permissions(user, overwrite=None)

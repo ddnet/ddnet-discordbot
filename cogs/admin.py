@@ -36,8 +36,7 @@ class Admin(commands.Cog):
     @commands.command(pass_context=True)
     async def reload(self, ctx, *, extension):
         try:
-            self.bot.unload_extension(extension)
-            self.bot.load_extension(extension)
+            self.bot.reload_extension(extension)
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
         else:
