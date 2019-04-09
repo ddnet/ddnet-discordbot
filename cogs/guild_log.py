@@ -7,6 +7,8 @@ from discord.ext import commands
 from utils.text import escape
 
 
+VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
+
 class GuildLog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -73,7 +75,7 @@ class GuildLog(commands.Cog):
             attachment = message.attachments[0]
 
             # Can only properly recover images
-            if attachment.filename.endswith(('.webp', '.jpeg', '.jpg', '.png', '.gif')):
+            if attachment.filename.endswith(VALID_IMAGE_FORMATS):
                 buf = BytesIO()
                 try:
                     await attachment.save(buf, use_cached=True)
