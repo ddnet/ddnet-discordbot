@@ -60,8 +60,7 @@ class GuildLog(commands.Cog):
         await self.join_chan.send(msg)
 
 
-    @commands.Cog.listener()
-    async def on_message_delete(self, message):
+    async def log_message(self, message):
         if not message.guild or message.guild != self.guild:
             return
 
@@ -89,6 +88,16 @@ class GuildLog(commands.Cog):
 
         await self.log_chan.send(file=file, embed=embed)
 
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, message):
+        await self.log_message(message)
+
+
+    @commands.Cog.listener()
+    async def on_bulk_message_delete(self, messages):
+        for message in messages:
+            await self.log_message(message)
 
 def setup(bot):
     bot.add_cog(GuildLog(bot))
