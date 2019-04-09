@@ -2,7 +2,6 @@ import re
 from datetime import datetime
 from io import BytesIO
 from sys import platform
-from typing import Union
 
 import discord
 from discord.ext import commands
@@ -21,12 +20,6 @@ SERVER_TYPES = {
     'Solo':         '⚡',
     'Race':         '🏁',
 }
-
-STATUS = [
-    '📆', # READY
-    '🔥', # RELEASED
-    '❌' # DECLINED
-]
 
 
 class MapTesting(commands.Cog):
@@ -93,15 +86,12 @@ class MapTesting(commands.Cog):
             return None if resp.status == 200 else await resp.text()
 
 
-    def has_map_file(self, obj: Union[discord.Message, dict]):
-        if isinstance(obj, discord.Message):
-            return obj.attachments and obj.attachments[0].filename.endswith('.map')
-        if isinstance(obj, dict):
-            return obj['attachments'] and obj['attachments'][0]['filename'].endswith('.map')
+    def has_map_file(self, message: discord.Message):
+        return message.attachments and message.attachments[0].filename.endswith('.map')
 
 
     def is_staff(self, channel: discord.TextChannel, user: discord.Member):
-        return channel.permissions_for(user).manage_channels and not user.bot
+        return channel.permissions_for(user).manage_channels
 
 
     def is_testing_channel(self, channel: discord.TextChannel, map_channel=False):
@@ -187,7 +177,7 @@ class MapTesting(commands.Cog):
             name = sanitize(match.group(1), channel_name=True)
             map_chan = self.get_map_channel(name)
             if map_chan:
-                await self.move_map_channel(map_chan, state=1)
+                await self.move_map_channel(map_chan, emoji='🔥')
 
 
     @commands.Cog.listener()
@@ -195,7 +185,10 @@ class MapTesting(commands.Cog):
         data = payload.data
 
         # Handle edits to initial map submissions
-        if not (int(data['channel_id']) == self.submit_chan.id and self.has_map_file(data)):
+        if int(data['channel_id']) != self.submit_chan.id:
+            return
+
+        if not ('attachments' in data and data['attachments'][0]['filename'].endswith('.map')):
             return
 
         message = await self.submit_chan.fetch_message(payload.message_id)
@@ -227,7 +220,7 @@ class MapTesting(commands.Cog):
             filename = attachment.filename
 
         # Handle map submissions
-        if str(emoji) == '☑' and self.is_staff(channel, user) and self.has_map_file(message):
+        if str(emoji) == '☑' and self.is_staff(channel, user) and self.has_map_file(message) and user != self.bot.user:
             # TODO: Implement this with discord.utils.get
             if channel == self.submit_chan and not any(str(r.emoji) == '☑' for r in message.reactions):
                 return
@@ -328,21 +321,22 @@ class MapTesting(commands.Cog):
                 await map_chan.set_permissions(user, overwrite=None)
 
 
-    async def move_map_channel(self, channel: discord.TextChannel, state):
-        try:
-            pre_state = STATUS.index(channel.name[0])
-        except ValueError:
-            pre_state = -1
+    async def move_map_channel(self, channel: discord.TextChannel, emoji = ''):
+        VALID_EMOJIS = ('📆', '🔥', '❌')
 
-        name = channel.name[1:] if pre_state >= 0 else channel.name
+        prev_emoji = channel.name[0] if channel.name[0] in VALID_EMOJIS else ''
+        if emoji and emoji == prev_emoji or not emoji and prev_emoji not in VALID_EMOJIS:
+            return
 
-        if state == -1:
-            category = self.mt_cat
-            pos = -1
-        else:
-            name = STATUS[state] + name
+        name = channel.name[1:] if prev_emoji else channel.name
+
+        if emoji:
+            name = emoji + name
             category = self.em_cat
             pos = 0
+        else:
+            category = self.mt_cat
+            pos = -1
 
         await channel.edit(name=name, position=pos, category=category)
 
@@ -352,37 +346,32 @@ class MapTesting(commands.Cog):
         return self.is_testing_channel(ctx.channel, map_channel=True) and self.is_staff(ctx.channel, ctx.author)
 
 
-    @commands.command(pass_context=True)
+    async def cog_command_error(self, ctx, error):
+        await ctx.author.send(error)
+
+
+    @commands.command()
     async def reset(self, ctx):
         if not self.testing_mod_check(ctx):
             return
 
-        if ctx.channel.name[0] not in STATUS:
-            return
-
-        await self.move_map_channel(ctx.channel, state=-1)
+        await self.move_map_channel(ctx.channel)
 
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def ready(self, ctx):
         if not self.testing_mod_check(ctx):
             return
 
-        if ctx.channel.name[0] == STATUS[0]:
-            return
-
-        await self.move_map_channel(ctx.channel, state=0)
+        await self.move_map_channel(ctx.channel, emoji='📆')
 
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def decline(self, ctx):
         if not self.testing_mod_check(ctx):
             return
 
-        if ctx.channel.name[0] == STATUS[2]:
-            return
-
-        await self.move_map_channel(ctx.channel, state=2)
+        await self.move_map_channel(ctx.channel, emoji='❌')
 
 
 def setup(bot):

@@ -13,7 +13,7 @@ class Admin(commands.Cog):
         return await self.bot.is_owner(ctx.author)
 
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def load(self, ctx, *, extension):
         try:
             self.bot.load_extension(extension)
@@ -23,7 +23,7 @@ class Admin(commands.Cog):
             await ctx.message.add_reaction('👌')
 
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def unload(self, ctx, *, extension):
         try:
             self.bot.unload_extension(extension)
@@ -33,7 +33,7 @@ class Admin(commands.Cog):
             await ctx.message.add_reaction('👌')
 
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def reload(self, ctx, *, extension):
         try:
             self.bot.reload_extension(extension)
