@@ -90,7 +90,7 @@ class MapTesting(commands.Cog):
         headers = {'X-DDNet-Token': self.bot.config.get('DDNET_UPLOAD', 'TOKEN')}
 
         async with self.bot.session.post(url, data=data, headers=headers) as resp:
-            return resp.status
+            return None if resp.status == 200 else await resp.text()
 
 
     def has_map_file(self, obj: Union[discord.Message, dict]):
@@ -279,15 +279,18 @@ class MapTesting(commands.Cog):
 
                     _, err = await shell(f'{DIR}/generate_thumbnail.sh {filename}', self.bot.loop)
                     if err:
-                        print(err)
+                        print('[map_thumbnail]', err)
                     else:
                         thumbnail = discord.File(f'{DIR}/thumbnails/{filename[:-4]}.png')
                         await map_chan.send(file=thumbnail)
 
             # Upload the map to DDNet test servers
             resp = await self.upload_file('map', buf, filename[:-4])
+            if resp is not None:
+                print('[map_upload]', resp)
+
             await message.clear_reactions()
-            await message.add_reaction('🆙' if resp == 200 else '❌')
+            await message.add_reaction('🆙' if resp is None else '❌')
 
             # Log it
             desc = f'[{filename}]({message.jump_url})'
