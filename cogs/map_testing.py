@@ -341,22 +341,14 @@ class MapTesting(commands.Cog):
         name = channel.name[1:] if pre_state >= 0 else channel.name
 
         if state == -1:
-            pos = self.mt_cat.channels[-1].position
-            await channel.edit(name=name, position=pos, category=self.mt_cat)
+            category = self.mt_cat
+            pos = -1
         else:
-            # Get the channel we want to move our channel above
-            pre_chan = discord.utils.find(lambda c: STATUS.index(c.name[0]) >= state, self.em_cat.channels)
-            if pre_chan:
-                # Handle moving up and down appropriately (still goes wrong sometimes; due to Discord inaccuracy?)
-                pos = pre_chan.position if 0 >= pre_state > state else pre_chan.position - 1
-            else:
-                try:
-                    # If there is no channel to place over, set it to the back
-                    pos = self.em_cat.channels[-1].position
-                except IndexError:
-                    pos = 0
+            name = STATUS[state] + name
+            category = self.em_cat
+            pos = 0
 
-            await channel.edit(name=STATUS[state] + name, position=pos, category=self.em_cat)
+        await channel.edit(name=name, position=pos, category=category)
 
 
     # TODO: Implement this using the commands.check interface
