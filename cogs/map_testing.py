@@ -255,9 +255,9 @@ class MapTesting(commands.Cog):
                 await message.clear_reactions()
                 await message.add_reaction('✅')
 
-                file = discord.File(buf.getvalue(), filename=filename)
+                file = discord.File(buf, filename=filename)
+                buf.seek(0)
                 message = await map_chan.send(message.author.mention, file=file)
-                await message.add_reaction('🔄')
 
                 # Generate the thumbnail
                 if platform == 'linux':
@@ -269,6 +269,8 @@ class MapTesting(commands.Cog):
                     else:
                         thumbnail = discord.File(f'{DIR}/thumbnails/{filename[:-4]}.png')
                         await map_chan.send(file=thumbnail)
+
+                await message.add_reaction('🔄')
 
             # Upload the map to DDNet test servers
             resp = await self.upload_file('map', buf, filename[:-4])
