@@ -255,7 +255,8 @@ class MapTesting(commands.Cog):
                 await message.clear_reactions()
                 await message.add_reaction('✅')
 
-                file = discord.File(buf.getbuffer(), filename=filename)
+                tmp_buf = buf
+                file = discord.File(tmp_buf, filename=filename)
                 message = await map_chan.send(message.author.mention, file=file)
 
                 # Generate the thumbnail
