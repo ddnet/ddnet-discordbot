@@ -255,7 +255,8 @@ class MapTesting(commands.Cog):
                 await message.clear_reactions()
                 await message.add_reaction('✅')
 
-                tmp_buf = buf
+                tmp_buf = BytesIO()
+                await attachment.save(tmp_buf)
                 file = discord.File(tmp_buf, filename=filename)
                 message = await map_chan.send(message.author.mention, file=file)
 
