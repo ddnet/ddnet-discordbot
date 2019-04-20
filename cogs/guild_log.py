@@ -1,6 +1,6 @@
 from datetime import datetime
 from io import BytesIO
-from typing import Union
+from typing import List, Union
 
 import discord
 from discord.ext import commands
@@ -61,7 +61,7 @@ class GuildLog(commands.Cog):
         await self.join_chan.send(msg)
 
 
-    async def log_message(self, message: discord.Member) -> None:
+    async def log_message(self, message: discord.Message) -> None:
         if not message.guild or message.guild != self.guild:
             return
 
@@ -91,12 +91,12 @@ class GuildLog(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_message_delete(self, message: discord.Member) -> None:
+    async def on_message_delete(self, message: discord.Message) -> None:
         await self.log_message(message)
 
 
     @commands.Cog.listener()
-    async def on_bulk_message_delete(self, messages: discord.Member) -> None:
+    async def on_bulk_message_delete(self, messages: List[discord.Message]) -> None:
         for message in messages:
             await self.log_message(message)
 
