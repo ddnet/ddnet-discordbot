@@ -1,6 +1,6 @@
 import re
 
-import emoji
+import discord
 
 
 def escape_single_backquote(text):
@@ -45,29 +45,15 @@ def escape_triple_backquote(text):
     return escape_custom_emojis(text)
 
 
-def escape_markdown(text):
-    return re.sub(r'([*`_~\\])', r'\\\1', text)
-
-
-def escape_mentions(text):
-    return text.replace('@', '@\u200b')
-
-
-def escape_emojis(text):
-    return ''.join(f'\\{c}' if c in emoji.UNICODE_EMOJI else c for c in text)
-
-
 def escape_custom_emojis(text):
-    return re.sub(r'<(a)?:([a-zA-Z0-9_]+):([0-9]+)>', r'<%s\1:\2:\3>' % '\u200b', text)
+    return re.sub(r'<(a)?:([a-zA-Z0-9_]+):([0-9]{17,21})>', r'<%s\1:\2:\3>' % '\u200b', text)
 
 
-def escape(text, markdown=True, mentions=True, emojis=True, custom_emojis=True):
+def escape(text, markdown=True, mentions=True, custom_emojis=True):
     if markdown:
-        text = escape_markdown(text)
+        text = discord.utils.escape_markdown(text)
     if mentions:
-        text = escape_mentions(text)
-    if emojis:
-        text = escape_emojis(text)
+        text = discord.utils.escape_mentions(text)
     if custom_emojis:
         text = escape_custom_emojis(text)
 
@@ -83,7 +69,7 @@ def unescape_mentions(text):
 
 
 def unescape_custom_emojis(text):
-    return re.sub(r'<%s(a)?:([a-zA-Z0-9_]+):([0-9]+)>' % '\u200b', r'<\1:\2:\3>', text)
+    return re.sub(r'<%s(a)?:([a-zA-Z0-9_]+):([0-9]{17,21})>' % '\u200b', r'<\1:\2:\3>', text)
 
 
 def unescape(text, markdown=True, mentions=True, custom_emojis=True):
