@@ -2,9 +2,10 @@ import asyncio
 import re
 from asyncio.subprocess import PIPE
 from sys import platform
+from typing import Tuple
 
 
-def sanitize(name, channel_name=False, case_insensitive=True):
+def sanitize(name: str, channel_name: bool=False, case_insensitive: bool=True) -> str:
     name = re.sub(r'[\^<>{}"/|;:,~!?@#$%^=&*\]\\()\[+]', '', name)
     if channel_name:
         name = name.replace(' ', '_')
@@ -14,7 +15,7 @@ def sanitize(name, channel_name=False, case_insensitive=True):
     return name
 
 
-def humanize_list(seq, delim=', ', final=' & '):
+def humanize_list(seq: list, delim: str=', ', final: str=' & ') -> str:
     size = len(seq)
     if size == 0:
         return ''
@@ -26,7 +27,7 @@ def humanize_list(seq, delim=', ', final=' & '):
         return f'{delim.join(seq[:-1])} {final} {seq[-1]}'
 
 
-async def shell(cmd, loop=None):
+async def shell(cmd: str, loop: asyncio.AbstractEventLoop=None) -> Tuple[str]:
     if platform == 'win32':
         loop = asyncio.ProactorEventLoop()  # Subprocess pipes only work with this under Windows
         asyncio.set_event_loop(loop)

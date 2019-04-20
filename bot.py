@@ -30,7 +30,7 @@ initial_extensions = (
 
 
 class DDNet(commands.Bot):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(command_prefix='$', fetch_offline_members=True)
 
         self.loop = loop
@@ -39,11 +39,11 @@ class DDNet(commands.Bot):
 
 
     @property
-    def guild(self):
+    def guild(self) -> discord.Guild:
         return self.get_guild(self.config.getint('GENERAL', 'GUILD'))
 
 
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         self.start_time = datetime.utcnow()
         print(f'Logged in as {self.user} ({self.user.id})')
         print(f'discord.py version {discord.__version__}')
@@ -56,24 +56,24 @@ class DDNet(commands.Bot):
                 print(traceback.format_exc())
 
 
-    async def on_resumed(self):
+    async def on_resumed(self) -> None:
         print('resumed..')
 
 
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
 
         await self.process_commands(message)
 
 
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
         ignored = (commands.CheckFailure, commands.CommandNotFound, discord.Forbidden)
         if isinstance(error, ignored):
             return
 
 
-    def run(self):
+    def run(self) -> None:
         self.remove_command('help')
         super().run(self.config.get('AUTH', 'TOKEN'), reconnect=True)
 

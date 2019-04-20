@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 from io import BytesIO
 from sys import platform
+from typing import Optional, Union, Tuple
 
 import discord
 from discord.ext import commands
@@ -23,46 +24,46 @@ SERVER_TYPES = {
 
 
 class MapTesting(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
         self.bot = bot
         self.guild = self.bot.guild
 
 
     @property
-    def mt_cat(self):
+    def mt_cat(self) -> discord.CategoryChannel:
         return discord.utils.get(self.guild.categories, name='Map Testing')
 
 
     @property
-    def em_cat(self):
+    def em_cat(self) -> discord.CategoryChannel:
         return discord.utils.get(self.guild.categories, name='Evaluated Maps')
 
     @property
-    def announce_chan(self):
-        return discord.utils.get(self.guild.channels, name='announcements')
+    def announce_chan(self) -> discord.TextChannel:
+        return discord.utils.get(self.guild.text_channels, name='announcements')
 
 
     @property
-    def log_chan(self):
-        return discord.utils.get(self.guild.channels, name='logs')
+    def log_chan(self) -> discord.TextChannel:
+        return discord.utils.get(self.guild.text_channels, name='logs')
 
 
     @property
-    def tinfo_chan(self):
-        return discord.utils.get(self.guild.channels, name='📌info')
+    def tinfo_chan(self) -> discord.TextChannel:
+        return discord.utils.get(self.guild.text_channels, name='📌info')
 
 
     @property
-    def submit_chan(self):
-        return discord.utils.get(self.guild.channels, name='📬submit-maps')
+    def submit_chan(self) -> discord.TextChannel:
+        return discord.utils.get(self.guild.text_channels, name='📬submit-maps')
 
 
     @property
-    def testing_role(self):
+    def testing_role(self) -> discord.Role:
         return discord.utils.get(self.guild.roles, name='testing')
 
 
-    async def upload_file(self, asset_type, file, filename):
+    async def upload_file(self, asset_type: str, file: BytesIO, filename: str) -> Optional[int]:
         url = self.bot.config.get('DDNET_UPLOAD', 'URL')
 
         if asset_type == 'map':
@@ -86,15 +87,15 @@ class MapTesting(commands.Cog):
             return None if resp.status == 200 else await resp.text()
 
 
-    def has_map_file(self, message: discord.Message):
+    def has_map_file(self, message: discord.Message) -> bool:
         return message.attachments and message.attachments[0].filename.endswith('.map')
 
 
-    def is_staff(self, channel: discord.TextChannel, user: discord.Member):
+    def is_staff(self, channel: discord.TextChannel, user: discord.Member) -> bool:
         return channel.permissions_for(user).manage_channels
 
 
-    def is_testing_channel(self, channel: discord.TextChannel, map_channel=False):
+    def is_testing_channel(self, channel: discord.TextChannel, map_channel: bool=False) -> bool:
         testing_channel = isinstance(channel, discord.TextChannel) and channel.category in (self.mt_cat, self.em_cat)
         if map_channel:
             testing_channel = testing_channel and channel not in (self.tinfo_chan, self.submit_chan)
@@ -102,7 +103,7 @@ class MapTesting(commands.Cog):
         return testing_channel
 
 
-    def format_map_details(self, details):
+    def format_map_details(self, details: str) -> Optional[Tuple[str]]:
         # Format: `"<name>" by <mapper> [<server>]`
         format_re = r'^\"(.+)\" +by +(.+) +\[(.+)\]$'
         match = re.search(format_re, details)
@@ -116,13 +117,13 @@ class MapTesting(commands.Cog):
         return (name, mapper, server)
 
 
-    def get_map_channel(self, name):
+    def get_map_channel(self, name: str) -> Optional[discord.TextChannel]:
         name = name.lower()
-        return discord.utils.find(lambda c: name == c.name[1:], self.mt_cat.channels) \
-            or discord.utils.find(lambda c: name == c.name[2:], self.em_cat.channels)
+        return discord.utils.find(lambda c: name == c.name[1:], self.mt_cat.text_channels) \
+            or discord.utils.find(lambda c: name == c.name[2:], self.em_cat.text_channels)
 
 
-    def check_map_submission(self, message: discord.Message):
+    def check_map_submission(self, message: discord.Message) -> str:
         details = self.format_map_details(message.content)
         filename = message.attachments[0].filename[:-4]
         duplicate_chan = self.get_map_channel(filename)
@@ -140,7 +141,7 @@ class MapTesting(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
         channel = message.channel
         author = message.author
 
@@ -181,7 +182,7 @@ class MapTesting(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_raw_message_edit(self, payload):
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent) -> None:
         data = payload.data
 
         # Handle edits to initial map submissions
@@ -206,7 +207,7 @@ class MapTesting(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         channel = self.bot.get_channel(payload.channel_id)
         if not self.is_testing_channel(channel):
             return
@@ -304,7 +305,7 @@ class MapTesting(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload):
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent) -> None:
         # Handle removing map testing user permissions
         if str(payload.emoji) != '✅':
             return
@@ -324,7 +325,7 @@ class MapTesting(commands.Cog):
                 await map_chan.set_permissions(user, overwrite=None)
 
 
-    async def move_map_channel(self, channel: discord.TextChannel, emoji = ''):
+    async def move_map_channel(self, channel: discord.TextChannel, emoji: str='') -> None:
         VALID_EMOJIS = ('📆', '🔥', '❌')
 
         prev_emoji = channel.name[0] if channel.name[0] in VALID_EMOJIS else ''
@@ -345,16 +346,16 @@ class MapTesting(commands.Cog):
 
 
     # TODO: Implement this using the commands.check interface
-    def testing_mod_check(self, ctx):
+    def testing_mod_check(self, ctx: commands.Context) -> bool:
         return self.is_testing_channel(ctx.channel, map_channel=True) and self.is_staff(ctx.channel, ctx.author)
 
 
-    async def cog_command_error(self, ctx, error):
+    async def cog_command_error(self, ctx: commands.Context, error: Exception) -> None:
         await ctx.author.send(error)
 
 
     @commands.command()
-    async def reset(self, ctx):
+    async def reset(self, ctx: commands.Context) -> None:
         if not self.testing_mod_check(ctx):
             return
 
@@ -362,7 +363,7 @@ class MapTesting(commands.Cog):
 
 
     @commands.command()
-    async def ready(self, ctx):
+    async def ready(self, ctx: commands.Context) -> None:
         if not self.testing_mod_check(ctx):
             return
 
@@ -370,12 +371,12 @@ class MapTesting(commands.Cog):
 
 
     @commands.command()
-    async def decline(self, ctx):
+    async def decline(self, ctx: commands.Context) -> None:
         if not self.testing_mod_check(ctx):
             return
 
         await self.move_map_channel(ctx.channel, emoji='❌')
 
 
-def setup(bot):
+def setup(bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
     bot.add_cog(MapTesting(bot))
