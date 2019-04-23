@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import Union
 
 import discord
@@ -9,16 +10,16 @@ class Misc(commands.Cog):
         self.bot = bot
 
 
-    @commands.command
+    @commands.command()
     async def avatar(self, ctx: commands.Context, *, user: discord.User=None) -> None:
         await ctx.trigger_typing()
 
         user = user or ctx.author
-        url = user.avatar_url_as(static_format='png')
-        async with self.bot.session.get(url) as r:
-            avatar = await r.read()
+        avatar = user.avatar_url_as(static_format='png')
+        buf = BytesIO()
+        await avatar.save(buf)
 
-        file = discord.File(avatar, filename=f'avatar_{user.name}.png')
+        file = discord.File(buf, filename=f'avatar_{user.name}.png')
         await ctx.send(file=file)
 
 
