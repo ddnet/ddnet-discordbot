@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import traceback
-from typing import Union
 
 import discord
 from discord.ext import commands
 
 
 class Admin(commands.Cog):
-    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
 
@@ -47,5 +46,5 @@ class Admin(commands.Cog):
             await ctx.message.add_reaction('👌')
 
 
-def setup(bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(Admin(bot))

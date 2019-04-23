@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 from io import BytesIO
 from sys import platform
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple
 
 import discord
 from discord.ext import commands
@@ -27,7 +27,7 @@ SERVER_TYPES = {
 
 
 class MapTesting(commands.Cog):
-    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.guild = self.bot.guild
 
@@ -381,5 +381,5 @@ class MapTesting(commands.Cog):
         await self.move_map_channel(ctx.channel, emoji='❌')
 
 
-def setup(bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(MapTesting(bot))

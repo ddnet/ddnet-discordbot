@@ -3,7 +3,7 @@
 
 from datetime import datetime
 from io import BytesIO
-from typing import List, Union
+from typing import List
 
 import discord
 from discord.ext import commands
@@ -14,7 +14,7 @@ VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
 
 
 class GuildLog(commands.Cog):
-    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.guild = self.bot.guild
 
@@ -103,5 +103,5 @@ class GuildLog(commands.Cog):
         for message in messages:
             await self.log_message(message)
 
-def setup(bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(GuildLog(bot))

@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from io import BytesIO
 from typing import Union
 
@@ -6,7 +9,7 @@ from discord.ext import commands
 
 
 class Misc(commands.Cog):
-    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
 
@@ -23,5 +26,5 @@ class Misc(commands.Cog):
         await ctx.send(file=file)
 
 
-def setup(bot):
+def setup(bot: commands.Bot):
     bot.add_cog(Misc(bot))
