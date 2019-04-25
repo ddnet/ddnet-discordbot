@@ -20,7 +20,7 @@ class Votes(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user: Union[discord.Member, discord.User]) -> None:
-        if reaction.me:
+        if user == self.bot.user:
             return
 
         message = reaction.message
@@ -36,14 +36,14 @@ class Votes(commands.Cog):
             del self.votes[message.id]
         else:
             try:
-                await message.remove_reaction(emoji, user)
+                await reaction.remove(user)
             except discord.Forbidden:
                 pass
 
 
     @commands.Cog.listener()
     async def on_reaction_remove(self, reaction: discord.Reaction, user: Union[discord.Member, discord.User]) -> None:
-        if reaction.me:
+        if user == self.bot.user:
             return
 
         message = reaction.message
