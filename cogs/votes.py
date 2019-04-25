@@ -69,13 +69,16 @@ class Votes(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx: commands.Context, *, user: discord.Member) -> None:
-        if user == ctx.author:
+        author = ctx.author
+        owner = ctx.guild.owner
+
+        if user == author:
             return await ctx.send('You can\'t kick yourself')
 
-        if user == ctx.guild.owner or user.top_role >= ctx.author.top_role or user == self.bot.user:
+        if user == owner or user == self.bot.user or (author != owner and user.top_role >= author.top_role):
             return await ctx.send('You can\'t kick this user')
 
-        msg = f'{ctx.author.mention} called for vote to kick {user.mention}'
+        msg = f'{author.mention} called for vote to kick {user.mention}'
         message = await ctx.send(msg)
 
         self.votes[message.id] = 0
