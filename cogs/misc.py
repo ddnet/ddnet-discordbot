@@ -22,7 +22,8 @@ class Misc(commands.Cog):
         buf = BytesIO()
         await avatar.save(buf)
 
-        file = discord.File(buf, filename=f'avatar_{user.name}.png')
+        ext = 'gif' if user.is_avatar_animated() else 'png'
+        file = discord.File(buf, filename=f'avatar_{user.name}.{ext}')
         await ctx.send(file=file)
 
 
