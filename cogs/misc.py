@@ -27,14 +27,16 @@ class Misc(commands.Cog):
 
     @commands.command()
     async def about(self, ctx: commands.Context) -> None:
-        desc = f'Discord bot for [DDraceNetwork](https://ddnet.tw/) ' \
-                '([Source](https://github.com/12pm/ddnet-discordbot))'
-        embed = discord.Embed(title='About', description=desc, color=0xFEA500)
+        desc = f'Discord bot for [DDraceNetwork](https://ddnet.tw/)'
+        url = 'https://github.com/12pm/ddnet-discordbot'
+        embed = discord.Embed(title='GitHub repository', description=desc, color=0xFEA500, url=url)
 
         owner = self.bot.get_user(self.bot.owner_id)
         embed.set_author(name=owner, icon_url=owner.avatar_url_as(format='png'))
 
-        embed.add_field(name='Guilds', value=len(self.bot.guilds))
+        channels = sum(len(g.voice_channels + g.text_channels) for g in self.bot.guilds)
+        stats = f'{len(self.bot.guilds)} Guilds\n{channels} Channels\n{len(self.bot.users)} Users'
+        embed.add_field(name='Stats', value=stats)
 
         memory = self.process.memory_full_info().uss / 1024**2
         cpu = self.process.cpu_percent() / psutil.cpu_count()
