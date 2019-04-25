@@ -1,16 +1,48 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
 from io import BytesIO
 from typing import Union
 
 import discord
+import psutil
 from discord.ext import commands
 
 
 class Misc(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+        self.process = psutil.Process()
+
+
+    def get_uptime(self) -> str:
+        delta = datetime.utcnow() - self.bot.start_time
+        hours, remainder = divmod(int(delta.total_seconds()), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        days, hours = divmod(hours, 24)
+
+        return f'{days}d {hours}h {minutes}m {seconds}s'
+
+
+    @commands.command()
+    async def about(self, ctx: commands.Context) -> None:
+        desc = f'Discord bot for [DDraceNetwork](https://ddnet.tw/) ' \
+                '([Source](https://github.com/12pm/ddnet-discordbot))'
+        embed = discord.Embed(title='About', description=desc, color=0xFEA500)
+
+        owner = self.bot.get_user(self.bot.owner_id)
+        embed.set_author(name=owner, icon_url=owner.avatar_url_as(format='png'))
+
+        embed.add_field(name='Guilds', value=len(self.bot.guilds))
+
+        memory = self.process.memory_full_info().uss / 1024**2
+        cpu = self.process.cpu_percent() / psutil.cpu_count()
+        embed.add_field(name='Process', value=f'{memory:.2f} MB\n{cpu:.2f}% CPU')
+
+        embed.add_field(name='Uptime', value=self.get_uptime())
+
+        await ctx.send(embed=embed)
 
 
     @commands.command()
@@ -27,5 +59,5 @@ class Misc(commands.Cog):
         await ctx.send(file=file)
 
 
-def setup(bot: commands.Bot):
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(Misc(bot))
