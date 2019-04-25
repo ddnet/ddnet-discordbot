@@ -7,9 +7,9 @@ from typing import List, Union
 import discord
 from discord.ext import commands
 
-YES     = '<:f3:397431188941438976>'
-NO      = '<:f4:397431204552376320>'
-CANCEL  = '\N{NO ENTRY SIGN}'
+VOTE_YES     = '<:f3:397431188941438976>'
+VOTE_NO      = '<:f4:397431204552376320>'
+VOTE_CANCEL  = '\N{NO ENTRY SIGN}'
 
 
 class Votes(commands.Cog):
@@ -20,18 +20,19 @@ class Votes(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user: Union[discord.Member, discord.User]) -> None:
+        if reaction.me:
+            return
+
         message = reaction.message
         if message.id not in self.votes:
             return
 
         emoji = str(reaction.emoji)
-        if emoji == YES:
+        if emoji == VOTE_YES:
             self.votes[message.id] += 1
-        elif emoji == NO:
+        elif emoji == VOTE_NO:
             self.votes[message.id] -= 1
-        elif emoji == CANCEL and user.guild_permissions.kick_members:
-            if user == self.bot.user:
-                return
+        elif emoji == VOTE_CANCEL and user.guild_permissions.kick_members:
             del self.votes[message.id]
         else:
             try:
@@ -42,14 +43,17 @@ class Votes(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_remove(self, reaction: discord.Reaction, user: Union[discord.Member, discord.User]) -> None:
+        if reaction.me:
+            return
+
         message = reaction.message
         if message.id not in self.votes:
             return
 
         emoji = str(reaction.emoji)
-        if emoji == YES:
+        if emoji == VOTE_YES:
             self.votes[message.id] -= 1
-        elif emoji == NO:
+        elif emoji == VOTE_NO:
             self.votes[message.id] += 1
 
 
@@ -71,7 +75,7 @@ class Votes(commands.Cog):
         self.votes[message.id] = 0
 
         try:
-            for emoji in (YES, NO, CANCEL):
+            for emoji in (VOTE_YES, VOTE_NO, VOTE_CANCEL):
                 await message.add_reaction(emoji.strip('<>'))  # TODO: Remove strip when discord.py 1.1.0 releases
         except discord.Forbidden:
             pass
