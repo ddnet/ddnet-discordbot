@@ -27,12 +27,11 @@ class Misc(commands.Cog):
 
     @commands.command()
     async def about(self, ctx: commands.Context) -> None:
-        desc = f'Discord bot for [DDraceNetwork](https://ddnet.tw/)'
-        url = 'https://github.com/12pm/ddnet-discordbot'
-        embed = discord.Embed(title='GitHub repository', description=desc, color=0xFEA500, url=url)
+        desc = 'Discord bot for [DDraceNetwork](https://ddnet.tw/) — ' \
+               '[GitHub repository](https://github.com/12pm/ddnet-discordbot)'
+        embed = discord.Embed(description=desc, color=0xFEA500)
 
-        owner = self.bot.get_user(self.bot.owner_id)
-        embed.set_author(name=owner, icon_url=owner.avatar_url_as(format='png'))
+        embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url_as(format='png'))
 
         channels = sum(len(g.voice_channels + g.text_channels) for g in self.bot.guilds)
         stats = f'{len(self.bot.guilds)} Guilds\n{channels} Channels\n{len(self.bot.users)} Users'
@@ -43,6 +42,9 @@ class Misc(commands.Cog):
         embed.add_field(name='Process', value=f'{memory:.2f} MB\n{cpu:.2f}% CPU')
 
         embed.add_field(name='Uptime', value=self.get_uptime())
+
+        owner = self.bot.get_user(self.bot.owner_id)
+        embed.set_footer(text=f'Made by {owner} with Python', icon_url=owner.avatar_url_as(format='png'))
 
         await ctx.send(embed=embed)
 
