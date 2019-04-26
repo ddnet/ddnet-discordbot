@@ -105,7 +105,7 @@ class Votes(commands.Cog):
                 try:
                     await user.kick(reason='Kicked by vote')
                 except discord.HTTPException:
-                    # Bot doesn't have kick members permission or the user is owner/has a higher role
+                    # Bot doesn't have kick members permission, a higher role, or the user is owner
                     pass
                 else:
                     result_msg += f'. {user.mention} kicked by vote'
