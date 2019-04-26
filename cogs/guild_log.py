@@ -111,7 +111,7 @@ class GuildLog(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_guild_leave(self, guild: discord.Guild) -> None:
+    async def on_guild_remove(self, guild: discord.Guild) -> None:
         msg = f'📤 Left guild **{escape(guild.name)}** ({guild.id}) with {guild.member_count} members'
         await self.log_chan.send(msg)
 
