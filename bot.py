@@ -1,45 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import asyncio
-import traceback
-from configparser import ConfigParser
+import logging
 from datetime import datetime
-from sys import platform
 
-import aiohttp
 import discord
 from discord.ext import commands
 
-try:
-    import uvloop
-except ImportError:
-    if platform == 'linux':
-        print('Please install uvloop: `pip install uvloop`')
-    pass
-else:
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-finally:
-    loop = asyncio.get_event_loop()
-
-config = ConfigParser()
-config.read('config.ini')
+log = logging.getLogger(__name__)
 
 initial_extensions = (
     'cogs.admin',
     'cogs.guild_log',
     'cogs.map_testing',
-    'cogs.misc'
+    'cogs.misc',
+    'cogs.votes',
 )
 
 
 class DDNet(commands.Bot):
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__(command_prefix='$', fetch_offline_members=True)
 
-        self.loop = loop
-        self.session = aiohttp.ClientSession(loop=self.loop)
-        self.config = config
+        self.config = kwargs.pop('config')
+        self.pool = kwargs.pop('pool')
+        self.session = kwargs.pop('session')
 
 
     @property
@@ -49,38 +34,43 @@ class DDNet(commands.Bot):
 
     async def on_ready(self) -> None:
         self.start_time = datetime.utcnow()
-        print(f'Logged in as {self.user} ({self.user.id})')
-        print(f'discord.py version {discord.__version__}')
+        log.info('Logged in as %s (%d)', self.user, self.user.id)
 
         for extension in initial_extensions:
             try:
                 self.load_extension(extension)
-            except Exception:
-                print(f'Failed to load extension {extension}')
-                print(traceback.format_exc())
+            except Exception as exc:
+                log.exception('Failed to load extension %s: %s', extension, exc)
+            else:
+                log.info('Successfully loaded extension %s', extension)
 
 
     async def on_resumed(self) -> None:
-        print('resumed..')
+        log.info('Resumed')
+
+
+    async def close(self) -> None:
+        log.info('Closing')
+        await super().close()
+        await self.pool.close()
+        await self.session.close()
 
 
     async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
 
+        await self.wait_until_ready()
         await self.process_commands(message)
+
+
+    async def on_command(self, ctx: commands.Context) -> None:
+        author = ctx.author
+        channel = ctx.channel
+        log.info('%s (%d) used $%s in channel %s (%d)', author, author.id, ctx.command, channel, channel.id)
 
 
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
         ignored = (commands.CheckFailure, commands.CommandNotFound, discord.Forbidden)
         if isinstance(error, ignored):
             return
-
-
-    def run(self) -> None:
-        self.remove_command('help')
-        super().run(self.config.get('AUTH', 'TOKEN'), reconnect=True)
-
-
-if __name__ == '__main__':
-    DDNet().run()

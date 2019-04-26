@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import logging
 import re
 from datetime import datetime
 from io import BytesIO
@@ -11,6 +12,8 @@ import discord
 from discord.ext import commands
 
 from utils.misc import humanize_list, sanitize, shell
+
+log = logging.getLogger(__name__)
 
 DIR = 'data/map-testing'
 
@@ -87,7 +90,12 @@ class MapTesting(commands.Cog):
         headers = {'X-DDNet-Token': self.bot.config.get('DDNET_UPLOAD', 'TOKEN')}
 
         async with self.bot.session.post(url, data=data, headers=headers) as resp:
-            return None if resp.status == 200 else await resp.text()
+            status = resp.status
+            if status != 200:
+                text = await resp.text()
+                log.exception('Failed to upload %s %s to ddnet.tw: %s (status code: %d)', asset_type, filename, text, status)
+
+            return status
 
 
     def has_map_file(self, message: discord.Message) -> bool:
@@ -268,9 +276,9 @@ class MapTesting(commands.Cog):
                 if platform == 'linux':
                     await attachment.save(f'{DIR}/maps/{filename}')
 
-                    _, err = await shell(f'{DIR}/generate_thumbnail.sh {filename}', self.bot.loop)
-                    if err:
-                        print('[map_thumbnail]', err)
+                    _, stderr = await shell(f'{DIR}/generate_thumbnail.sh {filename}', self.bot.loop)
+                    if stderr:
+                        log.exception('Failed to generate thumbnail of map %s: %s', filename, stderr)
                     else:
                         thumbnail = discord.File(f'{DIR}/thumbnails/{filename[:-4]}.png')
                         await map_chan.send(file=thumbnail)
@@ -279,17 +287,10 @@ class MapTesting(commands.Cog):
 
             # Upload the map to DDNet test servers
             resp = await self.upload_file('map', buf, filename[:-4])
-            if resp is not None:
-                print('[map_upload]', resp)
-
             await message.clear_reactions()
-            await message.add_reaction('🆙' if resp is None else '❌')
+            await message.add_reaction('🆙' if resp == 200 else '❌')
 
-            # Log it
-            desc = f'[{filename}]({message.jump_url})'
-            embed = discord.Embed(title='Map approved', description=desc, color=0x77B255, timestamp=datetime.utcnow())
-            embed.set_author(name=f'{user} → #{channel}', icon_url=user.avatar_url_as(format='png'))
-            await self.log_chan.send(embed=embed)
+            log.info('%s (%d) approved map %s in channel %s (%d)', user, user.id, filename, channel, channel.id)
 
         # Handle adding map testing user permissions
         if str(emoji) == '✅':
