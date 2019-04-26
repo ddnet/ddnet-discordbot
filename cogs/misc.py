@@ -43,8 +43,7 @@ class Misc(commands.Cog):
 
         embed.add_field(name='Uptime', value=self.get_uptime())
 
-        owner = self.bot.get_user(self.bot.owner_id)
-        embed.set_footer(text=f'Made by {owner} with Python', icon_url=owner.avatar_url_as(format='png'))
+        embed.set_footer(text='Made by jao#3750 with Python')
 
         await ctx.send(embed=embed)
 
