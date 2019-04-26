@@ -34,7 +34,7 @@ class DDNet(commands.Bot):
 
     async def on_ready(self) -> None:
         self.start_time = datetime.utcnow()
-        log.info('Logged in as %s (%d)', self.user, self.user.id)
+        log.info('Logged in as %s (ID: %d)', self.user, self.user.id)
 
         for extension in initial_extensions:
             try:
@@ -65,9 +65,7 @@ class DDNet(commands.Bot):
 
 
     async def on_command(self, ctx: commands.Context) -> None:
-        author = ctx.author
-        channel = ctx.channel
-        log.info('%s (%d) used $%s in channel %s (%d)', author, author.id, ctx.command, channel, channel.id)
+        log.info('%s (ID: %d) used %s (channel ID: %d)', ctx.author, ctx.author.id, ctx.message.content, ctx.channel.id)
 
 
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:

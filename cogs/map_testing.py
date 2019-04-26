@@ -290,7 +290,7 @@ class MapTesting(commands.Cog):
             await message.clear_reactions()
             await message.add_reaction('🆙' if resp == 200 else '❌')
 
-            log.info('%s (%d) approved map %s in channel %s (%d)', user, user.id, filename, channel, channel.id)
+            log.info('%s (ID: %d) approved map %s (channel ID: %d)', user, user.id, filename, channel.id)
 
         # Handle adding map testing user permissions
         if str(emoji) == '✅':
