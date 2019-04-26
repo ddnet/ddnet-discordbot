@@ -37,7 +37,7 @@ class Votes(commands.Cog):
         else:
             try:
                 await reaction.remove(user)
-            except discord.Forbidden:
+            except discord.HTTPException:
                 pass
 
 
@@ -67,16 +67,8 @@ class Votes(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
-    @commands.has_permissions(kick_members=True)
     async def kick(self, ctx: commands.Context, *, user: discord.Member) -> None:
         author = ctx.author
-        owner = ctx.guild.owner
-
-        if user == author:
-            return await ctx.send('You can\'t kick yourself')
-
-        if user == owner or user == self.bot.user or (author != owner and user.top_role >= author.top_role):
-            return await ctx.send('You can\'t kick this user')
 
         msg = f'{author.mention} called for vote to kick {user.mention}'
         message = await ctx.send(msg)
@@ -86,12 +78,13 @@ class Votes(commands.Cog):
         try:
             for emoji in (VOTE_YES, VOTE_NO, VOTE_CANCEL):
                 await message.add_reaction(emoji.strip('<>'))  # TODO: Remove strip when discord.py 1.1.0 releases
-        except discord.Forbidden:
+        except discord.HTTPException:
             pass
 
         i = 30
         while True:
             if message.id not in self.votes:
+                # Vote cancled
                 i = 0
 
             await message.edit(content=f'{msg}. {i}s left')
@@ -105,12 +98,17 @@ class Votes(commands.Cog):
         result = self.votes.pop(message.id, 0)
         if result > 0:
             result_msg = 'Vote passed'
-            try:
-                await user.kick(reason='Kicked by vote')
-            except discord.Forbidden:
-                pass
-            else:
-                result_msg += f'. {user.mention} kicked by vote'
+
+            if (author.guild_permissions.kick_members
+                and (author == ctx.guild.owner or author.top_role > user.top_role)
+                and author != user):
+                try:
+                    await user.kick(reason='Kicked by vote')
+                except discord.HTTPException:
+                    # Bot doesn't have kick members permission or the user is owner/has a higher role
+                    pass
+                else:
+                    result_msg += f'. {user.mention} kicked by vote'
         else:
             result_msg = 'Vote failed'
 
