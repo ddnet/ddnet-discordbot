@@ -103,5 +103,18 @@ class GuildLog(commands.Cog):
         for message in messages:
             await self.log_message(message)
 
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild: discord.Guild) -> None:
+        msg = f'📥 Joined guild **{escape(guild.name)}** ({guild.id}) with {(guild.member_count)} members'
+        await self.log_chan.send(msg)
+
+
+    @commands.Cog.listener()
+    async def on_guild_leave(self, guild: discord.Guild) -> None:
+        msg = f'📤 Left guild **{escape(guild.name)}** ({guild.id}) with {guild.member_count} members'
+        await self.log_chan.send(msg)
+
+
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(GuildLog(bot))
