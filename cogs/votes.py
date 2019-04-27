@@ -15,25 +15,25 @@ VOTE_CANCEL  = '\N{NO ENTRY SIGN}'
 class Votes(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.votes = {}
+        self._votes = {}
 
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user: Union[discord.Member, discord.User]) -> None:
-        if user == self.bot.user:
+        if user.bot:
             return
 
         message = reaction.message
-        if message.id not in self.votes:
+        if message.id not in self._votes:
             return
 
         emoji = str(reaction.emoji)
         if emoji == VOTE_YES:
-            self.votes[message.id] += 1
+            self._votes[message.id] += 1
         elif emoji == VOTE_NO:
-            self.votes[message.id] -= 1
+            self._votes[message.id] -= 1
         elif emoji == VOTE_CANCEL and user.guild_permissions.kick_members:
-            del self.votes[message.id]
+            del self._votes[message.id]
         else:
             try:
                 await reaction.remove(user)
@@ -43,37 +43,38 @@ class Votes(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_remove(self, reaction: discord.Reaction, user: Union[discord.Member, discord.User]) -> None:
-        if user == self.bot.user:
+        if user.bot:
             return
 
         message = reaction.message
-        if message.id not in self.votes:
+        if message.id not in self._votes:
             return
 
         emoji = str(reaction.emoji)
         if emoji == VOTE_YES:
-            self.votes[message.id] -= 1
+            self._votes[message.id] -= 1
         elif emoji == VOTE_NO:
-            self.votes[message.id] += 1
+            self._votes[message.id] += 1
 
 
     @commands.Cog.listener()
     async def on_reaction_clear(self, message: discord.Message, reactions: List[discord.Reaction]) -> None:
-        if message.id not in self.votes:
+        if message.id not in self._votes:
             return
 
-        self.votes[message.id] = 0
+        self._votes[message.id] = 0
 
 
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 30, type=commands.BucketType.member)
     async def kick(self, ctx: commands.Context, *, user: discord.Member) -> None:
         author = ctx.author
 
         msg = f'{author.mention} called for vote to kick {user.mention}'
         message = await ctx.send(msg)
 
-        self.votes[message.id] = 0
+        self._votes[message.id] = 0
 
         try:
             for emoji in (VOTE_YES, VOTE_NO, VOTE_CANCEL):
@@ -83,19 +84,21 @@ class Votes(commands.Cog):
 
         i = 30
         while True:
-            if message.id not in self.votes:
+            if message.id not in self._votes:
                 # Vote cancled
                 i = 0
 
-            await message.edit(content=f'{msg}. {i}s left')
+            if i % 5 == 0 or i % 1 == 0 and i <= 5:
+                # Update countdown only every 5 seconds at first to avoid being rate limited
+                await message.edit(content=f'{msg}. {int(i)}s left')
 
             if i == 0:
                 break
 
-            i -= 1
-            await asyncio.sleep(1)
+            i -= 0.5
+            await asyncio.sleep(0.5)
 
-        result = self.votes.pop(message.id, 0)
+        result = self._votes.pop(message.id, 0)
         if result > 0:
             result_msg = 'Vote passed'
 
