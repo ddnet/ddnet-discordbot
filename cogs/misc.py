@@ -3,7 +3,6 @@
 
 from datetime import datetime
 from io import BytesIO
-from typing import Union
 
 import discord
 import psutil
@@ -49,7 +48,7 @@ class Misc(commands.Cog):
 
 
     @commands.command()
-    async def avatar(self, ctx: commands.Context, *, user: Union[discord.Member, discord.User]=None) -> None:
+    async def avatar(self, ctx: commands.Context, *, user: discord.User=None) -> None:
         await ctx.trigger_typing()
 
         user = user or ctx.author

@@ -29,7 +29,7 @@ SERVER_TYPES = {
 }
 
 
-class MapTesting(commands.Cog):
+class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.guild = self.bot.guild
@@ -69,7 +69,7 @@ class MapTesting(commands.Cog):
         return discord.utils.get(self.guild.roles, name='testing')
 
 
-    async def upload_file(self, asset_type: str, file: BytesIO, filename: str) -> Optional[int]:
+    async def upload_file(self, asset_type: str, file: BytesIO, filename: str) -> int:
         url = self.bot.config.get('DDNET_UPLOAD', 'URL')
 
         if asset_type == 'map':
@@ -349,8 +349,7 @@ class MapTesting(commands.Cog):
         await channel.edit(name=name, position=pos, category=category)
 
 
-    # TODO: Implement this using the commands.check interface
-    def testing_mod_check(self, ctx: commands.Context) -> bool:
+    def cog_check(self, ctx: commands.Context) -> bool:
         return self.is_testing_channel(ctx.channel, map_channel=True) and self.is_staff(ctx.channel, ctx.author)
 
 
@@ -360,25 +359,16 @@ class MapTesting(commands.Cog):
 
     @commands.command()
     async def reset(self, ctx: commands.Context) -> None:
-        if not self.testing_mod_check(ctx):
-            return
-
         await self.move_map_channel(ctx.channel)
 
 
     @commands.command()
     async def ready(self, ctx: commands.Context) -> None:
-        if not self.testing_mod_check(ctx):
-            return
-
         await self.move_map_channel(ctx.channel, emoji='📆')
 
 
     @commands.command()
     async def decline(self, ctx: commands.Context) -> None:
-        if not self.testing_mod_check(ctx):
-            return
-
         await self.move_map_channel(ctx.channel, emoji='❌')
 
 

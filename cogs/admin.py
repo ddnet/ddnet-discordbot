@@ -11,7 +11,7 @@ from discord.ext import commands
 
 CONFIRM = '\N{OK HAND SIGN}'
 
-class Admin(commands.Cog):
+class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self._last_result = None

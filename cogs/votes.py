@@ -66,14 +66,21 @@ class Votes(commands.Cog):
         self._votes[message.id] = 0
 
 
+    def cog_check(self, ctx: commands.Context) -> bool:
+        return ctx.guild and (ctx.guild.id, ctx.author.id) not in self._vote_callers
+
+
+    async def cog_command_error(self, ctx: commands.Context, error: Exception) -> None:
+        if isinstance(error, commands.CheckFailure) and ctx.guild:
+            await ctx.send('You can only call one vote at a time')
+        elif isinstance(error, commands.BadArgument):
+            await ctx.send('Could not find that user')
+
+
     @commands.command()
-    @commands.guild_only()
     async def kick(self, ctx: commands.Context, *, user: discord.Member) -> None:
         guild = ctx.guild
         author = ctx.author
-
-        if (guild.id, author.id) in self._vote_callers:
-            return await ctx.send('You can only call one vote at a time')
 
         self._vote_callers.add((guild.id, author.id))
 
@@ -124,12 +131,6 @@ class Votes(commands.Cog):
         await ctx.send(result_msg)
 
         self._vote_callers.remove((guild.id, author.id))
-
-
-    @kick.error
-    async def kick_error(self, ctx: commands.Context, error: Exception) -> None:
-        if isinstance(error, commands.BadArgument):
-            await ctx.send('Could not find that user')
 
 
 def setup(bot: commands.Bot) -> None:
