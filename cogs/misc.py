@@ -62,5 +62,11 @@ class Misc(commands.Cog):
         await ctx.send(file=file)
 
 
+    @avatar.error
+    async def avatar_error(self, ctx: commands.Context, error: Exception) -> None:
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Could not find that user')
+
+
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Misc(bot))
