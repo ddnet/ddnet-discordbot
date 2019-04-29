@@ -114,7 +114,7 @@ class Votes(commands.Cog):
 
         result = self._votes.pop(message.id, 0)
         if result > 0:
-            kicked = 'kicked'
+            kicked = '~~kicked~~'
             if (author.guild_permissions.kick_members
                 and (author == ctx.guild.owner or author.top_role > user.top_role)
                 and author != user):
@@ -124,7 +124,7 @@ class Votes(commands.Cog):
                     # Bot doesn't have kick members permission, a higher role, or the user is owner
                     pass
                 else:
-                    kicked = '~~kicked~~'
+                    kicked = 'kicked'
 
             await ctx.send(f'Vote passed. {user.mention} {kicked} by vote ({reason})')
         else:
