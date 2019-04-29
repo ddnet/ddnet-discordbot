@@ -4,7 +4,7 @@
 import textwrap
 import traceback
 from contextlib import redirect_stdout
-from io import StringIO
+from io import BytesIO, StringIO
 
 import discord
 from discord.ext import commands
@@ -108,16 +108,26 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
                 self._last_result = ret
                 content = f'```py\n{value}{ret}\n```'
 
-        if content:
-            if len(content) > 2000:
-                url = 'https://mystb.in/documents'
-                data = cleanup_code(content)
-                async with self.bot.session.post(url, data=data) as resp:
-                    js = await resp.json()
+        if not content:
+            return
 
-                await ctx.send(f'Content too big: https://mystb.in/{js["key"]}.py')
+        if len(content) > 2000:
+            url = 'https://mystb.in/documents'
+            data = cleanup_code(content).encode('utf-8')
+            async with self.bot.session.post(url, data=data) as resp:
+                status = resp.status
+                js = await resp.json()
+
+            if status == 200:
+                await ctx.send(f'Content too big: <https://mystb.in/{js["key"]}.py>')
             else:
-                await ctx.send(content)
+                buf = BytesIO(data)
+                file = discord.File(buf, filename='content.txt')
+                msg = f'Content too big and failed to upload to Mystbin: {js["message"]} (status code: {status})'
+                await ctx.send(msg, file=file)
+
+        else:
+            await ctx.send(content)
 
 
 def setup(bot: commands.Bot) -> None:
