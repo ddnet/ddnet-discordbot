@@ -84,9 +84,8 @@ class Votes(commands.Cog):
 
         self._vote_callers.add((guild.id, author.id))
 
-        msg = f'{author.mention} called for vote to kick {user.mention}'
-        if reason:
-            msg += f'with reason {reason}'
+        reason = reason or 'No reason given'
+        msg = f'{author.mention} called for vote to kick {user.mention} ({reason})'
         message = await ctx.send(msg)
 
         self._votes[message.id] = 0
@@ -105,7 +104,7 @@ class Votes(commands.Cog):
 
             if i % 5 == 0 or i % 1 == 0 and i <= 5:
                 # Update countdown only every 5 seconds at first to avoid being rate limited
-                await message.edit(content=f'{msg}. {int(i)}s left')
+                await message.edit(content=f'{msg} — {int(i)}s left')
 
             if i == 0:
                 break
@@ -115,9 +114,7 @@ class Votes(commands.Cog):
 
         result = self._votes.pop(message.id, 0)
         if result > 0:
-            reason = reason or 'No reason given'
-            result_msg = f'Vote passed ({reason})'
-
+            kicked = 'kicked'
             if (author.guild_permissions.kick_members
                 and (author == ctx.guild.owner or author.top_role > user.top_role)
                 and author != user):
@@ -127,11 +124,11 @@ class Votes(commands.Cog):
                     # Bot doesn't have kick members permission, a higher role, or the user is owner
                     pass
                 else:
-                    result_msg += f'. {user.mention} kicked by vote.'
-        else:
-            result_msg = 'Vote failed'
+                    kicked = '~~kicked~~'
 
-        await ctx.send(result_msg)
+            await ctx.send(f'Vote passed. {user.mention} {kicked} by vote ({reason})')
+        else:
+            await ctx.send('Vote failed')
 
         self._vote_callers.remove((guild.id, author.id))
 
