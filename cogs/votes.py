@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-from typing import List, Union
+from typing import List, Optional, Union
 
 import discord
 from discord.ext import commands
@@ -78,13 +78,15 @@ class Votes(commands.Cog):
 
 
     @commands.command()
-    async def kick(self, ctx: commands.Context, *, user: discord.Member) -> None:
+    async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: Optional[str]=None) -> None:
         guild = ctx.guild
         author = ctx.author
 
         self._vote_callers.add((guild.id, author.id))
 
         msg = f'{author.mention} called for vote to kick {user.mention}'
+        if reason:
+            msg += f'with reason {reason}'
         message = await ctx.send(msg)
 
         self._votes[message.id] = 0
@@ -113,7 +115,8 @@ class Votes(commands.Cog):
 
         result = self._votes.pop(message.id, 0)
         if result > 0:
-            result_msg = 'Vote passed'
+            reason = reason or 'No reason given'
+            result_msg = f'Vote passed ({reason})'
 
             if (author.guild_permissions.kick_members
                 and (author == ctx.guild.owner or author.top_role > user.top_role)
@@ -124,7 +127,7 @@ class Votes(commands.Cog):
                     # Bot doesn't have kick members permission, a higher role, or the user is owner
                     pass
                 else:
-                    result_msg += f'. {user.mention} kicked by vote'
+                    result_msg += f'. {user.mention} kicked by vote.'
         else:
             result_msg = 'Vote failed'
 
