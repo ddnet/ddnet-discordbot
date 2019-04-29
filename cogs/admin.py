@@ -93,7 +93,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
                 ret = await func()
         except Exception:
             value = stdout.getvalue()
-            content = f'```py\n{value}{traceback.format_exc()}\n```'
+            content = value + traceback.format_exc()
         else:
             value = stdout.getvalue()
             try:
@@ -103,17 +103,17 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
             if ret is None:
                 if value:
-                    content = f'```py\n{value}\n```'
+                    content = value
             else:
                 self._last_result = ret
-                content = f'```py\n{value}{ret}\n```'
+                content = value + ret
 
         if not content:
             return
 
-        if len(content) > 2000:
+        if len(content) > 1990:
             url = 'https://mystb.in/documents'
-            data = cleanup_code(content).encode('utf-8')
+            data = content.encode('utf-8')
             async with self.bot.session.post(url, data=data) as resp:
                 status = resp.status
                 js = await resp.json()
@@ -124,10 +124,13 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
                 buf = BytesIO(data)
                 file = discord.File(buf, filename='content.txt')
                 msg = f'Content too big and failed to upload to Mystbin: {js["message"]} (status code: {status})'
-                await ctx.send(msg, file=file)
+                try:
+                    await ctx.send(msg, file=file)
+                except discord.HTTPException:
+                    await ctx.send('Content too big and failed to upload to Mystbin, even failed to upload as file')
 
         else:
-            await ctx.send(content)
+            await ctx.send(f'```py\n{content}\n```')
 
 
 def setup(bot: commands.Bot) -> None:
