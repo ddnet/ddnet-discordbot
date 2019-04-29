@@ -11,6 +11,16 @@ from discord.ext import commands
 
 CONFIRM = '\N{OK HAND SIGN}'
 
+
+def cleanup_code(content: str) -> str:
+    # remove ```py\n```
+    if content.startswith('```') and content.endswith('```'):
+        return '\n'.join(content.split('\n')[1:-1])
+
+    # remove `foo`
+    return content.strip('` \n')
+
+
 class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
@@ -51,15 +61,6 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
             await ctx.message.add_reaction(CONFIRM)
 
 
-    def cleanup_code(self, content: str) -> str:
-        # remove ```py\n```
-        if content.startswith('```') and content.endswith('```'):
-            return '\n'.join(content.split('\n')[1:-1])
-
-        # remove `foo`
-        return content.strip('` \n')
-
-
     @commands.command(name='eval')
     async def _eval(self, ctx: commands.Context, *, body: str) -> None:
         env = {
@@ -75,7 +76,8 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
         env.update(globals())
 
-        body = self.cleanup_code(body)
+        body = cleanup_code(body)
+        content = None
         stdout = StringIO()
 
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
@@ -91,7 +93,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
                 ret = await func()
         except Exception:
             value = stdout.getvalue()
-            await ctx.send(f'```py\n{value}{traceback.format_exc()}\n```')
+            content = f'```py\n{value}{traceback.format_exc()}\n```'
         else:
             value = stdout.getvalue()
             try:
@@ -101,10 +103,21 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
             if ret is None:
                 if value:
-                    await ctx.send(f'```py\n{value}\n```')
+                    content = f'```py\n{value}\n```'
             else:
                 self._last_result = ret
-                await ctx.send(f'```py\n{value}{ret}\n```')
+                content = f'```py\n{value}{ret}\n```'
+
+        if content:
+            if len(content) > 2000:
+                url = 'https://mystb.in/documents'
+                data = cleanup_code(content)
+                async with self.bot.session.post(url, data=data) as resp:
+                    js = await resp.json()
+
+                await ctx.send(f'Content too big: https://mystb.in/{js["key"]}.py')
+            else:
+                await ctx.send(content)
 
 
 def setup(bot: commands.Bot) -> None:
