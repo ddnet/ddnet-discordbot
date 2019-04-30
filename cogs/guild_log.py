@@ -100,6 +100,8 @@ class GuildLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_bulk_message_delete(self, messages: List[discord.Message]) -> None:
+        # Sort by timestamp to make sure messages are logged in correct order
+        messages = sorted(messages, key=lambda m: m.created_at)
         for message in messages:
             await self.log_message(message)
 
