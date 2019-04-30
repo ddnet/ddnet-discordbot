@@ -106,7 +106,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
                     content = value
             else:
                 self._last_result = ret
-                content = value + ret
+                content = value + str(ret)
 
         if not content:
             return
