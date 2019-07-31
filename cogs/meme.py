@@ -10,7 +10,7 @@ import discord
 from discord.ext import commands
 
 
-def wrap(line_width: int, text: str, font: ImageFont) -> List[str]:
+def wrap(font: ImageFont, text: str, line_width: int) -> List[str]:
     words = text.split()
 
     lines = []

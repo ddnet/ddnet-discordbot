@@ -14,7 +14,7 @@ COLOR_DEFAULT = (255, 255, 255)
 COLOR_GREY = (150, 150, 150)
 
 
-def get_background(points: int) -> Tuple[Image, tuple]:
+def get_background(points: int) -> Tuple[Image.Image, Tuple[int, int, int]]:
     with open(f'{DIR}/assets/backgrounds/thresholds.json', 'r', encoding='utf-8') as f:
         thresholds = json.loads(f.read())
 
@@ -26,8 +26,7 @@ def get_background(points: int) -> Tuple[Image, tuple]:
     color = tuple(color)
     return image, color
 
-
-def get_flag(country: str) -> Image:
+def get_flag(country: str) -> Image.Image:
     with open(f'{DIR}/assets/flags/valid_flags.json', 'r', encoding='utf-8') as f:
         flags = json.loads(f.read())
 
@@ -35,10 +34,8 @@ def get_flag(country: str) -> Image:
     flag = country if country in flags else 'UNK'
     return Image.open(f'{DIR}/assets/flags/{flag}.png')
 
-
 def center_text(width_context: int, width_text: int) -> int:
     return (width_context - width_text) / 2
-
 
 def plural(value: int, name: str) -> str:
     if abs(value) == 1:
@@ -53,7 +50,6 @@ def plural(value: int, name: str) -> str:
 class Profile(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-
 
     def generate_profile_image(self, stats: asyncpg.Record) -> BytesIO:
         base = Image.new('RGBA', (800, 256))
@@ -150,7 +146,6 @@ class Profile(commands.Cog):
         base.save(buf, format='png')
         buf.seek(0)
         return buf
-
 
     @commands.command(aliases=['player', 'points'])
     async def profile(self, ctx: commands.Context, *, player: str=None):
