@@ -116,13 +116,13 @@ class Profile(commands.Cog):
             major, minor = heights
             abc = [[f'{rank_type} ', font_normal_24, COLOR_DEFAULT, minor]]
             if rank:
-                points_, text = plural(points, 'POINT').split(' ')
+                text = plural(points, ' POINT')
                 abc.extend((
                     ['#', font_bold_36, COLOR_DEFAULT, major],
                     [str(rank), font_bold_36, COLOR_DEFAULT, major],
                     ['   ', font_bold_36, COLOR_DEFAULT, major],  # Placeholder for the border
-                    [points_, font_bold_36, colored, major],
-                    [f' {text}', font_normal_24, colored, minor]
+                    [str(points), font_bold_36, colored, major],
+                    [text, font_normal_24, colored, minor]
                 ))
             else:
                 abc.append(['UNRANKED', font_bold_36, COLOR_GREY, major])
