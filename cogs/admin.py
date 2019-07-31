@@ -9,6 +9,8 @@ from io import BytesIO, StringIO
 import discord
 from discord.ext import commands
 
+from utils.misc import run_process
+
 CONFIRM = '\N{OK HAND SIGN}'
 
 
@@ -22,17 +24,15 @@ def cleanup_code(content: str) -> str:
 
 
 class Admin(commands.Cog, command_attrs=dict(hidden=True)):
-    def __init__(self, bot: commands.Bot) -> None:
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self._last_result = None
-
 
     async def cog_check(self, ctx: commands.Context) -> bool:
         return await self.bot.is_owner(ctx.author)
 
-
     @commands.command()
-    async def load(self, ctx: commands.Context, *, extension: str) -> None:
+    async def load(self, ctx: commands.Context, *, extension: str):
         try:
             self.bot.load_extension(extension)
         except Exception:
@@ -40,9 +40,8 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             await ctx.message.add_reaction(CONFIRM)
 
-
     @commands.command()
-    async def unload(self, ctx: commands.Context, *, extension: str) -> None:
+    async def unload(self, ctx: commands.Context, *, extension: str):
         try:
             self.bot.unload_extension(extension)
         except Exception:
@@ -50,9 +49,8 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             await ctx.message.add_reaction(CONFIRM)
 
-
     @commands.command()
-    async def reload(self, ctx: commands.Context, *, extension: str) -> None:
+    async def reload(self, ctx: commands.Context, *, extension: str):
         try:
             self.bot.reload_extension(extension)
         except Exception:
@@ -60,9 +58,17 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             await ctx.message.add_reaction(CONFIRM)
 
+    async def mystbin_upload(self, content: str) -> str:
+        data = content.encode('utf-8')
+        async with self.bot.session.post('https://mystb.in/documents', data=data) as resp:
+            js = await resp.json()
+            if resp.status == 200:
+                return f'<https://mystb.in/{js["key"]}.py>'
+            else:
+                return f'Failed uploading to mystbin: {js["message"]} (status code: {resp.status})'
 
     @commands.command(name='eval')
-    async def _eval(self, ctx: commands.Context, *, body: str) -> None:
+    async def _eval(self, ctx: commands.Context, *, body: str):
         env = {
             'self': self,
             'bot': self.bot,
@@ -108,29 +114,30 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
                 self._last_result = ret
                 content = value + str(ret)
 
-        if not content:
-            return
-
-        if len(content) > 1990:
-            url = 'https://mystb.in/documents'
-            data = content.encode('utf-8')
-            async with self.bot.session.post(url, data=data) as resp:
-                status = resp.status
-                js = await resp.json()
-
-            if status == 200:
-                await ctx.send(f'Content too big: <https://mystb.in/{js["key"]}.py>')
+        if content:
+            if len(content) <= 1990:
+                msg = f'```py\n{content}\n```'
             else:
-                buf = BytesIO(data)
-                file = discord.File(buf, filename='content.txt')
-                msg = f'Content too big and failed to upload to Mystbin: {js["message"]} (status code: {status})'
-                try:
-                    await ctx.send(msg, file=file)
-                except discord.HTTPException:
-                    await ctx.send('Content too big and failed to upload to Mystbin, even failed to upload as file')
+                msg = await self.mystbin_upload(content)
 
+            await ctx.send(msg)
+
+    @commands.command()
+    async def sh(self, ctx: commands.Context, *, cmd: str):
+        async with ctx.typing():
+            stdout, stderr = await run_process(cmd)
+
+        if stderr:
+            text = f'stdout:\n{stdout}\nstderr:\n{stderr}'
         else:
-            await ctx.send(f'```py\n{content}\n```')
+            text = stdout
+
+        if len(text) <= 1992:
+            msg = f'```\n{text}\n```'
+        else:
+            msg = await self.mystbin_upload(text)
+
+        await ctx.send(msg)
 
 
 def setup(bot: commands.Bot) -> None:

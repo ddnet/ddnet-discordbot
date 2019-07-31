@@ -5,7 +5,7 @@ import asyncio
 import re
 from asyncio.subprocess import PIPE
 from sys import platform
-from typing import Tuple
+from typing import Optional, Tuple
 
 
 def sanitize(name: str, channel_name: bool=False, case_insensitive: bool=True) -> str:
@@ -17,8 +17,7 @@ def sanitize(name: str, channel_name: bool=False, case_insensitive: bool=True) -
 
     return name
 
-
-def humanize_list(seq: list, delim: str=', ', final: str=' & ') -> str:
+def human_join(seq: list, delim: str=', ', final: str=' & ') -> str:
     size = len(seq)
     if size == 0:
         return ''
@@ -29,15 +28,7 @@ def humanize_list(seq: list, delim: str=', ', final: str=' & ') -> str:
     else:
         return f'{delim.join(seq[:-1])} {final} {seq[-1]}'
 
-
-async def shell(cmd: str, loop: asyncio.AbstractEventLoop=None) -> Tuple[str]:
-    if platform == 'win32':
-        loop = asyncio.ProactorEventLoop()  # Subprocess pipes only work with this under Windows
-        asyncio.set_event_loop(loop)
-    elif not loop:
-        loop = asyncio.get_event_loop()
-
-    proc = await asyncio.create_subprocess_shell(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, loop=loop)
-
+async def run_process(cmd: str) -> Tuple[Optional[str], Optional[str]]:
+    proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
     stdout, stderr = await proc.communicate()
     return stdout.decode(), stderr.decode()

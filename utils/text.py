@@ -16,7 +16,6 @@ def escape_single_backquote(text: str) -> str:
 
     return escape_custom_emojis(text)
 
-
 def escape_double_backquote(text: str) -> str:
     text = text.replace('``', '`\u200b`')
     if text[0] == '`':
@@ -25,7 +24,6 @@ def escape_double_backquote(text: str) -> str:
         text += '\u200b'
 
     return escape_custom_emojis(text)
-
 
 def escape_triple_backquote(text: str) -> str:
     if not text:
@@ -47,10 +45,8 @@ def escape_triple_backquote(text: str) -> str:
 
     return escape_custom_emojis(text)
 
-
 def escape_custom_emojis(text: str) -> str:
     return re.sub(r'<(a)?:([a-zA-Z0-9_]+):([0-9]{17,21})>', r'<%s\1:\2:\3>' % '\u200b', text)
-
 
 def escape(text: str, markdown: bool=True, mentions: bool=True, custom_emojis: bool=True) -> str:
     if markdown:
@@ -62,18 +58,14 @@ def escape(text: str, markdown: bool=True, mentions: bool=True, custom_emojis: b
 
     return text
 
-
 def unescape_markdown(text: str) -> str:
     return re.sub(r'\\([*`_~\\])', r'\1', text)
-
 
 def unescape_mentions(text: str) -> str:
     return text.replace(f'@\u200b', '@')
 
-
 def unescape_custom_emojis(text: str) -> str:
     return re.sub(r'<%s(a)?:([a-zA-Z0-9_]+):([0-9]{17,21})>' % '\u200b', r'<\1:\2:\3>', text)
-
 
 def unescape(text: str, markdown: bool=True, mentions: bool=True, custom_emojis: bool=True) -> str:
     if markdown:

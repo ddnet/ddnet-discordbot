@@ -1,4 +1,7 @@
+Pillow
 asyncpg
 discord
+msgpack-python
 psutil
-uvloop; sys_platform != "win32" and implementation_name == "cpython"
+requests
+uvloop
