@@ -52,9 +52,9 @@ class Memes(commands.Cog):
         return buf
 
     async def executor(self, type_: str, text1: str, text2: str=None) -> discord.File:
-        fn = partial(self.generate, 'angry', text1, text2)
+        fn = partial(self.generate, type_, text1, text2)
         buf = await self.bot.loop.run_in_executor(None, fn)
-        return discord.File(buf, filename='angry.png')
+        return discord.File(buf, filename=f'{type_}.png')
 
     @commands.command()
     async def angry(self, ctx: commands.Context, text1: str, text2: str):

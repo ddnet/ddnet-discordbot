@@ -116,7 +116,7 @@ class Profile(commands.Cog):
             major, minor = heights
             abc = [[f'{rank_type} ', font_normal_24, COLOR_DEFAULT, minor]]
             if rank:
-                points_, text = plural('POINT', points).split(' ')
+                points_, text = plural(points, 'POINT').split(' ')
                 abc.extend((
                     ['#', font_bold_36, COLOR_DEFAULT, major],
                     [str(rank), font_bold_36, COLOR_DEFAULT, major],
