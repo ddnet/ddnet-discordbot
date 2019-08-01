@@ -104,7 +104,8 @@ class DDNet(commands.Bot):
             original = error.original
             if isinstance(original, discord.Forbidden):
                 await ctx.send('I do not have proper permission')
-            else:
+            elif not (hasattr(command, 'on_error') or hasattr(command.cog, 'cog_command_error')):
+                # handle uncaught errors
                 exc = ''.join(traceback.format_exception(type(original), original, original.__traceback__))
-                log.exception('Command %s caused an exception: %s', command.qualified_name, exc)
+                log.error('Command %s caused an exception: %s\n%s', command.qualified_name, original, exc)
                 await ctx.send('An internal error occurred')
