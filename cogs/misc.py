@@ -221,7 +221,7 @@ class Misc(commands.Cog):
 
         msg = f':flag_{country.lower()}: |  **Weather for {city}, {country}**\n' \
               f'**Weather:** {emoji} ({description})\n' \
-              f'**Temp:** {celcius} °C / {fahrenheit} °C / {rankine} °R\n' \
+              f'**Temp:** {celcius:0.1f} °C / {fahrenheit:0.1f} °F / {rankine:0.1f} °R\n' \
               f'**Wind:** {wind} m/s **Humidity:** {humidity}% **Cloudiness:** {cloudiness}%'
 
         await ctx.send(msg)
