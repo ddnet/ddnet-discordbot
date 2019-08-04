@@ -212,8 +212,8 @@ class Misc(commands.Cog):
         description = data['weather'][0]['description']
         temp = data['main']['temp']  # K
         celcius = temp - 273.15
-        fahrenheit = temp * 9/5
-        rankine = temp * 9/5 - 459.67
+        rankine = temp * 9/5
+        fahrenheit = temp * 9/5 - 459.67
         wind = data['wind']['speed']  # m/s
         humidity = data['main']['humidity']  # %
         cloudiness = data['clouds']['all']  # %
