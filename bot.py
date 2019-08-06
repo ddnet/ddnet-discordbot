@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import sys
 import traceback
 from datetime import datetime
 
@@ -43,10 +44,10 @@ class DDNet(commands.Bot):
         for extension in initial_extensions:
             try:
                 self.load_extension(extension)
-            except Exception as exc:
-                log.exception('Failed to load extension %s: %s', extension, exc)
+            except Exception:
+                log.exception('Failed to load extension %r', extension)
             else:
-                log.info('Successfully loaded extension %s', extension)
+                log.info('Successfully loaded extension %r', extension)
 
     async def on_resumed(self):
         log.info('Resumed')
@@ -107,5 +108,8 @@ class DDNet(commands.Bot):
             elif not (hasattr(command, 'on_error') or hasattr(command.cog, 'cog_command_error')):
                 # handle uncaught errors
                 exc = ''.join(traceback.format_exception(type(original), original, original.__traceback__))
-                log.error('Command %s caused an exception: %s\n%s', command.qualified_name, original, exc)
+                log.error('Command %r caused an exception\n%s', command.qualified_name, exc)
                 await ctx.send('An internal error occurred')
+
+    async def on_error(self, event: str, *args, **kwargs):
+        log.exception('Event %r caused an exception:', event)

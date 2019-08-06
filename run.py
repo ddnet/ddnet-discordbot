@@ -38,7 +38,7 @@ async def main():
                                          host = 'localhost',
                                          database = 'ddnet-discordbot')
     except (ConnectionRefusedError, asyncpg.CannotConnectNowError) as exc:
-        return log.exception('Failed to connect to PostgreSQL: %s, exiting', exc)
+        return log.exception('Failed to connect to PostgreSQL, exiting', exc)
 
     session = aiohttp.ClientSession(loop=loop)
 
