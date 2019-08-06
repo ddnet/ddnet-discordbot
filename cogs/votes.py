@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-import random
 from typing import Union
 
 import discord
@@ -64,7 +63,7 @@ class Votes(commands.Cog):
         return ctx.guild and (ctx.channel.id, ctx.author.id) not in self._vote_callers
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
-        if isinstance(error, commands.CheckFailure) and ctx.guild:
+        if isinstance(error, commands.CheckFailure) and ctx.guild and not isinstance(error, commands.MissingPermissions):
             await ctx.send('You can only call one vote at a time')
         elif isinstance(error, commands.BadArgument):
             await ctx.send('Could not find that user')
@@ -73,7 +72,7 @@ class Votes(commands.Cog):
         channel = ctx.channel
         author = ctx.author
 
-        msg = f'{author.mention} called for vote to kick {user.mention} ({reason})'
+        msg = f'{author} called for vote to kick {user} ({reason})'
         try:
             message = await ctx.send(msg)
         except discord.Forbidden:
@@ -102,7 +101,7 @@ class Votes(commands.Cog):
             await asyncio.sleep(seconds)
 
         result = self._votes.pop(message.id, 0)
-        result_msg = f'Vote passed. {user.mention} kicked by vote ({reason})' if result > 0 else 'Vote failed'
+        result_msg = f'Vote passed. {user} kicked by vote ({reason})' if result > 0 else 'Vote failed'
 
         try:
             await ctx.send(result_msg)
@@ -123,12 +122,6 @@ class Votes(commands.Cog):
         result = await self._kick(ctx, user, reason)
         if result > 0:
             await user.kick()
-
-    @commands.command()
-    async def randomkick(self, ctx: commands.Context):
-        user = random.choice(ctx.guild.members)
-        reason = 'random'
-        await self._kick(ctx, user, reason)
 
 
 def setup(bot: commands.Bot):
