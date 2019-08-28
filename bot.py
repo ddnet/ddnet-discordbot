@@ -100,16 +100,25 @@ class DDNet(commands.Bot):
 
         command = ctx.command
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(f'{self.command_prefix}{command.qualified_name} {command.signature}')
+            try:
+                await ctx.send(f'{self.command_prefix}{command.qualified_name} {command.signature}')
+            except discord.Forbidden:
+                pass
         elif isinstance(error, commands.CommandInvokeError):
             original = error.original
             if isinstance(original, discord.Forbidden):
-                await ctx.send('I do not have proper permission')
+                try:
+                    await ctx.send('I do not have proper permission')
+                except discord.Forbidden:
+                    pass
             elif not (hasattr(command, 'on_error') or hasattr(command.cog, 'cog_command_error')):
                 # handle uncaught errors
                 exc = ''.join(traceback.format_exception(type(original), original, original.__traceback__))
                 log.error('Command %r caused an exception\n%s', command.qualified_name, exc)
-                await ctx.send('An internal error occurred')
+                try:
+                    await ctx.send('An internal error occurred')
+                except discord.Forbidden:
+                    pass
 
     async def on_error(self, event: str, *args, **kwargs):
-        log.exception('Event %r caused an exception:', event)
+        log.exception('Event %r caused an exception', event)
