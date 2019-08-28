@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import sys
 import traceback
 from datetime import datetime
 
