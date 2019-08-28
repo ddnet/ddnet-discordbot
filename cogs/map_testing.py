@@ -139,20 +139,15 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             return f'A channel for the map you submitted already exists: {duplicate_chan.mention}'
 
     async def uploaded_by_author(self, channel: discord.TextChannel, author: discord.Member, map_name: str) -> bool:
-        first_message = await channel.history(limit=1, oldest_first=True).flatten()
-        if not first_message:
+        try:
+            mentions, filename = channel.topic.split('\n')[1].split(' | ')
+        except (IndexError, ValueError):
             return False
 
-        first_message = first_message[0]
-        if first_message.author != self.bot.user:
+        if filename != map_name:
             return False
 
-        if not first_message.mentions or first_message.mentions[0] != author:
-            return False
-
-        # Fetch again because history() doesn't return attachments reliably
-        first_message = await channel.fetch_message(first_message.id)
-        if not first_message.attachments or first_message.attachments[0].filename != map_name:
+        if not any(m == author.mention for m in mentions.split(' ')):
             return False
 
         return True
@@ -254,7 +249,8 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
             name, mapper, server = self.format_map_details(message.content)
             emoji = SERVER_TYPES[server]
-            topic = f'**"{name}"** by {human_join([f"**{m}**" for m in mapper])} [{server}]'
+            topic = f'**"{name}"** by {human_join([f"**{m}**" for m in mapper])} [{server}]\n' \
+                    f'{message.author.mention} | {filename}'
 
             read_messages = discord.PermissionOverwrite(read_messages=True)
             users = await accept.users().flatten()

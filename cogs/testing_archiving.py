@@ -261,7 +261,7 @@ class Archiving(commands.Cog):
                 'version': 1.0
             },
             'name': channel.name[2:],  # Strip first 2 chars as they are status emojis
-            'topic': channel.topic.replace('**', '') if channel.topic else '',  # Remove markdown bolding
+            'topic': channel.topic.split('\n')[0].replace('**', '') if channel.topic else '',  # Remove markdown bolding
             'messages': messages
         }
 
