@@ -24,9 +24,9 @@ def human_join(seq: list, delim: str=', ', final: str=' & ') -> str:
     elif size == 1:
         return seq[0]
     elif size == 2:
-        return f'{seq[0]} {final} {seq[1]}'
+        return seq[0] + final + seq[1]
     else:
-        return f'{delim.join(seq[:-1])} {final} {seq[-1]}'
+        return delim.join(seq[:-1]) + final + seq[-1]
 
 async def run_process(cmd: str) -> Tuple[Optional[str], Optional[str]]:
     proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
