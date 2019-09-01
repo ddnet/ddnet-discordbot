@@ -14,15 +14,6 @@ from utils.misc import run_process
 CONFIRM = '\N{OK HAND SIGN}'
 
 
-def cleanup_code(content: str) -> str:
-    # remove ```py\n```
-    if content.startswith('```') and content.endswith('```'):
-        return '\n'.join(content.split('\n')[1:-1])
-
-    # remove `foo`
-    return content.strip('` \n')
-
-
 class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -82,7 +73,6 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
         env.update(globals())
 
-        body = cleanup_code(body)
         content = None
         stdout = StringIO()
 
@@ -124,18 +114,15 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
     @commands.command()
     async def sh(self, ctx: commands.Context, *, cmd: str):
-        async with ctx.typing():
-            stdout, stderr = await run_process(cmd)
+        await ctx.trigger_typing()
 
-        if stderr:
-            text = f'stdout:\n{stdout}\nstderr:\n{stderr}'
-        else:
-            text = stdout
+        stdout, stderr = await run_process(cmd)
 
-        if len(text) <= 1992:
-            msg = f'```\n{text}\n```'
+        content = f'$ {cmd}\n\nstdout:\n{stdout}\nstderr:\n{stderr}'
+        if len(content) <= 1992:
+            msg = f'```\n{content}\n```'
         else:
-            msg = await self.mystbin_upload(text)
+            msg = await self.mystbin_upload(content)
 
         await ctx.send(msg)
 

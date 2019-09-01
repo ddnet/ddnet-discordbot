@@ -279,8 +279,9 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             if stderr:
                 log.error('Failed to generate thumbnail of map %s: %s', filename, stderr)
             else:
+                preview = f'https://ddnet.tw/testmaps/?map={filename[:-4]}'
                 thumbnail = discord.File(f'{DIR}/thumbnails/{filename[:-4]}.png')
-                await map_chan.send(file=thumbnail)
+                await map_chan.send(preview, file=thumbnail)
 
         # Upload the map to DDNet test servers
         buf = BytesIO()

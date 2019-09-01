@@ -113,8 +113,8 @@ class Misc(commands.Cog):
     def get_uptime(self) -> str:
         return human_timedelta(datetime.utcnow() - self.bot.start_time)
 
-    @property
-    def invite(self) -> str:
+    @commands.command()
+    async def invite(self, ctx: commands.Context):
         perms = discord.Permissions.none()
         perms.send_messages = True
         perms.manage_messages = True
@@ -125,24 +125,19 @@ class Misc(commands.Cog):
         perms.external_emojis = True
         perms.add_reactions = True
         perms.manage_webhooks = True
-        return discord.utils.oauth_url(self.bot.user.id, permissions=perms)
+        invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms)
+        await ctx.send(f'<{invite}>')
 
-    async def get_latest_commit(self) -> str:
-        fmt = f'[`%h`]({GH_URL}/commit/%H) %s (%ar)'
-        stdout, _ = await run_process(f'git log -n 1 --format={fmt!r}')
+    async def get_latest_commits(self, num: int=3) -> str:
+        fmt = fr'[\`%h\`]({GH_URL}/commit/%H) %s (%ar)'
+        stdout, _ = await run_process(f'git log -{num} --format="{fmt}"')
         return stdout
 
     @commands.command()
     async def about(self, ctx: commands.Context):
         """Shows information about the bot"""
         title = 'Discord bot for DDraceNetwork'
-
-        commit = await self.get_latest_commit()
-        desc = f'[Website](https://ddnet.tw)\n' \
-               f'[Invite]({self.invite})\n' \
-               f'[GitHub]({GH_URL})\n' \
-               f'• {commit}'
-        embed = discord.Embed(title=title, description=desc, color=0xFEA500)
+        embed = discord.Embed(title=title, color=0xFEA500, url='https://ddnet.tw')
 
         embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url_as(format='png'))
 
@@ -157,6 +152,9 @@ class Misc(commands.Cog):
 
         latency = self.bot.latency * 1000
         embed.add_field(name='Bot', value=f'{self.get_uptime()} Uptime\n{latency:.2f}ms Latency')
+
+        commits = await self.get_latest_commits()
+        embed.add_field(name='Latest commits', value=commits)
 
         embed.set_footer(text='Made by jao#3750 with Python')
 
