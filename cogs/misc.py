@@ -10,9 +10,11 @@ import discord
 import psutil
 from discord.ext import commands
 
-from utils.text import truncate
+from utils.misc import run_process
 
 log = logging.getLogger(__name__)
+
+GH_URL = 'https://github.com/12pm/ddnet-discordbot'
 
 def get_weather_emoji(condition: int) -> str:
     # https://openweathermap.org/weather-conditions
@@ -125,17 +127,10 @@ class Misc(commands.Cog):
         perms.manage_webhooks = True
         return discord.utils.oauth_url(self.bot.user.id, permissions=perms)
 
-    async def get_latest_commit(self):
-        url = 'https://api.github.com/repos/12pm/ddnet-discordbot/commits/master'
-        async with self.bot.session.get(url) as resp:
-            js = await resp.json()
-            short_sha = js['sha'][:7]
-            html_url = js['html_url']
-            message = truncate(js['commit']['message'], length=50)
-            date = datetime.strptime(js['commit']['author']['date'], '%Y-%m-%dT%H:%M:%SZ')
-            delta = human_timedelta(datetime.utcnow() - date, accuracy=1)
-
-            return f'[`{short_sha}`]({html_url}) {message} ({delta} ago)'
+    async def get_latest_commit(self) -> str:
+        fmt = f'[`%h`]({GH_URL}/commit/%H) %s (%ar)'
+        stdout, _ = await run_process(f'git log -n 1 --format={fmt!r}')
+        return stdout
 
     @commands.command()
     async def about(self, ctx: commands.Context):
@@ -143,8 +138,11 @@ class Misc(commands.Cog):
         title = 'Discord bot for DDraceNetwork'
 
         commit = await self.get_latest_commit()
-        desc = f'[GitHub](https://github.com/12pm/ddnet-discordbot)\n{commit}\n\n[Invite]({self.invite})'
-        embed = discord.Embed(title=title, description=desc, color=0xFEA500, url='https://ddnet.tw/')
+        desc = f'[Website](https://ddnet.tw)\n' \
+               f'[Invite]({self.invite})\n' \
+               f'[GitHub]({GH_URL})\n' \
+               f'• {commit}'
+        embed = discord.Embed(title=title, description=desc, color=0xFEA500)
 
         embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url_as(format='png'))
 
