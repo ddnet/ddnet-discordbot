@@ -10,6 +10,8 @@ import discord
 import psutil
 from discord.ext import commands
 
+from utils.text import truncate
+
 log = logging.getLogger(__name__)
 
 def get_weather_emoji(condition: int) -> str:
@@ -37,10 +39,7 @@ def get_weather_emoji(condition: int) -> str:
         return '\N{CLOUD}'
 
 def get_time_emoji(now: int, sunrise: int, sunset: int) -> str:
-    if sunrise <= now < sunset:
-        return '\N{SUN WITH FACE}'
-    else:
-        return '\N{FULL MOON WITH FACE}'
+    return '\N{SUN WITH FACE}' if sunrise <= now < sunset else '\N{FULL MOON WITH FACE}'
 
 
 class MemberBestMatch(commands.Converter):
@@ -76,6 +75,21 @@ class WeatherError(RuntimeError):
     pass
 
 
+def human_timedelta(delta: timedelta, accuracy=4) -> str:
+    hours, remainder = divmod(int(delta.total_seconds()), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    days, hours = divmod(hours, 24)
+
+    units = (
+        ('d', days),
+        ('h', hours),
+        ('m', minutes),
+        ('s', seconds),
+    )
+
+    return ' '.join([f'{v}{u}' for u, v in units if v > 0][:accuracy])
+
+
 class Misc(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -95,19 +109,7 @@ class Misc(commands.Cog):
             await after.add_reaction('🇺')
 
     def get_uptime(self) -> str:
-        delta = datetime.utcnow() - self.bot.start_time
-        hours, remainder = divmod(int(delta.total_seconds()), 3600)
-        minutes, seconds = divmod(remainder, 60)
-        days, hours = divmod(hours, 24)
-
-        units = (
-            ('d', days),
-            ('h', hours),
-            ('m', minutes),
-            ('s', seconds),
-        )
-
-        return ' '.join(f'{v}{u}' for u, v in units if v > 0)
+        return human_timedelta(datetime.utcnow() - self.bot.start_time)
 
     @property
     def invite(self) -> str:
@@ -123,11 +125,25 @@ class Misc(commands.Cog):
         perms.manage_webhooks = True
         return discord.utils.oauth_url(self.bot.user.id, permissions=perms)
 
+    async def get_latest_commit(self):
+        url = 'https://api.github.com/repos/12pm/ddnet-discordbot/commits/master'
+        async with self.bot.session.get(url) as resp:
+            js = await resp.json()
+            short_sha = js['sha'][:7]
+            html_url = js['html_url']
+            message = truncate(js['commit']['message'], length=50)
+            date = datetime.strptime(js['commit']['author']['date'], '%Y-%m-%dT%H:%M:%SZ')
+            delta = human_timedelta(datetime.utcnow() - date, accuracy=1)
+
+            return f'[`{short_sha}`]({html_url}) {message} ({delta} ago)'
+
     @commands.command()
     async def about(self, ctx: commands.Context):
         """Shows information about the bot"""
         title = 'Discord bot for DDraceNetwork'
-        desc = f'[GitHub](https://github.com/12pm/ddnet-discordbot) — [Invite]({self.invite})'
+
+        commit = await self.get_latest_commit()
+        desc = f'[GitHub](https://github.com/12pm/ddnet-discordbot)\n{commit}\n\n[Invite]({self.invite})'
         embed = discord.Embed(title=title, description=desc, color=0xFEA500, url='https://ddnet.tw/')
 
         embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url_as(format='png'))
