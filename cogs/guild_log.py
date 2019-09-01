@@ -8,7 +8,7 @@ from typing import List
 import discord
 from discord.ext import commands
 
-from utils.text import escape
+from utils.text import escape, truncate
 
 VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
 
@@ -113,8 +113,8 @@ class GuildLog(commands.Cog):
 
         desc = f'[Jump to message]({before.jump_url})'
         embed = discord.Embed(title='Message edited', description=desc, color=0xF5B942, timestamp=datetime.utcnow())
-        embed.add_field(name='Before', value=before.content, inline=False)
-        embed.add_field(name='After', value=after.content, inline=False)
+        embed.add_field(name='Before', value=truncate(before.content, length=1024), inline=False)
+        embed.add_field(name='After', value=truncate(after.content, length=1024), inline=False)
         embed.set_author(name=f'{author} → #{before.channel}', icon_url=author.avatar_url_as(format='png'))
         embed.set_footer(text=f'Author ID: {author.id} | Message ID: {before.id}')
 

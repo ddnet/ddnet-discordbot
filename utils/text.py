@@ -76,3 +76,6 @@ def unescape(text: str, markdown: bool=True, mentions: bool=True, custom_emojis:
         text = unescape_custom_emojis(text)
 
     return text
+
+def truncate(text: str, *, length: int) -> str:
+    return f'{text[:length - 3]}...' if len(text) > length else text
