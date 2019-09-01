@@ -126,7 +126,7 @@ class Memes(commands.Cog):
         return buf
 
     @commands.command()
-    async def clown(self, ctx: commands.Context, *, text1: str, text2: str, text3: str, text4: str):
+    async def clown(self, ctx: commands.Context, text1: str, text2: str, text3: str, text4: str):
         fn = partial(self.generate_clown, text1, text2, text3, text4)
         buf = await self.bot.loop.run_in_executor(None, fn)
         file = discord.File(buf, filename='clown.png')
