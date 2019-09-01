@@ -91,7 +91,7 @@ class Memes(commands.Cog):
         file = await self.executor('ohno', text)
         await ctx.send(file=file)
 
-    def generate_teebob(self, text: str):
+    def generate_teebob(self, text: str) -> BytesIO:
         base = Image.open('data/memes/teebob.png')
         canv = ImageDraw.Draw(base)
         font = ImageFont.truetype('data/ddnet-stats/fonts/normal.ttf', 40)
@@ -108,6 +108,28 @@ class Memes(commands.Cog):
         fn = partial(self.generate_teebob, text)
         buf = await self.bot.loop.run_in_executor(None, fn)
         file = discord.File(buf, filename='teebob.png')
+        await ctx.send(file=file)
+
+    def generate_clown(self, text1: str, text2: str, text3: str, text4: str) -> BytesIO:
+        base = Image.open('data/memes/clown.png')
+        canv = ImageDraw.Draw(base)
+        font = ImageFont.truetype('data/ddnet-stats/fonts/normal.ttf', 30)
+
+        canv.text((10, 10), wrap(font, text1, 310), fill='black', font=font)
+        canv.text((10, 180), wrap(font, text2, 310), fill='black', font=font)
+        canv.text((10, 360), wrap(font, text3, 310), fill='black', font=font)
+        canv.text((10, 530), wrap(font, text4, 310), fill='black', font=font)
+
+        buf = BytesIO()
+        base.save(buf, format='png')
+        buf.seek(0)
+        return buf
+
+    @commands.command()
+    async def clown(self, ctx: commands.Context, *, text1: str, text2: str, text3: str, text4: str):
+        fn = partial(self.generate_clown, text1, text2, text3, text4)
+        buf = await self.bot.loop.run_in_executor(None, fn)
+        file = discord.File(buf, filename='clown.png')
         await ctx.send(file=file)
 
 
