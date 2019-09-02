@@ -130,7 +130,7 @@ class Misc(commands.Cog):
 
     async def get_latest_commits(self, num: int=3) -> str:
         fmt = fr'[\`%h\`]({GH_URL}/commit/%H) %s (%ar)'
-        stdout, _ = await run_process(f'git log -{num} --format="{fmt}"')
+        stdout, _ = await run_process(f'git log master -{num} --no-merges --format="{fmt}"')
         return stdout
 
     @commands.command()
