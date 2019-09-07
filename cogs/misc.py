@@ -271,6 +271,8 @@ class Misc(commands.Cog):
     async def emojis(self, ctx: commands.Context):
         """Return a zip file with all guild emojis"""
         guild = ctx.guild
+        if not guild.emojis:
+            return await ctx.send('This guild doesn\'t own any emojis')
 
         buf = BytesIO()
         with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
