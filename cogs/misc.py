@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import zipfile
 from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Optional, Union
@@ -73,10 +74,6 @@ class MemberBestMatch(commands.Converter):
         return matches[0][1]
 
 
-class WeatherError(RuntimeError):
-    pass
-
-
 def human_timedelta(delta: timedelta, accuracy=4) -> str:
     hours, remainder = divmod(int(delta.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -130,7 +127,8 @@ class Misc(commands.Cog):
 
     async def get_latest_commits(self, num: int=3) -> str:
         fmt = fr'[\`%h\`]({GH_URL}/commit/%H) %s (%ar)'
-        stdout, _ = await run_process(f'git log master -{num} --no-merges --format="{fmt}"')
+        cmd = f'git log master -{num} --no-merges --format="{fmt}"'
+        stdout, _ = await run_process(cmd)
         return stdout
 
     @commands.command()
@@ -203,20 +201,23 @@ class Misc(commands.Cog):
         }
 
         async with self.bot.session.get(url, params=params) as resp:
-            status = resp.status
             js = await resp.json()
-            if status == 200:
+            if resp.status == 200:
                 return js
-            elif status == 404:
-                raise WeatherError('Could not find that city')
+            elif resp.status == 404:
+                raise RuntimeError('Could not find that city')
             else:
-                log.error('Failed to retrieve weather data for %r: %s (status code: %d)', city, js['message'], status)
-                raise WeatherError('Could not retrieve data')
+                fmt = 'Failed to fetch weather data for %r: %s (status code: %d %s)'
+                log.error(fmt, city, js['message'], resp.status, resp.reason)
+                raise RuntimeError('Could not fetch weather information')
 
     @commands.command()
     async def weather(self, ctx: commands.Context, *, city: str):
         """Shows weather information of a city"""
-        data = await self.fetch_weather_data(city)
+        try:
+            data = await self.fetch_weather_data(city)
+        except RuntimeError as exc:
+            return await ctx.send(exc)
 
         city = data['name']
         country = data['sys']['country']
@@ -242,7 +243,11 @@ class Misc(commands.Cog):
     async def time(self, ctx: commands.Context, *, city: str):
         """Shows the time and date of a city"""
         now = datetime.utcnow()
-        data = await self.fetch_weather_data(city)
+
+        try:
+            data = await self.fetch_weather_data(city)
+        except RuntimeError as exc:
+            return await ctx.send(exc)
 
         offset = data['timezone']
         utc = offset / 60 / 60
@@ -254,16 +259,30 @@ class Misc(commands.Cog):
 
         await ctx.send(f'{emoji} **{time.strftime("%d/%m/%Y %H:%M:%S")}** (UTC {utc:+})')
 
-    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        if isinstance(error, commands.CommandInvokeError) and isinstance(error.original, WeatherError):
-            await ctx.send(error.original)
-
     @commands.command(aliases=['c'])
     async def cringe(self, ctx: commands.Context, *, user: Optional[MemberBestMatch]):
         """Shows a message by the cringe lord"""
         content = user.mention if user else None
         file = discord.File('data/cringe.png')
         await ctx.send(content, file=file)
+
+    @commands.command()
+    @commands.guild_only()
+    async def emojis(self, ctx: commands.Context):
+        """Return a zip file with all guild emojis"""
+        guild = ctx.guild
+
+        buf = BytesIO()
+        with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+            for emoji in guild.emojis:
+                ext = 'gif' if emoji.animated else 'png'
+                bytes_ = await emoji.url.read()
+                zf.writestr(f'{emoji.name}.{ext}', bytes_)
+
+        buf.seek(0)
+
+        file = discord.File(buf, f'emojis_{guild}.zip')
+        await ctx.send(file=file)
 
 
 def setup(bot: commands.Bot):
