@@ -269,22 +269,32 @@ class Misc(commands.Cog):
     @commands.command()
     @commands.guild_only()
     async def emojis(self, ctx: commands.Context):
-        """Return a zip file with all guild emojis"""
+        """Returns a zip file with all guild emojis"""
         guild = ctx.guild
         if not guild.emojis:
             return await ctx.send('This guild doesn\'t own any emojis')
 
-        buf = BytesIO()
-        with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+        async with ctx.typing():
+            count = [0, 0]
+            emojis = []  # can't be a dict since emoji names aren't unique
             for emoji in guild.emojis:
+                count[emoji.animated] += 1
                 ext = 'gif' if emoji.animated else 'png'
-                bytes_ = await emoji.url.read()
-                zf.writestr(f'{emoji.name}.{ext}', bytes_)
+                data = await emoji.url.read()
+                emojis.append((f'{emoji.name}.{ext}', data))
 
-        buf.seek(0)
+            limit = guild.emoji_limit
+            msg = f'Static: {count[0]}/{limit} Animated: {count[1]}/{limit}'
 
-        file = discord.File(buf, f'emojis_{guild}.zip')
-        await ctx.send(file=file)
+            buf = BytesIO()
+            with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+                for emoji in emojis:
+                    zf.writestr(*emoji)
+
+            buf.seek(0)
+            file = discord.File(buf, f'emojis_{guild}.zip')
+
+            await ctx.send(msg, file=file)
 
 
 def setup(bot: commands.Bot):
