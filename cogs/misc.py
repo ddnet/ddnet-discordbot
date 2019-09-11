@@ -5,7 +5,6 @@ import logging
 import zipfile
 from datetime import datetime, timedelta
 from io import BytesIO
-from typing import Optional, Union
 
 import discord
 import psutil
@@ -40,39 +39,11 @@ def get_weather_emoji(condition: int) -> str:
     elif 801 <= condition < 810:
         # Clouds
         return '\N{CLOUD}'
+    else:
+        return ''
 
 def get_time_emoji(now: int, sunrise: int, sunset: int) -> str:
     return '\N{SUN WITH FACE}' if sunrise <= now < sunset else '\N{FULL MOON WITH FACE}'
-
-
-class MemberBestMatch(commands.Converter):
-    async def convert(self, ctx: commands.Context, argument: str) -> discord.Member:
-        if not ctx.guild:
-            raise commands.BadArgument('Not in a guild context')
-
-        argument = argument.lower()
-        matches = {}
-
-        # lookup by nickname first
-        for member in ctx.guild.members:
-            if not member.nick:
-                continue
-
-            nick = member.nick.lower()
-            if argument in nick and nick not in matches:
-                matches[nick] = member
-
-        for member in ctx.guild.members:
-            name = member.name.lower()
-            if argument in name and name not in matches:
-                matches[name] = member
-
-        if not matches:
-            raise commands.BadArgument('Could not find a matching member')
-
-        matches = sorted(matches.items(), key=lambda m: (m[0].index(argument), m[0]))
-        return matches[0][1]
-
 
 def human_timedelta(delta: timedelta, accuracy=4) -> str:
     hours, remainder = divmod(int(delta.total_seconds()), 3600)
@@ -92,20 +63,7 @@ def human_timedelta(delta: timedelta, accuracy=4) -> str:
 class Misc(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.gays = ('gay', 'ur gay', 'you\'re gay', 'you are gay')
         self.process = psutil.Process()
-
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        if message.content.lower() in self.gays:
-            await message.add_reaction('<:no:389587856093478915>')
-            await message.add_reaction('🇺')
-
-    @commands.Cog.listener()
-    async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        if before.content.lower() not in self.gays and after.content.lower() in self.gays:
-            await after.add_reaction('<:no:389587856093478915>')
-            await after.add_reaction('🇺')
 
     def get_uptime(self) -> str:
         return human_timedelta(datetime.utcnow() - self.bot.start_time)
@@ -175,7 +133,7 @@ class Misc(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def avatar(self, ctx: commands.Context, *, user: Union[discord.Member, discord.User]=None):
+    async def avatar(self, ctx: commands.Context, *, user: discord.User=None):
         """Shows the avatar of a user"""
         await ctx.trigger_typing()
 
@@ -190,7 +148,7 @@ class Misc(commands.Cog):
 
     @avatar.error
     async def avatar_error(self, ctx: commands.Context, error: commands.CommandError):
-        if isinstance(error, commands.BadUnionArgument):
+        if isinstance(error, commands.BadArgument):
             await ctx.send('Could not find that user')
 
     async def fetch_weather_data(self, city: str) -> dict:
@@ -255,16 +213,9 @@ class Misc(commands.Cog):
         time = now + timedelta(seconds=offset)
         sunrise = data['sys']['sunrise']
         sunset = data['sys']['sunset']
-        emoji = get_time_emoji(now.timestamp(), sunrise, sunset)
+        emoji = get_time_emoji(int(now.timestamp()), sunrise, sunset)
 
         await ctx.send(f'{emoji} **{time.strftime("%d/%m/%Y %H:%M:%S")}** (UTC {utc:+})')
-
-    @commands.command(aliases=['c'])
-    async def cringe(self, ctx: commands.Context, *, user: Optional[MemberBestMatch]):
-        """Shows a message by the cringe lord"""
-        content = user.mention if user else None
-        file = discord.File('data/cringe.png')
-        await ctx.send(content, file=file)
 
     @commands.command()
     @commands.guild_only()
