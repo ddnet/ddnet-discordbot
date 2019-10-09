@@ -57,12 +57,10 @@ class GuildLog(commands.Cog):
         await self.join_chan.send(msg)
 
     async def log_message(self, message: discord.Message):
-        author = message.author
-
         if not message.guild or message.guild != self.guild:
             return
 
-        if message.type is not discord.MessageType.default:
+        if message.type is not discord.MessageType.default: # TODO d.py 1.3: if message.is_system()
             return
 
         embed = discord.Embed(title='Message deleted', description=message.content, color=0xDD2E44, timestamp=datetime.utcnow())
@@ -71,7 +69,7 @@ class GuildLog(commands.Cog):
         if message.attachments:
             attachment = message.attachments[0]
 
-            # Can only properly recover images
+            # can only properly recover images
             if attachment.filename.endswith(VALID_IMAGE_FORMATS):
                 buf = BytesIO()
                 try:
@@ -82,6 +80,7 @@ class GuildLog(commands.Cog):
                     file = discord.File(buf, filename=attachment.filename)
                     embed.set_image(url=f'attachment://{attachment.filename}')
 
+        author = message.author
         embed.set_author(name=f'{author} → #{message.channel}', icon_url=author.avatar_url_as(format='png'))
         embed.set_footer(text=f'Author ID: {author.id} | Message ID: {message.id}')
 
@@ -94,18 +93,16 @@ class GuildLog(commands.Cog):
     @commands.Cog.listener()
     async def on_bulk_message_delete(self, messages: List[discord.Message]):
         # sort by timestamp to make sure messages are logged in correct order
-        messages = sorted(messages, key=lambda m: m.created_at)
+        messages.sort(key=lambda m: m.created_at)
         for message in messages:
             await self.log_message(message)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        author = before.author
-
         if not after.guild or before.guild != self.guild:
             return
 
-        if before.type is not discord.MessageType.default:
+        if before.type is not discord.MessageType.default: # TODO d.py 1.3: if message.is_system()
             return
 
         if before.content == after.content:
@@ -113,27 +110,13 @@ class GuildLog(commands.Cog):
 
         desc = f'[Jump to message]({before.jump_url})'
         embed = discord.Embed(title='Message edited', description=desc, color=0xF5B942, timestamp=datetime.utcnow())
-        embed.add_field(name='Before', value=truncate(before.content, length=1024), inline=False)
-        embed.add_field(name='After', value=truncate(after.content, length=1024), inline=False)
+        embed.add_field(name='Before', value=truncate(before.content, length=1024) or '\u200b', inline=False)
+        embed.add_field(name='After', value=truncate(after.content, length=1024) or '\u200b', inline=False)
+        author = before.author
         embed.set_author(name=f'{author} → #{before.channel}', icon_url=author.avatar_url_as(format='png'))
         embed.set_footer(text=f'Author ID: {author.id} | Message ID: {before.id}')
 
         await self.log_chan.send(embed=embed)
-
-    @commands.Cog.listener()
-    async def on_guild_join(self, guild: discord.Guild):
-        embed = discord.Embed(title='Joined guild')
-        embed.add_field(name='Name', value=guild.name)
-        embed.add_field(name='ID', value=guild.id)
-
-
-        msg = f'📥 Joined guild **{escape(guild.name)}** ({guild.id}) with {(guild.member_count)} members'
-        await self.log_chan.send(msg)
-
-    @commands.Cog.listener()
-    async def on_guild_remove(self, guild: discord.Guild):
-        msg = f'📤 Left guild **{escape(guild.name)}** ({guild.id}) with {guild.member_count} members'
-        await self.log_chan.send(msg)
 
 
 def setup(bot: commands.Bot):
