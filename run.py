@@ -3,7 +3,6 @@
 
 import asyncio
 import logging
-import sys
 from configparser import ConfigParser
 from datetime import datetime
 
@@ -13,7 +12,7 @@ import uvloop
 
 from bot import DDNet
 
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+uvloop.install()
 loop = asyncio.get_event_loop()
 
 TIMESTAMP = datetime.utcnow().strftime('%Y-%m-%d_%H.%M.%S.%f')
