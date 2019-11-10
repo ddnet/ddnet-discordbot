@@ -119,8 +119,9 @@ class Misc(commands.Cog):
     @commands.command()
     async def commandstats(self, ctx: commands.Context):
         """Shows command stats"""
-        query = 'SELECT command, count(*) AS uses FROM stats_commands GROUP BY command ORDER BY uses DESC;'
+        query = 'SELECT command, COUNT(*) AS uses FROM stats_commands GROUP BY command ORDER BY uses DESC;'
         stats = await self.bot.pool.fetch(query)
+        stats = [s for s in stats if self.bot.get_command(s['command']) is not None]
 
         prefix = self.bot.command_prefix
         width = len(max((s['command'] for s in stats[:20]), key=len))
