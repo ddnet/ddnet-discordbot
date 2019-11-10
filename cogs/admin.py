@@ -56,7 +56,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
             if resp.status == 200:
                 return f'<https://mystb.in/{js["key"]}.py>'
             else:
-                return f'Failed uploading to mystbin: {js["message"]} (status code: {resp.status})'
+                return f'Failed uploading to mystbin: {js["message"]} (status code: {resp.status} {resp.reason})'
 
     @commands.command(name='eval')
     async def _eval(self, ctx: commands.Context, *, body: str):

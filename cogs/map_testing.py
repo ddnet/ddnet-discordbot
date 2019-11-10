@@ -89,12 +89,12 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         headers = {'X-DDNet-Token': self.bot.config.get('DDNET_UPLOAD', 'TOKEN')}
 
         async with self.bot.session.post(url, data=data, headers=headers) as resp:
-            status = resp.status
-            if status != 200:
+            if resp.status != 200:
                 text = await resp.text()
-                log.error('Failed to upload %s %s to ddnet.tw: %s (status code: %d)', asset_type, filename, text, status)
+                fmt = 'Failed uploading %s %r to ddnet.tw: %s (status code: %d %s)'
+                log.error(fmt, asset_type, filename, text, resp.status, resp.reason)
 
-            return status
+            return resp.status
 
     def is_staff(self, channel: discord.TextChannel, user: discord.Member) -> bool:
         return channel.permissions_for(user).manage_channels
