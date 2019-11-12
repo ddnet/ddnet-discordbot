@@ -19,6 +19,7 @@ initial_extensions = (
     'cogs.profile',
     'cogs.records',
     'cogs.testing_archiving',
+    'cogs.teeworlds',
     'cogs.votes',
 )
 
