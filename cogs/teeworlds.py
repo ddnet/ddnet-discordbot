@@ -71,7 +71,7 @@ class Server:
     def __init__(self, **kwargs):
         self.ip = kwargs.pop('ip')
         self.port = kwargs.pop('port')
-        self.host = kwargs.pop('host', self.ip)
+        self.host = kwargs.pop('host')
         self.name = kwargs.pop('name')
         self.map = kwargs.pop('map')
         self.map_url = kwargs.pop('map_url', None)
@@ -263,7 +263,7 @@ class Teeworlds(commands.Cog):
             return [Server(**s, timestamp=timestamp) for s in js]
 
     @commands.command()
-    async def find(self, ctx: commands.Context, *, player: str):
+    async def find(self, ctx: commands.Context, *, player: str=None):
         """Find a player on a DDNet server"""
         player = player or ctx.author.display_name
         for user in ctx.message.mentions:
