@@ -161,7 +161,7 @@ class ServerPaginator:
         self.current_page = 0
         self.num_pages = len(server.scoreboard.pages)
 
-        self.paginating = self.num_pages > 0
+        self.paginating = self.num_pages > 1
         self.emojis = {
             '\N{BLACK LEFT-POINTING TRIANGLE}': self.prev_page,
             '\N{BLACK RIGHT-POINTING TRIANGLE}': self.next_page
