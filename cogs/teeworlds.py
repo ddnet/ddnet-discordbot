@@ -245,6 +245,74 @@ class ServerPaginator:
         await self.show_page(page)
 
 
+Net = namedtuple('Net', 'rx tx')
+HW = namedtuple('HW', 'used total')
+
+
+class ServerStats:
+    __slots__ = ('name', 'domain', 'location', '_online', 'uptime', 'load',
+                 'network', 'packets', 'cpu', 'memory', 'swap', 'hdd')
+
+    def __init__(self, **kwargs):
+        self.name = kwargs.pop('name')
+        self.domain = kwargs.pop('type')
+        self.location = kwargs.pop('location')
+        self._online = kwargs.pop('online4')
+        self.uptime = kwargs.pop('uptime')
+        self.load = kwargs.pop('load')
+        self.network = Net(kwargs.pop('network_rx'), kwargs.pop('network_tx'))
+        self.packets = Net(kwargs.pop('packets_rx'), kwargs.pop('packets_tx'))
+        self.cpu = kwargs.pop('cpu')
+        self.memory = HW(kwargs.pop('memory_used'), kwargs.pop('memory_total'))
+        self.swap = HW(kwargs.pop('swap_used'), kwargs.pop('swap_total'))
+        self.hdd = HW(kwargs.pop('hdd_used'), kwargs.pop('hdd_total'))
+
+    def is_online(self) -> bool:
+        return self._online
+
+    def is_ddosed(self) -> bool:
+        return self.packets.rx > 5000
+
+    @property
+    def country(self) -> Optional[str]:
+        if not self.domain.endswith('.ddnet.tw'):
+            return
+
+        return self.domain.split('.')[0].upper()
+
+    @property
+    def flag(self) -> Optional[str]:
+        if self.country is None:
+            return
+
+        country_codes = {
+            'GER': '🇩🇪',
+            'RUS': '🇷🇺',
+            'CHL': '🇨🇱',
+            'USA': '🇺🇸',
+            'BRA': '🇧🇷',
+            'ZAF': '🇿🇦',
+            'CHN': '🇨🇳'
+        }
+
+        return country_codes.get(self.country, None)
+
+    def format(self):
+        line = [self.country or self.domain]
+
+        if not self._online:
+            line.append('`down`')
+        elif self.is_ddosed():
+            line.append('`ddosed`')
+        else:
+            line.append('`up`')
+
+        if self.flag is not None:
+            line = [self.flag] + line
+
+        return ' '.join(line)
+
+
 class Teeworlds(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -283,6 +351,26 @@ class Teeworlds(commands.Cog):
         paginator = ServerPaginator(ctx, server)
         await paginator.start_paginating()
 
+    async def fetch_stats(self) -> List[ServerStats]:
+        url = 'https://ddnet.tw/status/json/stats.json'
+        async with self.bot.session.get(url) as resp:
+            if resp.status != 200:
+                log.error('Failed to fetch DDNet server stats (status code: %d %s)', resp.status, resp.reason)
+                raise RuntimeError('Could not fetch DDNet stats')
+
+        js = await resp.json()
+
+        return [ServerStats(**s) for s in js['servers']]
+
+    @commands.command()
+    async def ddos(self, ctx: commands.Context):
+        try:
+            stats = await self.fetch_stats()
+        except RuntimeError as exc:
+            return await ctx.send(exc)
+
+        embed = discord.Embed(title='Server Status', description='\n'.join(s.format() for s in stats))
+        await ctx.send(embed=embed)
 
 def setup(bot: commands.Bot):
     bot.add_cog(Teeworlds(bot))
