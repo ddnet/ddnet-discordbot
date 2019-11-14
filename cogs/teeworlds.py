@@ -290,7 +290,7 @@ class ServerStats:
             'RUS': '🇷🇺',
             'CHL': '🇨🇱',
             'USA': '🇺🇸',
-            'BRA': '🇧🇷',
+            'BR': '🇧🇷',
             'ZAF': '🇿🇦',
             'CHN': '🇨🇳'
         }
@@ -369,7 +369,8 @@ class Teeworlds(commands.Cog):
         except RuntimeError as exc:
             return await ctx.send(exc)
 
-        embed = discord.Embed(title='Server Status', description='\n'.join(s.format() for s in stats))
+        desc = '\n'.join(s.format() for s in stats if s.domain != 'ddnet.tw')
+        embed = discord.Embed(title='Server Status', description=desc)
         await ctx.send(embed=embed)
 
 
