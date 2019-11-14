@@ -258,14 +258,16 @@ class ServerStats:
         self.domain = kwargs.pop('type')
         self.location = kwargs.pop('location')
         self._online = kwargs.pop('online4')
-        self.uptime = kwargs.pop('uptime')
-        self.load = kwargs.pop('load')
-        self.network = Net(kwargs.pop('network_rx'), kwargs.pop('network_tx'))
-        self.packets = Net(kwargs.pop('packets_rx'), kwargs.pop('packets_tx'))
-        self.cpu = kwargs.pop('cpu')
-        self.memory = HW(kwargs.pop('memory_used'), kwargs.pop('memory_total'))
-        self.swap = HW(kwargs.pop('swap_used'), kwargs.pop('swap_total'))
-        self.hdd = HW(kwargs.pop('hdd_used'), kwargs.pop('hdd_total'))
+
+        if self._online:
+            self.uptime = kwargs.pop('uptime')
+            self.load = kwargs.pop('load')
+            self.network = Net(kwargs.pop('network_rx'), kwargs.pop('network_tx'))
+            self.packets = Net(kwargs.pop('packets_rx'), kwargs.pop('packets_tx'))
+            self.cpu = kwargs.pop('cpu')
+            self.memory = HW(kwargs.pop('memory_used'), kwargs.pop('memory_total'))
+            self.swap = HW(kwargs.pop('swap_used'), kwargs.pop('swap_total'))
+            self.hdd = HW(kwargs.pop('hdd_used'), kwargs.pop('hdd_total'))
 
     def is_online(self) -> bool:
         return self._online
