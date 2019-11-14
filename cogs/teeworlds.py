@@ -274,11 +274,24 @@ class ServerStats:
         return self.packets.rx > 5000
 
     @property
+    def status(self) -> str:
+        if not self._online:
+            return 'down'
+        elif self.is_ddosed():
+            return 'ddosed'
+        else:
+            return 'up'
+
+    @property
     def country(self) -> Optional[str]:
         if not self.domain.endswith('.ddnet.tw'):
             return
 
-        return self.domain.split('.')[0].upper()
+        country = self.domain.split('.')[0].upper()
+        if country == 'BR':
+            country = 'BRA'
+
+        return country
 
     @property
     def flag(self) -> Optional[str]:
@@ -290,27 +303,15 @@ class ServerStats:
             'RUS': '🇷🇺',
             'CHL': '🇨🇱',
             'USA': '🇺🇸',
-            'BR': '🇧🇷',
+            'BRA': '🇧🇷',
             'ZAF': '🇿🇦',
             'CHN': '🇨🇳'
         }
 
-        return country_codes.get(self.country, None)
+        return country_codes.get(self.country, FLAG_UNK)
 
-    def format(self):
-        line = [self.country or self.domain]
-
-        if not self._online:
-            line.append('`down`')
-        elif self.is_ddosed():
-            line.append('`ddosed`')
-        else:
-            line.append('`up`')
-
-        if self.flag is not None:
-            line = [self.flag] + line
-
-        return ' '.join(line)
+    def format(self) -> str:
+        return f'{self.flag} {self.country}: `{self.status}`'
 
 
 class Teeworlds(commands.Cog):
