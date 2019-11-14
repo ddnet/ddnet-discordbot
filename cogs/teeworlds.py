@@ -358,9 +358,9 @@ class Teeworlds(commands.Cog):
                 log.error('Failed to fetch DDNet server stats (status code: %d %s)', resp.status, resp.reason)
                 raise RuntimeError('Could not fetch DDNet stats')
 
-        js = await resp.json()
+            js = await resp.json()
 
-        return [ServerStats(**s) for s in js['servers']]
+            return [ServerStats(**s) for s in js['servers']]
 
     @commands.command()
     async def ddos(self, ctx: commands.Context):
@@ -371,6 +371,7 @@ class Teeworlds(commands.Cog):
 
         embed = discord.Embed(title='Server Status', description='\n'.join(s.format() for s in stats))
         await ctx.send(embed=embed)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Teeworlds(bot))
