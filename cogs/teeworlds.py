@@ -304,7 +304,7 @@ class ServerInfo:
             return '' if pps < 0 else f'{pps} pps' if pps < 1000 else f'{round(pps / 1000, 2)} kpps'
 
         return f'{self.flag} `{self.country} | {self.status:^4} | ' \
-               f'▲ {humanize_pps(packets[0]):>11} | ▼ {humanize_pps(packets[1]):>11}`'
+               f'▲ {humanize_pps(self.packets[0]):>11} | ▼ {humanize_pps(self.packets[1]):>11}`'
 
 
 class ServerStatus:
