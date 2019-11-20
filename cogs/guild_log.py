@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import difflib
+import itertools
 from datetime import datetime
 from io import BytesIO
-from typing import List
+from typing import List, Tuple
 
 import discord
 from discord.ext import commands
 
-from utils.text import escape, truncate
+from utils.text import escape
 
 VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
 
@@ -97,6 +99,35 @@ class GuildLog(commands.Cog):
         for message in messages:
             await self.log_message(message)
 
+    def format_content_diff(self, before: str, after: str) -> Tuple[str, str]:
+        # https://github.com/python-discord/bot/pull/646
+        diff = difflib.ndiff(before.split(), after.split())
+        groups = [(t, [s[2:] for s in w]) for t, w in itertools.groupby(diff, key=lambda s: s[0])]
+
+        out_before = []
+        out_after = []
+        for index, (type_, words) in enumerate(groups):
+            sub = ' '.join(words)
+            if type_ == '-':
+                out_before.append(f'[{sub}](http://-)')
+            elif type_ == '+':
+                out_after.append(f'[{sub}](http://+)')
+            elif type_ == ' ':
+                if len(words) > 2:
+                    sub = ''
+                    if index > 0:
+                        sub += words[0]
+
+                    sub += ' ... '
+
+                    if index < len(groups):
+                        sub += words[-1]
+
+                out_before.append(sub)
+                out_after.append(sub)
+
+        return ' '.join(out_before), ' '.join(out_after)
+
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
         if not after.guild or before.guild != self.guild:
@@ -110,8 +141,11 @@ class GuildLog(commands.Cog):
 
         desc = f'[Jump to message]({before.jump_url})'
         embed = discord.Embed(title='Message edited', description=desc, color=0xF5B942, timestamp=datetime.utcnow())
-        embed.add_field(name='Before', value=truncate(before.content, length=1024) or '\u200b', inline=False)
-        embed.add_field(name='After', value=truncate(after.content, length=1024) or '\u200b', inline=False)
+
+        before, after = self.format_content_diff(before, after)
+        embed.add_field(name='Before', value=before, inline=False)
+        embed.add_field(name='After', value=after, inline=False)
+
         author = before.author
         embed.set_author(name=f'{author} → #{before.channel}', icon_url=author.avatar_url_as(format='png'))
         embed.set_footer(text=f'Author ID: {author.id} | Message ID: {before.id}')
