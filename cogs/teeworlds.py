@@ -273,7 +273,7 @@ class ServerInfo:
         self.host = kwargs.pop('type')
         self._online = kwargs.pop('online4')
 
-        self.packets = (kwargs.pop('packets_rx', -1), kwargs.pop('packets_tx'), -1)
+        self.packets = (kwargs.pop('packets_rx', -1), kwargs.pop('packets_tx', 1-))
 
     def is_online(self) -> bool:
         return self._online
