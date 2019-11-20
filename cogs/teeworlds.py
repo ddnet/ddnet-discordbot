@@ -282,7 +282,7 @@ class ServerInfo:
         return self.packets is not None and self.packets[0] > self.PPS_THRESHOLD
 
     @property
-    def status(self) -> Status:
+    def status(self) -> Status:  # noqa: F821
         if not self.is_online():
             return self.Status.DOWN
         elif self.is_under_attack():
