@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
+import enum
 import logging
 from collections import namedtuple
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import discord
 from discord.ext import commands
@@ -245,75 +246,85 @@ class ServerPaginator:
         await self.show_page(page)
 
 
-Net = namedtuple('Net', 'rx tx')
-HW = namedtuple('HW', 'used total')
+class ServerInfo:
+    __slots__ = ('host', '_online', 'packets')
 
+    PPS_THRESHOLD = 3000  # we usually get max 2 kpps legit traffic so this should be a safe threshold
 
-class ServerStats:
-    __slots__ = ('name', 'domain', 'location', '_online', 'uptime', 'load',
-                 'network', 'packets', 'cpu', 'memory', 'swap', 'hdd')
+    COUNTRYFLAGS = {
+        'GER': '🇩🇪',
+        'RUS': '🇷🇺',
+        'CHL': '🇨🇱',
+        'USA': '🇺🇸',
+        'BRA': '🇧🇷',
+        'ZAF': '🇿🇦',
+        'CHN': '🇨🇳',
+    }
+
+    class Status(enum.Enum):
+        UP          = 'up'
+        ATTACKED    = 'ddos'  # not necessarily correct but easy to understand
+        DOWN        = 'down'
+
+        def __str__(self) -> str:
+            return self.value
 
     def __init__(self, **kwargs):
-        self.name = kwargs.pop('name')
-        self.domain = kwargs.pop('type')
-        self.location = kwargs.pop('location')
+        self.host = kwargs.pop('type')
         self._online = kwargs.pop('online4')
 
-        if self._online:
-            self.uptime = kwargs.pop('uptime')
-            self.load = kwargs.pop('load')
-            self.network = Net(kwargs.pop('network_rx'), kwargs.pop('network_tx'))
-            self.packets = Net(kwargs.pop('packets_rx'), kwargs.pop('packets_tx'))
-            self.cpu = kwargs.pop('cpu')
-            self.memory = HW(kwargs.pop('memory_used'), kwargs.pop('memory_total'))
-            self.swap = HW(kwargs.pop('swap_used'), kwargs.pop('swap_total'))
-            self.hdd = HW(kwargs.pop('hdd_used'), kwargs.pop('hdd_total'))
+        self.packets = (kwargs.pop('packets_rx'), kwargs.pop('packets_tx')) if self._online else None
 
     def is_online(self) -> bool:
         return self._online
 
-    def is_ddosed(self) -> bool:
-        return self.packets.rx > 5000
+    def is_under_attack(self) -> bool:
+        return self.packets is not None and self.stats.packets[0] > self.PPS_THRESHOLD
 
     @property
-    def status(self) -> str:
-        if not self._online:
-            return 'down'
-        elif self.is_ddosed():
-            return 'ddosed'
+    def status(self) -> self.Status:
+        if not self.is_online():
+            return self.Status.DOWN
+        elif self.is_under_attack():
+            return self.Status.ATTACKED
         else:
-            return 'up'
+            return self.Status.UP
 
     @property
-    def country(self) -> Optional[str]:
-        if not self.domain.endswith('.ddnet.tw'):
-            return
-
-        country = self.domain.split('.')[0].upper()
-        if country == 'BR':
-            country = 'BRA'
-
-        return country
+    def country(self) -> str:
+        # monkey patch BRA so that country abbreviations are consistent
+        return self.host.split('.')[0].upper().replace('BR', 'BRA')
 
     @property
-    def flag(self) -> Optional[str]:
-        if self.country is None:
-            return
-
-        country_codes = {
-            'GER': '🇩🇪',
-            'RUS': '🇷🇺',
-            'CHL': '🇨🇱',
-            'USA': '🇺🇸',
-            'BRA': '🇧🇷',
-            'ZAF': '🇿🇦',
-            'CHN': '🇨🇳'
-        }
-
-        return country_codes.get(self.country, FLAG_UNK)
+    def flag(self) -> str:
+        return self.COUNTRYFLAGS.get(self.country, FLAG_UNK)
 
     def format(self) -> str:
-        return f'{self.flag} {self.country}: `{self.status}`'
+        fmt = f'{self.flag} {self.country}: `{self.status}`'
+
+        if self.packets is not None:
+            def humanize_pps(pps: int) -> str:
+                return f'{pps} pps' if pps < 1000 else f'{round(pps / 1000, 2)} kpps'
+
+            fmt += f' (▲ {humanize_pps(self.packets[0])} / ▼ {humanize_pps(self.packets[1])})'
+
+        return fmt
+
+
+class ServerStatus:
+    __slots__ = ('servers', 'timestamp')
+
+    URL = 'https://ddnet.tw/status/'
+
+    def __init__(self, servers: List[Dict], updated: int):
+        # drop ddnet.tw, we only care about game servers
+        self.servers = [ServerInfo(**s) for s in servers if s['name'] != 'DDNet.tw']
+        self.timestamp = datetime.utcfromtimestamp(updated)
+
+    @property
+    def embed(self) -> discord.Embed:
+        desc = '\n'.join(s.format() for s in self.servers)
+        return discord.Embed(title='Server Status', description=desc, url=self.url, timestamp=self.timestamp)
 
 
 class Teeworlds(commands.Cog):
@@ -354,7 +365,7 @@ class Teeworlds(commands.Cog):
         paginator = ServerPaginator(ctx, server)
         await paginator.start_paginating()
 
-    async def fetch_stats(self) -> List[ServerStats]:
+    async def fetch_stats(self) -> ServerStatus:
         url = 'https://ddnet.tw/status/json/stats.json'
         async with self.bot.session.get(url) as resp:
             if resp.status != 200:
@@ -363,18 +374,17 @@ class Teeworlds(commands.Cog):
 
             js = await resp.json()
 
-            return [ServerStats(**s) for s in js['servers']]
+            return ServerStatus(**js)
 
     @commands.command()
     async def ddos(self, ctx: commands.Context):
+        """Display DDNet server status"""
         try:
-            stats = await self.fetch_stats()
+            status = await self.fetch_stats()
         except RuntimeError as exc:
-            return await ctx.send(exc)
-
-        desc = '\n'.join(s.format() for s in stats if s.domain != 'ddnet.tw')
-        embed = discord.Embed(title='Server Status', description=desc)
-        await ctx.send(embed=embed)
+            await ctx.send(exc)
+        else:
+            await ctx.send(embed=status.embed)
 
 
 def setup(bot: commands.Bot):
