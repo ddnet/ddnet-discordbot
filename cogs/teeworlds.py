@@ -316,10 +316,10 @@ class ServerStatus:
 
     URL = 'https://ddnet.tw/status/'
 
-    def __init__(self, servers: List[Dict], updated: int):
+    def __init__(self, servers: List[Dict], updated: str):
         # drop ddnet.tw, we only care about game servers
         self.servers = [ServerInfo(**s) for s in servers if s['name'] != 'DDNet.tw']
-        self.timestamp = datetime.utcfromtimestamp(updated)
+        self.timestamp = datetime.utcfromtimestamp(float(updated))
 
     @property
     def embed(self) -> discord.Embed:
