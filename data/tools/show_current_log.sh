@@ -1,2 +1,2 @@
 #! /usr/bin/zsh
-vim $(ls -t *.log | head -1)
+vim $(ls -t ~/ddnet-discordbot/logs/*.log | head -1)
