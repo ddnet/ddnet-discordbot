@@ -324,7 +324,7 @@ class ServerStatus:
     @property
     def embed(self) -> discord.Embed:
         desc = '\n'.join(s.format() for s in self.servers)
-        return discord.Embed(title='Server Status', description=desc, url=self.url, timestamp=self.timestamp)
+        return discord.Embed(title='Server Status', description=desc, url=self.URL, timestamp=self.timestamp)
 
 
 class Teeworlds(commands.Cog):
