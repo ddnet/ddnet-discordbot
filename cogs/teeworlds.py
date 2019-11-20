@@ -273,13 +273,13 @@ class ServerInfo:
         self.host = kwargs.pop('type')
         self._online = kwargs.pop('online4')
 
-        self.packets = (kwargs.pop('packets_rx'), kwargs.pop('packets_tx')) if self._online else None
+        self.packets = (kwargs.pop('packets_rx', -1), kwargs.pop('packets_tx'), -1)
 
     def is_online(self) -> bool:
         return self._online
 
     def is_under_attack(self) -> bool:
-        return self.packets is not None and self.packets[0] > self.PPS_THRESHOLD
+        return self.packets[0] > self.PPS_THRESHOLD
 
     @property
     def status(self) -> Status:  # noqa: F821
@@ -301,14 +301,10 @@ class ServerInfo:
 
     def format(self) -> str:
         def humanize_pps(pps: int) -> str:
-            return f'{pps} pps' if pps < 1000 else f'{round(pps / 1000, 2)} kpps'
+            return '' if pps < 0 else f'{pps} pps' if pps < 1000 else f'{round(pps / 1000, 2)} kpps'
 
-        if self.packets is None:
-            packets = ('', '')
-        else:
-            packets = (humanize_pps(self.packets[0]), humanize_pps(self.packets[1]))
-
-        return f'{self.flag} `{self.country} | {self.status:^4} | ▲ {packets[0]:>10} | ▼ {packets[1]:>10}`'
+        return f'{self.flag} `{self.country} | {self.status:^4} | ' \
+               f'▲ {humanize_pps(packets[0]):>11} | ▼ {humanize_pps(packets[1]):>11}`'
 
 
 class ServerStatus:
