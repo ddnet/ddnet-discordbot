@@ -100,7 +100,7 @@ class GuildLog(commands.Cog):
             await self.log_message(message)
 
     def format_content_diff(self, before: str, after: str) -> Tuple[str, str]:
-        # https://github.com/python-discord/bot/pull/646
+        # taken from https://github.com/python-discord/bot/pull/646
         diff = difflib.ndiff(before.split(), after.split())
         groups = [(t, [s[2:] for s in w]) for t, w in itertools.groupby(diff, key=lambda s: s[0])]
 
@@ -142,9 +142,9 @@ class GuildLog(commands.Cog):
         desc = f'[Jump to message]({before.jump_url})'
         embed = discord.Embed(title='Message edited', description=desc, color=0xF5B942, timestamp=datetime.utcnow())
 
-        before, after = self.format_content_diff(before, after)
-        embed.add_field(name='Before', value=before, inline=False)
-        embed.add_field(name='After', value=after, inline=False)
+        before_content, after_content = self.format_content_diff(before.content, after.content)
+        embed.add_field(name='Before', value=before_content, inline=False)
+        embed.add_field(name='After', value=after_content, inline=False)
 
         author = before.author
         embed.set_author(name=f'{author} → #{before.channel}', icon_url=author.avatar_url_as(format='png'))
