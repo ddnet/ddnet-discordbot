@@ -300,15 +300,15 @@ class ServerInfo:
         return self.COUNTRYFLAGS.get(self.country, FLAG_UNK)
 
     def format(self) -> str:
-        fmt = f'{self.flag} {self.country}: `{self.status}`'
+        def humanize_pps(pps: int) -> str:
+            return f'{pps} pps' if pps < 1000 else f'{round(pps / 1000, 2)} kpps'
 
-        if self.packets is not None:
-            def humanize_pps(pps: int) -> str:
-                return f'{pps} pps' if pps < 1000 else f'{round(pps / 1000, 2)} kpps'
+        if self.packets is None:
+            packets = ('', '')
+        else:
+            packets = (humanize_pps(self.packets[0]), humanize_pps(self.packets[1]))
 
-            fmt += f' (▲ {humanize_pps(self.packets[0])} / ▼ {humanize_pps(self.packets[1])})'
-
-        return fmt
+        return f'{self.flag} `{self.country} | {self.status:^4} | ▲ {packets[0]:>10} | ▼ {packets[1]:>10}`'
 
 
 class ServerStatus:
