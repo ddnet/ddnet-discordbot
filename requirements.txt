@@ -1,6 +1,6 @@
 Pillow
 asyncpg
-discord
+discord.py
 msgpack-python
 psutil
 requests
