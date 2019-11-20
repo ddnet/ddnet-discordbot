@@ -17,6 +17,8 @@ from utils.text import escape
 log = logging.getLogger(__name__)
 
 
+BASE_URL = 'https://ddnet.tw'
+
 class Player:
     __slots__ = ('name', 'clan', 'score', 'country', '_playing', 'url')
 
@@ -26,7 +28,11 @@ class Player:
         self.score = kwargs.pop('score')
         self.country = kwargs.pop('country')
         self._playing = kwargs.pop('playing')
-        self.url = kwargs.pop('url', None)
+
+        try:
+            self.url = BASE_URL + kwargs.pop('url')
+        except KeyError:
+            self.url = None
 
     def is_playing(self) -> bool:
         return self._playing
@@ -66,8 +72,8 @@ Scoreboard = namedtuple('Scoreboard', 'title pages')
 
 
 class Server:
-    __slots__ = ('ip', 'port', 'host', 'name', 'map', 'map_url', 'gametype',
-                 'max_players', 'max_clients', '_clients', 'timestamp')
+    __slots__ = ('ip', 'port', 'host', 'name', 'map', 'gametype', 'max_players',
+                 'max_clients', '_clients', 'timestamp', 'map_url')
 
     def __init__(self, **kwargs):
         self.ip = kwargs.pop('ip')
@@ -75,12 +81,16 @@ class Server:
         self.host = kwargs.pop('host')
         self.name = kwargs.pop('name')
         self.map = kwargs.pop('map')
-        self.map_url = kwargs.pop('map_url', None)
         self.gametype = kwargs.pop('gametype')
         self.max_players = kwargs.pop('max_players')
         self.max_clients = kwargs.pop('max_clients')
         self._clients = [Player(**p) for p in kwargs.pop('players')]
-        self.timestamp = kwargs.pop('timestamp')
+        self.timestamp = datetime.utcfromtimestamp(kwargs.pop('timestamp'))
+
+        try:
+            self.map_url = BASE_URL + kwargs.pop('map_url')
+        except KeyError:
+            self.map_url = None
 
     def __contains__(self, item) -> bool:
         return any(p.name == item and p.is_connected() for p in self._clients)
@@ -310,7 +320,7 @@ class ServerInfo:
 class ServerStatus:
     __slots__ = ('servers', 'timestamp')
 
-    URL = 'https://ddnet.tw/status/'
+    URL = f'{BASE_URL}/status/'
 
     def __init__(self, servers: List[Dict], updated: str):
         # drop ddnet.tw, we only care about game servers
@@ -328,17 +338,15 @@ class Teeworlds(commands.Cog):
         self.bot = bot
 
     async def fetch_status(self) -> List[Server]:
-        url = 'https://ddnet.tw/status/index.json'
+        url = f'{BASE_URL}/status/index.json'
         async with self.bot.session.get(url) as resp:
             if resp.status != 200:
                 log.error('Failed to fetch DDNet status data (status code: %d %s)', resp.status, resp.reason)
                 raise RuntimeError('Could not fetch DDNet status')
 
-            # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified
-            timestamp = datetime.strptime(resp.headers['Last-Modified'], '%a, %d %b %Y %H:%M:%S GMT')
             js = await resp.json()
 
-            return [Server(**s, timestamp=timestamp) for s in js]
+            return [Server(**s) for s in js]
 
     @commands.command()
     async def find(self, ctx: commands.Context, *, player: str=None):
@@ -362,7 +370,7 @@ class Teeworlds(commands.Cog):
         await paginator.start_paginating()
 
     async def fetch_stats(self) -> ServerStatus:
-        url = 'https://ddnet.tw/status/json/stats.json'
+        url = f'{BASE_URL}/status/json/stats.json'
         async with self.bot.session.get(url) as resp:
             if resp.status != 200:
                 log.error('Failed to fetch DDNet server stats (status code: %d %s)', resp.status, resp.reason)
