@@ -279,7 +279,7 @@ class ServerInfo:
         return self._online
 
     def is_under_attack(self) -> bool:
-        return self.packets is not None and self.stats.packets[0] > self.PPS_THRESHOLD
+        return self.packets is not None and self.packets[0] > self.PPS_THRESHOLD
 
     @property
     def status(self) -> Status:
