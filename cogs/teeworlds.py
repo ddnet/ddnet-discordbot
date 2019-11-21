@@ -272,12 +272,12 @@ class ServerInfo:
     }
 
     class Status(enum.Enum):
-        UP          = 'up'
-        ATTACKED    = 'ddos'  # not necessarily correct but easy to understand
-        DOWN        = 'down'
+        UP      = enum.auto()
+        DDOS    = enum.auto()  # not necessarily correct but easy to understand
+        DOWN    = enum.auto()
 
         def __str__(self) -> str:
-            return self.value
+            return self.name.lower()
 
     def __init__(self, **kwargs):
         self.host = kwargs.pop('type')
@@ -296,7 +296,7 @@ class ServerInfo:
         if not self.is_online():
             return self.Status.DOWN
         elif self.is_under_attack():
-            return self.Status.ATTACKED
+            return self.Status.DDOS
         else:
             return self.Status.UP
 
@@ -311,10 +311,15 @@ class ServerInfo:
 
     def format(self) -> str:
         def humanize_pps(pps: int) -> str:
-            return '' if pps < 0 else f'{pps} pps' if pps < 1000 else f'{round(pps / 1000, 2)} kpps'
+            if pps < 0:
+                return ''
+            elif pps < 1000:
+                return str(pps)
+            else:
+                return f'{round(pps / 1000, 2)}k'
 
-        return f'{self.flag} `{self.country} | {self.status:^4} | ' \
-               f'▲ {humanize_pps(self.packets[0]):>11} | ▼ {humanize_pps(self.packets[1]):>11}`'
+        return f'{self.flag} `{self.country:^3}|{self.status:^4}|' \
+               f'{humanize_pps(self.packets[0]):>7}|{humanize_pps(self.packets[1]):>7}`'
 
 
 class ServerStatus:
@@ -329,7 +334,8 @@ class ServerStatus:
 
     @property
     def embed(self) -> discord.Embed:
-        desc = '\n'.join(s.format() for s in self.servers)
+        header = f'{FLAG_UNK} `srv| +- | ▲ pps | ▼ pps `'
+        desc = '\n'.join([header] + [s.format() for s in self.servers])
         return discord.Embed(title='Server Status', description=desc, url=self.URL, timestamp=self.timestamp)
 
 
