@@ -16,6 +16,13 @@ from utils.misc import human_join, run_process, sanitize
 
 log = logging.getLogger(__name__)
 
+CAT_MAP_TESTING     = 449352010072850443
+CAT_EVALUATED_MAPS  = 462954029643989003
+CHAN_INFO           = 455392314173554688
+CHAN_SUBMIT_MAPS    = 455392372663123989
+ROLE_TESTING        = 455814387169755176
+WH_MAP_RELEASES     = 345299155381649408
+
 DIR = 'data/map-testing'
 
 SERVER_TYPES = {
@@ -37,35 +44,6 @@ def has_map_file(message: discord.Message) -> bool:
 class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.guild = self.bot.guild
-
-    @property
-    def mt_cat(self) -> discord.CategoryChannel:
-        return discord.utils.get(self.guild.categories, name='Map Testing')
-
-    @property
-    def em_cat(self) -> discord.CategoryChannel:
-        return discord.utils.get(self.guild.categories, name='Evaluated Maps')
-
-    @property
-    def announce_chan(self) -> discord.TextChannel:
-        return discord.utils.get(self.guild.text_channels, name='announcements')
-
-    @property
-    def log_chan(self) -> discord.TextChannel:
-        return discord.utils.get(self.guild.text_channels, name='logs')
-
-    @property
-    def tinfo_chan(self) -> discord.TextChannel:
-        return discord.utils.get(self.guild.text_channels, name='📌info')
-
-    @property
-    def submit_chan(self) -> discord.TextChannel:
-        return discord.utils.get(self.guild.text_channels, name='📬submit-maps')
-
-    @property
-    def testing_role(self) -> discord.Role:
-        return discord.utils.get(self.guild.roles, name='testing')
 
     async def upload_file(self, asset_type: str, file: BytesIO, filename: str) -> int:
         url = self.bot.config.get('DDNET_UPLOAD', 'URL')
@@ -100,9 +78,9 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         return channel.permissions_for(user).manage_channels
 
     def is_testing_channel(self, channel: discord.TextChannel, map_channel: bool=False) -> bool:
-        testing_channel = isinstance(channel, discord.TextChannel) and channel.category in (self.mt_cat, self.em_cat)
+        testing_channel = channel.category_id in (CAT_MAP_TESTING, CAT_EVALUATED_MAPS)
         if map_channel:
-            testing_channel = testing_channel and channel not in (self.tinfo_chan, self.submit_chan)
+            testing_channel = testing_channel and channel.id not in (CHAN_INFO, CHAN_SUBMIT_MAPS)
 
         return testing_channel
 
@@ -121,8 +99,10 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
     def get_map_channel(self, name: str) -> Optional[discord.TextChannel]:
         name = name.lower()
-        return discord.utils.find(lambda c: name == c.name[1:], self.mt_cat.text_channels) \
-            or discord.utils.find(lambda c: name == c.name[2:], self.em_cat.text_channels)
+        mt_cat = self.bot.get_channel(CAT_MAP_TESTING)
+        em_cat = self.bot.get_channel(CAT_EVALUATED_MAPS)
+        return discord.utils.find(lambda c: name == c.name[1:], mt_cat.text_channels) \
+            or discord.utils.find(lambda c: name == c.name[2:], em_cat.text_channels)
 
     def validate_map_submission(self, message: discord.Message) -> Optional[str]:
         details = self.format_map_details(message.content)
@@ -157,7 +137,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         channel = message.channel
         author = message.author
 
-        if channel == self.submit_chan:
+        if channel.id == CHAN_SUBMIT_MAPS:
             if has_map_file(message):
                 error = self.validate_map_submission(message)
                 if error:
@@ -203,13 +183,14 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
         data = payload.data
 
-        if int(data['channel_id']) != self.submit_chan.id:
+        if int(data['channel_id']) != CHAN_SUBMIT_MAPS:
             return
 
         if not ('attachments' in data and data['attachments'][0]['filename'].endswith('.map')):
             return
 
-        message = await self.submit_chan.fetch_message(payload.message_id)
+        chan = self.bot.get_channel(CHAN_SUBMIT_MAPS)
+        message = await chan.fetch_message(payload.message_id)
         if any(str(r.emoji) == '✅' for r in message.reactions):
             # Ignore already approved submissions
             return
@@ -241,7 +222,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         attachment = message.attachments[0]
         filename = attachment.filename
 
-        if channel == self.submit_chan:
+        if channel.id == CHAN_SUBMIT_MAPS:
             # Initial map submissions
             accept = discord.utils.find(lambda r: str(r.emoji) == '☑', message.reactions)
             if not accept:
@@ -261,9 +242,9 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             #                   manage_messages=True, manage_roles=True
             # - testing role:   read_messages = True
             # - Bot user:       read_messages=True, manage_messages=True
-            overwrites.update(self.mt_cat.overwrites)
+            overwrites.update(channel.category.overwrites)
 
-            map_chan = await self.mt_cat.create_text_channel(emoji + filename[:-4], overwrites=overwrites, topic=topic)
+            map_chan = await channel.category.create_text_channel(emoji + filename[:-4], overwrites=overwrites, topic=topic)
 
             await message.clear_reactions()
             await message.add_reaction('✅')
@@ -301,11 +282,11 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         user = channel.guild.get_member(payload.user_id)
 
         # General permissions
-        if channel == self.tinfo_chan and self.testing_role not in user.roles:
+        if channel.id == CHAN_INFO and not any(r.id == ROLE_TESTING for r in user.roles):
             await user.add_roles(self.testing_role)
 
         # Individual channel permissions
-        if channel == self.submit_chan:
+        if channel.id == CHAN_SUBMIT_MAPS:
             message = await channel.fetch_message(payload.message_id)
             map_name = message.attachments[0].filename[:-4]
             map_chan = self.get_map_channel(map_name)
@@ -325,11 +306,11 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         user = channel.guild.get_member(payload.user_id)
 
         # General permissions
-        if channel == self.tinfo_chan and self.testing_role in user.roles:
+        if channel.id == CHAN_INFO and any(r.id == ROLE_TESTING for r in user.roles):
             await user.remove_roles(self.testing_role)
 
         # Individual channel permissions
-        if channel == self.submit_chan:
+        if channel.id == CHAN_SUBMIT_MAPS:
             message = await channel.fetch_message(payload.message_id)
             map_name = message.attachments[0].filename[:-4]
             map_chan = self.get_map_channel(map_name)
@@ -349,7 +330,8 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             return
 
         name = channel.name[1:] if prev_emoji else channel.name
-        await channel.edit(name=emoji + name, category=self.em_cat)
+        cat = self.bot.get_channel(CAT_EVALUATED_MAPS)
+        await channel.edit(name=emoji + name, category=cat)
 
     @commands.command()
     async def ready(self, ctx: commands.Context):
@@ -363,10 +345,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
     @commands.Cog.listener('on_message')
     async def release(self, message: discord.Message):
-        if message.channel != self.announce_chan:
-            return
-
-        if not message.webhook_id:
+        if message.webhook_id != WH_MAP_RELEASES:
             return
 
         map_url_re = r'\[(?P<name>.+)\]\(<https://ddnet\.tw/maps/\?map=.+?>\)'

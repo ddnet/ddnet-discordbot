@@ -32,15 +32,6 @@ class DDNet(commands.Bot):
         self.pool = kwargs.pop('pool')
         self.session = kwargs.pop('session')
 
-    @property
-    def guild(self) -> discord.Guild:
-        return self.get_guild(self.config.getint('GENERAL', 'GUILD'))
-
-    async def on_ready(self):
-        self.start_time = datetime.utcnow()
-        log.info('Logged in as %s (ID: %d)', self.user, self.user.id)
-
-        # TODO: move this to __init__
         for extension in initial_extensions:
             try:
                 self.load_extension(extension)
@@ -48,6 +39,14 @@ class DDNet(commands.Bot):
                 log.exception('Failed to load extension %r', extension)
             else:
                 log.info('Successfully loaded extension %r', extension)
+
+    @property
+    def guild(self) -> discord.Guild:
+        return self.get_guild(self.config.getint('GENERAL', 'GUILD'))
+
+    async def on_ready(self):
+        self.start_time = datetime.utcnow()
+        log.info('Logged in as %s (ID: %d)', self.user, self.user.id)
 
     async def on_resumed(self):
         log.info('Resumed')

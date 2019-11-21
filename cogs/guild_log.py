@@ -12,6 +12,10 @@ from discord.ext import commands
 
 from utils.text import escape
 
+CHAN_WELCOME    = 311192969493348362
+CHAN_JOIN_LEAVE = 255191476315750401
+CHAN_LOGS       = 364164149359411201
+
 VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
 
 
@@ -20,43 +24,25 @@ class GuildLog(commands.Cog):
         self.bot = bot
         self.guild = self.bot.guild
 
-    @property
-    def welcome_chan(self) -> discord.TextChannel:
-        return discord.utils.get(self.guild.text_channels, name='welcome')
-
-    @property
-    def join_chan(self) -> discord.TextChannel:
-        return discord.utils.get(self.guild.text_channels, name='join-leave')
-
-    @property
-    def log_chan(self) -> discord.TextChannel:
-        return discord.utils.get(self.guild.text_channels, name='logs')
-
-    @property
-    def eyes_emoji(self) -> discord.Emoji:
-        return discord.utils.get(self.guild.emojis, name='happy')
-
-    @property
-    def dotdot_emoji(self) -> discord.Emoji:
-        return discord.utils.get(self.guild.emojis, name='mmm')
-
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         if member.guild != self.guild or member.bot:
             return
 
         msg = f'📥 {member.mention}, Welcome to **DDraceNetwork\'s Discord**! ' \
-              f'Please make sure to read {self.welcome_chan.mention}. ' \
-              f'Have a great time here {self.eyes_emoji}'
-        await self.join_chan.send(msg)
+              f'Please make sure to read <#{CHAN_WELCOME}>. ' \
+               'Have a great time here <:happy:395753933089406976>'
+        chan = self.bot.get_channel(CHAN_JOIN_LEAVE)
+        await chan.send(msg)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         if member.guild != self.guild or member.bot:
             return
 
-        msg = f'📤 **{escape(str(member))}** just left the server {self.dotdot_emoji}'
-        await self.join_chan.send(msg)
+        msg = f'📤 **{escape(str(member))}** just left the server <:mmm:395753965410582538>'
+        chan = self.bot.get_channel(CHAN_JOIN_LEAVE)
+        await chan.send(msg)
 
     async def log_message(self, message: discord.Message):
         if not message.guild or message.guild != self.guild:
@@ -86,7 +72,8 @@ class GuildLog(commands.Cog):
         embed.set_author(name=f'{author} → #{message.channel}', icon_url=author.avatar_url_as(format='png'))
         embed.set_footer(text=f'Author ID: {author.id} | Message ID: {message.id}')
 
-        await self.log_chan.send(file=file, embed=embed)
+        chan = self.bot.get_channel(CHAN_LOGS)
+        await chan.send(file=file, embed=embed)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
@@ -150,7 +137,8 @@ class GuildLog(commands.Cog):
         embed.set_author(name=f'{author} → #{before.channel}', icon_url=author.avatar_url_as(format='png'))
         embed.set_footer(text=f'Author ID: {author.id} | Message ID: {before.id}')
 
-        await self.log_chan.send(embed=embed)
+        chan = self.bot.get_channel(CHAN_LOGS)
+        await chan.send(embed=embed)
 
 
 def setup(bot: commands.Bot):

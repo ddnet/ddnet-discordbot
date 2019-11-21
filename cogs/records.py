@@ -5,22 +5,16 @@ import discord
 from discord.ext import commands
 
 
+WH_RECORDS = 338945741714227201
+
 class Records(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.guild = self.bot.guild
         self.adapter = discord.AsyncWebhookAdapter(self.bot.session)
-
-    @property
-    def records_chan(self) -> discord.TextChannel:
-        return discord.utils.get(self.guild.text_channels, name='records')
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.channel != self.records_chan:
-            return
-
-        if message.webhook_id is None:
+        if message.webhook_id != WH_RECORDS:
             return
 
         query = 'SELECT id, token FROM records_webhooks;'
