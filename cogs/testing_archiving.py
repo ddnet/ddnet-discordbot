@@ -24,9 +24,10 @@ ROLE_RE = re.compile(r'<@&(\d+)>')
 class Archiving(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.guild = self.bot.guild
 
     async def gen_json(self, channel: discord.TextChannel) -> Tuple[str, dict]:
+        guild = channel.guild
+
         def process_multiline_codeblock(text: str) -> dict:
             return {
                 'multiline-codeblock': {
@@ -59,7 +60,7 @@ class Archiving(commands.Cog):
 
         async def process_user_mention(user_id: str) -> Optional[dict]:
             user_id = int(user_id)
-            user = self.guild.get_member(user_id) or self.bot.get_user(user_id)
+            user = guild.get_member(user_id) or self.bot.get_user(user_id)
             if not user:
                 try:
                     user = await self.bot.fetch_user(user_id)
@@ -71,7 +72,7 @@ class Archiving(commands.Cog):
 
             if isinstance(user, discord.Member):
                 roles = [
-                    'generic' if r == self.guild.default_role else r.name
+                    'generic' if r == guild.default_role else r.name
                     for r in user.roles[::-1]
                 ]
             else:
@@ -90,7 +91,7 @@ class Archiving(commands.Cog):
 
         async def process_channel_mention(channel_id: str) -> Optional[dict]:
             channel_id = int(channel_id)
-            channel = self.guild.get_channel(channel_id)
+            channel = guild.get_channel(channel_id)
             if not channel:
                 try:
                     channel = await self.bot.fetch_channel(channel_id)
@@ -100,12 +101,12 @@ class Archiving(commands.Cog):
             return {
                 'channel-mention': {
                     'name': channel.name,
-                    'highlight': channel.guild == self.bot.guild
+                    'highlight': channel.guild == guild
                 }
             }
 
         def process_role_mention(role_id: str) -> Optional[dict]:
-            role = self.guild.get_role(int(role_id))
+            role = guild.get_role(int(role_id))
             if not role:
                 return None
 
@@ -142,7 +143,7 @@ class Archiving(commands.Cog):
                     roles = ['generic']
                 else:
                     roles = [
-                        'generic' if r == self.guild.default_role else r.name
+                        'generic' if r == guild.default_role else r.name
                         for r in author.roles[::-1]
                     ]
             else:

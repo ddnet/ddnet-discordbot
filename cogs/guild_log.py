@@ -12,6 +12,7 @@ from discord.ext import commands
 
 from utils.text import escape
 
+GUILD_DDNET     = 252358080522747904
 CHAN_WELCOME    = 311192969493348362
 CHAN_JOIN_LEAVE = 255191476315750401
 CHAN_LOGS       = 364164149359411201
@@ -22,11 +23,10 @@ VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
 class GuildLog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.guild = self.bot.guild
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        if member.guild != self.guild or member.bot:
+        if member.guild.id != GUILD_DDNET or member.bot:
             return
 
         msg = f'📥 {member.mention}, Welcome to **DDraceNetwork\'s Discord**! ' \
@@ -37,7 +37,7 @@ class GuildLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
-        if member.guild != self.guild or member.bot:
+        if member.guild.id != GUILD_DDNET or member.bot:
             return
 
         msg = f'📤 **{escape(str(member))}** just left the server <:mmm:395753965410582538>'
@@ -45,7 +45,7 @@ class GuildLog(commands.Cog):
         await chan.send(msg)
 
     async def log_message(self, message: discord.Message):
-        if not message.guild or message.guild != self.guild:
+        if not message.guild or message.guild.id != GUILD_DDNET:
             return
 
         if message.type is not discord.MessageType.default: # TODO d.py 1.3: if message.is_system()
@@ -117,7 +117,7 @@ class GuildLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        if not after.guild or before.guild != self.guild:
+        if not after.guild or before.guild.id != GUILD_DDNET:
             return
 
         if before.type is not discord.MessageType.default: # TODO d.py 1.3: if message.is_system()

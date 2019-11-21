@@ -40,10 +40,6 @@ class DDNet(commands.Bot):
             else:
                 log.info('Successfully loaded extension %r', extension)
 
-    @property
-    def guild(self) -> discord.Guild:
-        return self.get_guild(self.config.getint('GENERAL', 'GUILD'))
-
     async def on_ready(self):
         self.start_time = datetime.utcnow()
         log.info('Logged in as %s (ID: %d)', self.user, self.user.id)
