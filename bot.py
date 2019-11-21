@@ -24,6 +24,10 @@ initial_extensions = (
 )
 
 
+def get_traceback(error: Exception) -> str:
+    return ''.join(traceback.format_exception(type(error), error, error.__traceback__))
+
+
 class DDNet(commands.Bot):
     def __init__(self, **kwargs):
         super().__init__(command_prefix='$', fetch_offline_members=True, help_command=commands.MinimalHelpCommand())
@@ -100,16 +104,14 @@ class DDNet(commands.Bot):
             except discord.Forbidden:
                 pass
         elif isinstance(error, commands.CommandInvokeError):
-            original = error.original
-            if isinstance(original, discord.Forbidden):
+            if isinstance(error.original, discord.Forbidden):
                 try:
                     await ctx.send('I do not have proper permission')
                 except discord.Forbidden:
                     pass
-            elif not (hasattr(command, 'on_error') or hasattr(command.cog, 'cog_command_error')):
-                # handle uncaught errors
-                exc = ''.join(traceback.format_exception(type(original), original, original.__traceback__))
-                log.error('Command %r caused an exception\n%s', command.qualified_name, exc)
+            else:
+                trace = get_traceback(error.original)
+                log.error('Command %r caused an exception\n%s', command.qualified_name, trace)
                 try:
                     await ctx.send('An internal error occurred')
                 except discord.Forbidden:
