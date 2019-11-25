@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-import enum
 import logging
 from collections import namedtuple
 from datetime import datetime
@@ -271,14 +270,6 @@ class ServerInfo:
         'CHN': '🇨🇳',
     }
 
-    class Status(enum.Enum):
-        UP      = enum.auto()
-        DDOS    = enum.auto()  # not necessarily correct but easy to understand
-        DOWN    = enum.auto()
-
-        def __str__(self) -> str:
-            return self.name.lower()
-
     def __init__(self, **kwargs):
         self.host = kwargs.pop('type')
         self._online = kwargs.pop('online4')
@@ -292,13 +283,13 @@ class ServerInfo:
         return self.packets[0] > self.PPS_THRESHOLD
 
     @property
-    def status(self) -> Status:  # noqa: F821
+    def status(self) -> str:
         if not self.is_online():
-            return self.Status.DOWN
+            return 'down'
         elif self.is_under_attack():
-            return self.Status.DDOS
+            return 'ddos'  # not necessarily correct but easy to understand
         else:
-            return self.Status.UP
+            return 'up'
 
     @property
     def country(self) -> str:
