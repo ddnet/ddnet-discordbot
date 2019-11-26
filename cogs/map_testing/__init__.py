@@ -7,8 +7,8 @@ from typing import Optional, Union
 import discord
 from discord.ext import commands
 
-from cogs.map_testing_new.log import TestLog
-from cogs.map_testing_new.submission import InitialSubmission, Submission, SubmissionState
+from cogs.map_testing.log import TestLog
+from cogs.map_testing.submission import InitialSubmission, Submission, SubmissionState
 from utils.text import sanitize
 
 log = logging.getLogger(__name__)
