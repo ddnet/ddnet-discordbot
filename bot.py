@@ -5,6 +5,7 @@ import logging
 import traceback
 from datetime import datetime
 
+import aiohttp
 import discord
 from discord.ext import commands
 
@@ -18,7 +19,6 @@ initial_extensions = (
     'cogs.misc',
     'cogs.profile',
     'cogs.records',
-    'cogs.testing_archiving',
     'cogs.teeworlds',
     'cogs.votes',
 )
@@ -98,24 +98,25 @@ class DDNet(commands.Bot):
         await self.register_command(ctx)
 
         command = ctx.command
+        msg = None
         if isinstance(error, commands.MissingRequiredArgument):
-            try:
-                await ctx.send(f'{self.command_prefix}{command.qualified_name} {command.signature}')
-            except discord.Forbidden:
-                pass
+            msg = f'{self.command_prefix}{command.qualified_name} {command.signature}'
         elif isinstance(error, commands.CommandInvokeError):
             if isinstance(error.original, discord.Forbidden):
-                try:
-                    await ctx.send('I do not have proper permission')
-                except discord.Forbidden:
-                    pass
+                msg = 'I do not have proper permission'
             else:
                 trace = get_traceback(error.original)
                 log.error('Command %r caused an exception\n%s', command.qualified_name, trace)
-                try:
-                    await ctx.send('An internal error occurred')
-                except discord.Forbidden:
-                    pass
+                if isinstance(error.original, aiohttp.ClientConnectorError):
+                    msg = 'Could not fetch/send data'
+                else:
+                    msg = 'An internal error occurred'
+
+        if msg is not None:
+            try:
+                await ctx.send(msg)
+            except discord.Forbidden:
+                pass
 
     async def on_error(self, event: str, *args, **kwargs):
         log.exception('Event %r caused an exception', event)

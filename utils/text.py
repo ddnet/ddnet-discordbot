@@ -79,3 +79,17 @@ def unescape(text: str, markdown: bool=True, mentions: bool=True, custom_emojis:
 
 def truncate(text: str, *, length: int) -> str:
     return f'{text[:length - 3]}...' if len(text) > length else text
+
+def human_join(seq: List[str], delim: str=', ', final: str=' & ') -> str:
+    size = len(seq)
+    if size == 0:
+        return ''
+    elif size == 1:
+        return seq[0]
+    elif size == 2:
+        return seq[0] + final + seq[1]
+    else:
+        return delim.join(seq[:-1]) + final + seq[-1]
+
+def sanitize(text: str) -> str:
+    return re.sub(r'[\^<>{}"/|;:,~!?@#$%^=&*\]\\()\[+]', '', text.replace(' ', '_'))

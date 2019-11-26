@@ -3,31 +3,10 @@
 
 import asyncio
 import os
-import re
 from asyncio.subprocess import PIPE
 from typing import Tuple
 
 SHELL = os.getenv('SHELL')
-
-def sanitize(name: str, channel_name: bool=False, case_insensitive: bool=True) -> str:
-    name = re.sub(r'[\^<>{}"/|;:,~!?@#$%^=&*\]\\()\[+]', '', name)
-    if channel_name:
-        name = name.replace(' ', '_')
-    if case_insensitive:
-        name = name.lower()
-
-    return name
-
-def human_join(seq: list, delim: str=', ', final: str=' & ') -> str:
-    size = len(seq)
-    if size == 0:
-        return ''
-    elif size == 1:
-        return seq[0]
-    elif size == 2:
-        return seq[0] + final + seq[1]
-    else:
-        return delim.join(seq[:-1]) + final + seq[-1]
 
 async def run_process(cmd: str, timeout: float=90.0) -> Tuple[str, str]:
     sequence = f'{SHELL} -c \'{cmd}\''
