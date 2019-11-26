@@ -50,7 +50,7 @@ def testing_check():
     return commands.check(predicate)
 
 
-class MapTesting(commands.Cog):
+class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         TestLog.bot = bot
