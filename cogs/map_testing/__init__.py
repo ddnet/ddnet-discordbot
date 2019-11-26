@@ -197,14 +197,13 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         channel = message.channel
 
         # delete system pin messages by ourself
-        if not (is_testing(channel) and is_pin(message) and author == self.bot.user):
-            return
+        bot_pin = is_testing(channel) and is_pin(message) and author == self.bot.user
 
         # delete messages without a map file by non staff in submit maps channel
-        if not (channel.id == CHAN_SUBMIT_MAPS and not has_map(message) and not is_staff(author, channel)):
-            return
+        non_submission = channel.id == CHAN_SUBMIT_MAPS and not has_map(message) and not is_staff(author, channel)
 
-        await message.delete()
+        if bot_pin or non_submission:
+            await message.delete()
 
     def get_map_channel(self, name: str) -> Optional[discord.TextChannel]:
         name = sanitize(name.lower())
