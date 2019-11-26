@@ -277,19 +277,19 @@ class MapTesting(commands.Cog):
 
     @commands.command()
     @testing_check()
-    async def reset_new(self, ctx: commands.Context):
+    async def reset(self, ctx: commands.Context):
         """Reset a map"""
         await self.move_map_channel(ctx.channel, state=MapState.TESTING)
 
     @commands.command()
     @testing_check()
-    async def ready_new(self, ctx: commands.Context):
+    async def ready(self, ctx: commands.Context):
         """Ready a map"""
         await self.move_map_channel(ctx.channel, state=MapState.READY)
 
     @commands.command()
     @testing_check()
-    async def decline_new(self, ctx: commands.Context):
+    async def decline(self, ctx: commands.Context):
         """Decline a map"""
         await self.move_map_channel(ctx.channel, state=MapState.DECLINED)
 
@@ -311,7 +311,7 @@ class MapTesting(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def archive_new(self, ctx: commands.Context, channel_id: int):
+    async def archive(self, ctx: commands.Context, channel_id: int):
         """Archive a map channel"""
         channel = self.bot.get_channel(channel_id)
         if channel is None:
@@ -349,7 +349,7 @@ class MapTesting(commands.Cog):
                     await self.ddnet_upload(asset_type, buf, filename)
                 except RuntimeError as exc:
                     failed.append(filename)
-                    pass
+                    continue
 
         msg = testlog.url
         if failed:
