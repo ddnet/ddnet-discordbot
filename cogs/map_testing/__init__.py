@@ -257,7 +257,6 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         await self.handle_perms(payload, 'remove')
 
     async def move_map_channel(self, channel: discord.TextChannel, *, state: MapState):
-        # TODO: sort channels
         prev_state = next((s for s in MapState if str(s) == channel.name[0]), MapState.TESTING)
         if prev_state is state:
             return
@@ -272,7 +271,18 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             category = self.bot.get_channel(CAT_EVALUATED_MAPS)
 
-        await channel.edit(name=str(state) + name, category=category)
+        state_channel = discord.find(lambda c: c.name[0] == str(state), category.text_channels)
+        if state_channel is None:
+            # move channel to the back
+            if category.text_channels:
+                position = category.text_channels[-1].position + 1
+            else:
+                position = 0
+        else:
+            # group channels by state
+            position = state_channel.position - 1
+
+        await channel.edit(name=str(state) + name, category=category, position=position)
 
     @commands.command()
     @testing_check()
@@ -306,7 +316,10 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         if map_channel is None:
             return
 
-        await self.move_map_channel(map_channel, state=MapState.RELEASED)
+        try:
+            await self.move_map_channel(map_channel, state=MapState.RELEASED)
+        except discord.Forbidden as exc:
+            log.error('Failed to move map channel #%s on release: %s', map_channel, exc.text)
 
     @commands.command()
     @commands.is_owner()
@@ -346,7 +359,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
                 buf = BytesIO(bytes_)
                 try:
                     await self.ddnet_upload(asset_type, buf, filename)
-                except RuntimeError as exc:
+                except RuntimeError:
                     failed.append(filename)
                     continue
 
