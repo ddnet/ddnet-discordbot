@@ -271,7 +271,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             category = self.bot.get_channel(CAT_EVALUATED_MAPS)
 
-        state_channel = discord.find(lambda c: c.name[0] == str(state), category.text_channels)
+        state_channel = discord.utils.find(lambda c: c.name[0] == str(state), category.text_channels)
         if state_channel is None:
             # move channel to the back
             if category.text_channels:
