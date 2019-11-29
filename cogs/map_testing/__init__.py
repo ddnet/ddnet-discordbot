@@ -271,18 +271,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             category = self.bot.get_channel(CAT_EVALUATED_MAPS)
 
-        state_channel = discord.utils.find(lambda c: c.name[0] == str(state), category.text_channels)
-        if state_channel is None:
-            # move channel to the back
-            if category.text_channels:
-                position = category.text_channels[-1].position + 1
-            else:
-                position = 0
-        else:
-            # group channels by state
-            position = state_channel.position - 1
-
-        await channel.edit(name=str(state) + name, category=category, position=position)
+        await channel.edit(name=str(state) + name, category=category)
 
     @commands.command()
     @testing_check()
