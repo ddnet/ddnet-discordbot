@@ -141,7 +141,10 @@ class Misc(commands.Cog):
         user = user or ctx.author
         avatar = user.avatar_url_as(static_format='png')
         buf = BytesIO()
-        await avatar.save(buf)
+        try:
+            await avatar.save(buf)
+        except discord.NotFound:
+            return await ctx.send('Could not get that user\'s avatar')
 
         ext = 'gif' if user.is_avatar_animated() else 'png'
         file = discord.File(buf, filename=f'avatar_{user.name}.{ext}')
