@@ -58,9 +58,6 @@ class DDNet(commands.Bot):
         await self.session.close()
 
     async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
-
         await self.wait_until_ready()
         await self.process_commands(message)
 
