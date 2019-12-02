@@ -139,16 +139,9 @@ class TestLog:
             if user.avatar:
                 self._avatars[f'{user.avatar}.png'] = str(user.avatar_url_as(format='png'))
 
+            roles = ['generic']
             if isinstance(user, discord.Member):
-                if user.roles is None:
-                    roles = ['generic']
-                else:
-                    roles = [
-                        'generic' if r == self.guild.default_role else r.name
-                        for r in user.roles[::-1]
-                    ]
-            else:
-                roles = ['generic']
+                roles += [r.name for r in user.roles if not r.is_default()]
 
             return {
                 'name': user.name,
@@ -156,7 +149,7 @@ class TestLog:
                 'avatar': {
                     'id': user.avatar or str(user.default_avatar.value)
                 },
-                'roles': roles
+                'roles': roles[::-1]
             }
 
     async def _handle_text(self, text: str) -> Dict:
