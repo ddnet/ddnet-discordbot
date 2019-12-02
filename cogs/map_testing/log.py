@@ -131,7 +131,7 @@ class TestLog:
         return {
             'role-mention': {
                 'name': role.name,
-                'hightlight': role.mentionable
+                'highlight': role.mentionable
             }
         }
 
