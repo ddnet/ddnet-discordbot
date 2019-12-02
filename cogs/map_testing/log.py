@@ -136,7 +136,7 @@ class TestLog:
         }
 
     def _handle_user(self, user: Union[discord.User, discord.Member]) -> Dict:
-            if user.avatar:
+            if user.avatar is not None:
                 self._avatars[f'{user.avatar}.png'] = str(user.avatar_url_as(format='png'))
 
             roles = ['generic']
