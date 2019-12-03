@@ -90,7 +90,7 @@ class InitialSubmission(Submission):
 
     def validate(self):
         # can't do this in init since we need a reference to the submission even if it's improper
-        match = re.search(self._FORMAT_RE, self.message.content)
+        match = re.search(self._FORMAT_RE, self.message.content, flags=re.IGNORECASE)
         if match is None:
             raise ValueError('Your map submission doesn\'t contain correctly formated details')
 
