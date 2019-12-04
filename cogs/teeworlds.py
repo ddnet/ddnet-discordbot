@@ -339,12 +339,12 @@ class Teeworlds(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    async def fetch_status(self) -> List[Server]:
+    async def fetch_servers(self) -> List[Server]:
         url = f'{BASE_URL}/status/index.json'
         async with self.bot.session.get(url) as resp:
             if resp.status != 200:
-                log.error('Failed to fetch DDNet status data (status code: %d %s)', resp.status, resp.reason)
-                raise RuntimeError('Could not fetch DDNet status')
+                log.error('Failed to fetch DDNet server data (status code: %d %s)', resp.status, resp.reason)
+                raise RuntimeError('Could not fetch DDNet servers')
 
             js = await resp.json()
 
@@ -358,7 +358,7 @@ class Teeworlds(commands.Cog):
             player = player.replace(user.mention, user.display_name)
 
         try:
-            servers = await self.fetch_status()
+            servers = await self.fetch_servers()
         except RuntimeError as exc:
             return await ctx.send(exc)
 
@@ -371,12 +371,12 @@ class Teeworlds(commands.Cog):
         paginator = ServerPaginator(ctx, server)
         await paginator.start_paginating()
 
-    async def fetch_stats(self) -> ServerStatus:
+    async def fetch_status(self) -> ServerStatus:
         url = f'{BASE_URL}/status/json/stats.json'
         async with self.bot.session.get(url) as resp:
             if resp.status != 200:
-                log.error('Failed to fetch DDNet server stats (status code: %d %s)', resp.status, resp.reason)
-                raise RuntimeError('Could not fetch DDNet stats')
+                log.error('Failed to fetch DDNet status data (status code: %d %s)', resp.status, resp.reason)
+                raise RuntimeError('Could not fetch DDNet status')
 
             js = await resp.json()
 
@@ -386,7 +386,7 @@ class Teeworlds(commands.Cog):
     async def ddos(self, ctx: commands.Context):
         """Display DDNet server status"""
         try:
-            status = await self.fetch_stats()
+            status = await self.fetch_status()
         except RuntimeError as exc:
             await ctx.send(exc)
         else:
