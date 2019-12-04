@@ -332,7 +332,6 @@ class ServerStatus:
     URL = f'{BASE_URL}/status/'
 
     def __init__(self, servers: List[Dict], updated: str):
-        # drop ddnet.tw, we only care about game servers
         self.servers = [ServerInfo(**s) for s in servers]
         self.timestamp = datetime.utcfromtimestamp(float(updated))
 
