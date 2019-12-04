@@ -259,6 +259,7 @@ class ServerInfo:
     __slots__ = ('host', '_online', 'packets')
 
     PPS_THRESHOLD = 3000  # we usually get max 2 kpps legit traffic so this should be a safe threshold
+    PPS_RATIO_THRESHOLD = 2
 
     COUNTRYFLAGS = {
         'GER': '🇩🇪',
@@ -280,7 +281,8 @@ class ServerInfo:
         return self._online
 
     def is_under_attack(self) -> bool:
-        return self.packets[0] > self.PPS_THRESHOLD
+        return self.packets[0] > self.PPS_THRESHOLD \
+            or self.packets[0] > 100 and self.packets[0] / self.packets[1] > self.PPS_RATIO_THRESHOLD
 
     @property
     def status(self) -> str:
