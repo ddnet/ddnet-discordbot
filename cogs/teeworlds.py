@@ -265,13 +265,15 @@ class ServerInfo:
     PPS_RATIO_THRESHOLD = 2.0  # responding to less than half the traffic indicates junk traffic
 
     COUNTRYFLAGS = {
-        'GER': '🇩🇪',
-        'RUS': '🇷🇺',
-        'CHL': '🇨🇱',
-        'USA': '🇺🇸',
-        'BRA': '🇧🇷',
-        'ZAF': '🇿🇦',
-        'CHN': '🇨🇳',
+        'MAIN': '🇪🇺',
+        'GER':  '🇩🇪',
+        'GER2': '🇩🇪',
+        'RUS':  '🇷🇺',
+        'CHL':  '🇨🇱',
+        'USA':  '🇺🇸',
+        'BRA':  '🇧🇷',
+        'ZAF':  '🇿🇦',
+        'CHN':  '🇨🇳',
     }
 
     def __init__(self, **kwargs):
@@ -279,6 +281,9 @@ class ServerInfo:
         self._online = kwargs.pop('online4')
 
         self.packets = Packets(kwargs.pop('packets_rx', -1), kwargs.pop('packets_tx', -1))
+
+    def is_main(self) -> bool:
+        return self.host == 'ddnet.tw'
 
     def is_online(self) -> bool:
         return self._online
@@ -298,6 +303,9 @@ class ServerInfo:
 
     @property
     def country(self) -> str:
+        if self.is_main():
+            return 'MAIN'
+
         # monkey patch BRA so that country abbreviations are consistent
         return self.host.split('.')[0].upper().replace('BR', 'BRA')
 
@@ -314,7 +322,7 @@ class ServerInfo:
             else:
                 return f'{round(pps / 1000, 2)}k'
 
-        return f'{self.flag} `{self.country:^3}|{self.status:^4}|' \
+        return f'{self.flag} `{self.country:^4}|{self.status:^4}|' \
                f'{humanize_pps(self.packets.rx):>7}|{humanize_pps(self.packets.tx):>7}`'
 
 
@@ -325,12 +333,12 @@ class ServerStatus:
 
     def __init__(self, servers: List[Dict], updated: str):
         # drop ddnet.tw, we only care about game servers
-        self.servers = [ServerInfo(**s) for s in servers if s['name'] != 'DDNet.tw']
+        self.servers = [ServerInfo(**s) for s in servers]
         self.timestamp = datetime.utcfromtimestamp(float(updated))
 
     @property
     def embed(self) -> discord.Embed:
-        header = f'{FLAG_UNK} `srv| +- | ▲ pps | ▼ pps `'
+        header = f'{FLAG_UNK} `srv | +- | ▲ pps | ▼ pps `'
         desc = '\n'.join([header] + [s.format() for s in self.servers])
         return discord.Embed(title='Server Status', description=desc, url=self.URL, timestamp=self.timestamp)
 
