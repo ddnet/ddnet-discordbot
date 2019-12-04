@@ -255,11 +255,14 @@ class ServerPaginator:
         await self.show_page(page)
 
 
+Packets = namedtuple('Packets', 'rx tx')
+
+
 class ServerInfo:
     __slots__ = ('host', '_online', 'packets')
 
     PPS_THRESHOLD = 3000  # we usually get max 2 kpps legit traffic so this should be a safe threshold
-    PPS_RATIO_THRESHOLD = 2
+    PPS_RATIO_THRESHOLD = 2.0  # responding to less than half the traffic indicates junk traffic
 
     COUNTRYFLAGS = {
         'GER': '🇩🇪',
@@ -275,14 +278,14 @@ class ServerInfo:
         self.host = kwargs.pop('type')
         self._online = kwargs.pop('online4')
 
-        self.packets = (kwargs.pop('packets_rx', -1), kwargs.pop('packets_tx', -1))
+        self.packets = Packets(kwargs.pop('packets_rx', -1), kwargs.pop('packets_tx', -1))
 
     def is_online(self) -> bool:
         return self._online
 
     def is_under_attack(self) -> bool:
-        return self.packets[0] > self.PPS_THRESHOLD \
-            or self.packets[0] > 100 and self.packets[0] / self.packets[1] > self.PPS_RATIO_THRESHOLD
+        return self.packets.rx > self.PPS_THRESHOLD \
+            or self.packets.rx > 100 and self.packets.rx / self.packets.tx > self.PPS_RATIO_THRESHOLD
 
     @property
     def status(self) -> str:
@@ -312,7 +315,7 @@ class ServerInfo:
                 return f'{round(pps / 1000, 2)}k'
 
         return f'{self.flag} `{self.country:^3}|{self.status:^4}|' \
-               f'{humanize_pps(self.packets[0]):>7}|{humanize_pps(self.packets[1]):>7}`'
+               f'{humanize_pps(self.packets.rx):>7}|{humanize_pps(self.packets.tx):>7}`'
 
 
 class ServerStatus:
