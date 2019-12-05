@@ -1,11 +1,12 @@
 import enum
 import logging
 import re
-from io import BytesIO, StringIO
-from typing import Optional, Union
+from datetime import datetime, timedelta
+from io import BytesIO
+from typing import Optional
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from cogs.map_testing.log import TestLog
 from cogs.map_testing.submission import InitialSubmission, Submission, SubmissionState
@@ -15,6 +16,7 @@ log = logging.getLogger(__name__)
 
 CAT_MAP_TESTING     = 449352010072850443
 CAT_EVALUATED_MAPS  = 462954029643989003
+CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_INFO           = 455392314173554688
 CHAN_SUBMIT_MAPS    = 455392372663123989
 ROLE_TESTING        = 455814387169755176
@@ -37,6 +39,9 @@ def is_testing(channel: discord.TextChannel) -> bool:
 def is_staff(member: discord.Member, channel: discord.TextChannel) -> bool:
     return channel.permissions_for(member).manage_channels
 
+def by_releases_webhook(message: discord.Message) -> bool:
+    return message.webhook_id == WH_MAP_RELEASES
+
 def has_map(message: discord.Message) -> bool:
     return message.attachments and message.attachments[0].filename.endswith('.map')
 
@@ -57,7 +62,12 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
         self._active_submissions = set()
 
-    async def ddnet_upload(self, asset_type: str, buf: Union[BytesIO, StringIO], filename: str):
+        self.auto_archive.start()
+
+    def cog_unload(self):
+        self.auto_archive.cancel()
+
+    async def ddnet_upload(self, asset_type: str, buf: BytesIO, filename: str):
         url = self.bot.config.get('DDNET_UPLOAD', 'URL')
         headers = {'X-DDNet-Token': self.bot.config.get('DDNET_UPLOAD', 'TOKEN')}
 
@@ -291,53 +301,46 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         """Decline a map"""
         await self.move_map_channel(ctx.channel, state=MapState.DECLINED)
 
-    @commands.Cog.listener('on_message')
-    async def handle_release(self, message: discord.Message):
-        if message.webhook_id != WH_MAP_RELEASES:
-            return
-
+    def get_map_channel_from_ann(self, content: str) -> Optional[discord.TextChannel]:
         map_url_re = r'\[(?P<name>.+)\]\(<?https:\/\/ddnet\.tw\/maps\/\?map=.+?>?\)'
-        match = re.search(map_url_re, message.content)
+        match = re.search(map_url_re, content)
         if match is None:
             return
 
-        map_channel = self.get_map_channel(match.group('name'))
+        return self.get_map_channel(match.group('name'))
+
+    @commands.Cog.listener('on_message')
+    async def handle_map_release(self, message: discord.Message):
+        if not by_releases_webhook(message):
+            return
+
+        map_channel = self.get_map_channel_from_ann(message.content)
         if map_channel is None:
             return
 
         try:
             await self.move_map_channel(map_channel, state=MapState.RELEASED)
         except discord.Forbidden as exc:
-            log.error('Failed to move map channel #%s on release: %s', map_channel, exc.text)
+            log.error('Failed moving map channel #%s on release: %s', map_channel, exc.text)
 
-    @commands.command()
-    @commands.is_owner()
-    async def archive(self, ctx: commands.Context, channel_id: int):
-        """Archive a map channel"""
-        channel = self.bot.get_channel(channel_id)
-        if channel is None:
-            return await ctx.send('Could not find that channel')
+    async def archive_testlog(self, testlog: TestLog) -> bool:
+        failed = False
 
-        if channel.category_id != CAT_EVALUATED_MAPS:
-            return await ctx.send('Can\'t archive that channel')
-
-        testlog = await TestLog.from_channel(channel)
-
+        js = testlog.json()
         with open(f'{testlog.DIR}/json/{testlog.name}.json', 'w', encoding='utf-8') as f:
-            f.write(testlog.json())
+            f.write(js)
 
-        buf = StringIO(testlog.json())
         try:
-            await self.ddnet_upload('log', buf, testlog.name)
-        except RuntimeError as exc:
-            return await ctx.send(exc)
+            await self.ddnet_upload('log', BytesIO(js.encode('utf-8')), testlog.name)
+        except RuntimeError:
+            failed = True
 
-        failed = []
         for asset_type, assets in testlog.assets.items():
             for filename, url in assets.items():
                 async with self.bot.session.get(url) as resp:
                     if resp.status != 200:
-                        failed.append(filename)
+                        log.error('Failed fetching asset %r: %s', filename, await resp.text())
+                        failed = True
                         continue
 
                     bytes_ = await resp.read()
@@ -345,19 +348,61 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
                 with open(f'{testlog.DIR}/assets/{asset_type}s/{filename}', 'wb') as f:
                     f.write(bytes_)
 
-                buf = BytesIO(bytes_)
                 try:
-                    await self.ddnet_upload(asset_type, buf, filename)
+                    await self.ddnet_upload(asset_type, BytesIO(bytes_), filename)
                 except RuntimeError:
-                    failed.append(filename)
+                    failed = True
                     continue
 
-        msg = testlog.url
-        if failed:
-            fmt = ', '.join(repr(f) for f in failed)
-            msg += f'\nFailed asset uploads:\n```py\n{fmt}\n```'
+        return not failed
 
-        await ctx.send(msg)
+    @tasks.loop(hours=1.0)
+    async def auto_archive(self):
+        now = datetime.utcnow()
+
+        ann_channel = self.bot.get_channel(CHAN_ANNOUNCEMENTS)
+        ann_history = await ann_channel.history(after=now - timedelta(days=3)).filter(by_releases_webhook).flatten()
+        recent_releases = {self.get_map_channel_from_ann(m.content) for m in ann_history}
+
+        em_category = self.bot.get_channel(CAT_EVALUATED_MAPS)
+        for channel in em_category.text_channels:
+            # keep the channel until its map is released, including a short grace period
+            if channel.name[0] == str(MapState.READY) or channel in recent_releases:
+                continue
+
+            # make sure there is no active discussion going on
+            recent_message = await channel.history(limit=1, after=now - timedelta(days=5)).flatten()
+            if recent_message:
+                continue
+
+            testlog = await TestLog.from_channel(channel)
+            archived = await self.archive_testlog(testlog)
+
+            if archived:
+                await channel.delete()
+                log.info('Sucessfully auto-archived channel #%s', channel)
+            else:
+                log.error('Failed auto-archiving channel #%s', channel)
+
+    @commands.command()
+    @commands.is_owner()
+    async def archive(self, ctx: commands.Context, channel_id: int):
+        """Archive a map channel"""
+        channel = self.bot.get_channel(channel_id)
+        if channel is None:
+            return await ctx.send('Couldn\'t find that channel')
+
+        if not isinstance(channel, discord.TextChannel) or channel.category_id != CAT_EVALUATED_MAPS:
+            return await ctx.send('Can\'t archive that channel')
+
+        testlog = await TestLog.from_channel(channel)
+        archived = await self.archive_testlog(testlog)
+
+        if archived:
+            await channel.delete()
+            await ctx.send(f'Sucessfully archived channel {channel.mention}: {testlog.url}')
+        else:
+            await ctx.send(f'Failed archiving channel {channel.mention}: {testlog.url}')
 
 
 def setup(bot: commands.Bot):

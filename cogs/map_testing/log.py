@@ -24,7 +24,7 @@ class TestLog:
 
     VERSION = 1.0
 
-    DIR = 'testlogs'
+    DIR = 'data/map-testing/testlogs'
 
     bot = None
 
@@ -196,7 +196,7 @@ class TestLog:
         attachment = attachments[0]  # TODO: handle multiple attachments
 
         filename, ext = attachment.filename.rsplit('.', 1)
-        self._attachments[f'{attachment.id}.{ext}'] = str(attachment.url)
+        self._attachments[f'{attachment.id}.{ext}'] = attachment.url
 
         out = {
             'id': attachment.id,
