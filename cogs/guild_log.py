@@ -89,31 +89,28 @@ class GuildLog(commands.Cog):
     def format_content_diff(self, before: str, after: str) -> Tuple[str, str]:
         # taken from https://github.com/python-discord/bot/pull/646
         diff = difflib.ndiff(before.split(), after.split())
-        groups = [(t, [s[2:] for s in w]) for t, w in itertools.groupby(diff, key=lambda s: s[0])]
+        groups = [(c, [s[2:] for s in w]) for c, w in itertools.groupby(diff, key=lambda d: d[0]) if c != '?']
 
-        out_before = []
-        out_after = []
-        for index, (type_, words) in enumerate(groups):
+        out = {'-': [], '+': []}
+        for i, (code, words) in enumerate(groups):
             sub = ' '.join(words)
-            if type_ == '-':
-                out_before.append(f'[{sub}](http://-)')
-            elif type_ == '+':
-                out_after.append(f'[{sub}](http://+)')
-            elif type_ == ' ':
+            if code in '-+':
+                out[code].append(f'[{sub}](http://{code})')
+            else:
                 if len(words) > 2:
                     sub = ''
-                    if index > 0:
+                    if i > 0:
                         sub += words[0]
 
                     sub += ' ... '
 
-                    if index < len(groups):
+                    if i < len(groups) - 1:
                         sub += words[-1]
 
-                out_before.append(sub)
-                out_after.append(sub)
+                out['-'].append(sub)
+                out['+'].append(sub)
 
-        return ' '.join(out_before), ' '.join(out_after)
+        return ' '.join(out['-']), ' '.join(out['+'])
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
