@@ -72,7 +72,7 @@ class DDNet(commands.Bot):
         log.info('%s used command in %s: %s', ctx.author, destination, ctx.message.content)
 
         query = """INSERT INTO stats_commands (guild_id, channel_id, author_id, timestamp, command)
-                   VALUES ($1, $2, $3, $4, $5, $6);
+                   VALUES ($1, $2, $3, $4, $5);
                 """
         values = (
             guild_id,
