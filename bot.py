@@ -61,10 +61,7 @@ class DDNet(commands.Bot):
         await self.wait_until_ready()
         await self.process_commands(message)
 
-    async def register_command(self, ctx: commands.Context):
-        if ctx.command is None:
-            return
-
+    async def on_command(self, ctx: commands.Context):
         if ctx.guild is None:
             destination = 'Private Message'
             guild_id = None
@@ -74,7 +71,7 @@ class DDNet(commands.Bot):
 
         log.info('%s used command in %s: %s', ctx.author, destination, ctx.message.content)
 
-        query = """INSERT INTO stats_commands (guild_id, channel_id, author_id, timestamp, command, failed)
+        query = """INSERT INTO stats_commands (guild_id, channel_id, author_id, timestamp, command)
                    VALUES ($1, $2, $3, $4, $5, $6);
                 """
         values = (
@@ -82,19 +79,14 @@ class DDNet(commands.Bot):
             ctx.channel.id,
             ctx.author.id,
             ctx.message.created_at,
-            ctx.command.qualified_name,
-            ctx.command_failed
+            ctx.command.qualified_name
         )
 
         await self.pool.execute(query, *values)
 
-    async def on_command_completion(self, ctx: commands.Context):
-        await self.register_command(ctx)
-
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        await self.register_command(ctx)
-
         command = ctx.command
+
         msg = None
         if isinstance(error, commands.MissingRequiredArgument):
             msg = f'{self.command_prefix}{command.qualified_name} {command.signature}'

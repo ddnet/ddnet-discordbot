@@ -14,8 +14,7 @@ CREATE TABLE IF NOT EXISTS stats_commands(
     channel_id BIGINT NOT NULL,
     author_id BIGINT NOT NULL,
     timestamp TIMESTAMP NOT NULL,
-    command VARCHAR(32) NOT NULL,
-    failed BOOLEAN NOT NULL
+    command VARCHAR(32) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS records_webhooks(
