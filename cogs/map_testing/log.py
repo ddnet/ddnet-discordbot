@@ -1,7 +1,7 @@
 import asyncio
 import json
 import re
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 
 import discord
 
@@ -17,6 +17,10 @@ async def maybe_coro(func, *args):
         return await func(*args)
     else:
         return func(*args)
+
+
+class TestLogError(Exception):
+    pass
 
 
 class TestLog:
@@ -80,14 +84,15 @@ class TestLog:
     def _handle_inline_codeblock(self, text: str) -> Dict:
         return {'inline-codeblock': {'text': text}}
 
-    async def _handle_custom_emoji(self, animated: str, emoji_name: str, emoji_id: str) -> Optional[Dict]:
+    async def _handle_custom_emoji(self, animated: str, emoji_name: str, emoji_id: str) -> Dict:
         emoji = discord.PartialEmoji(animated=bool(animated), name=emoji_name, id=int(emoji_id))
 
-        async with self.bot.session.get(str(emoji.url)) as resp:
+        emoji_url = str(emoji.url)
+        async with self.bot.session.get(emoji_url) as resp:
             if resp.status != 200:
-                return
+                raise TestLogError(':deleted-emoji:')
 
-        self._emojis[f'{emoji.id}.png'] = str(emoji.url)
+        self._emojis[f'{emoji.id}.png'] = emoji_url
 
         return {
             'custom-emoji': {
@@ -96,25 +101,25 @@ class TestLog:
             }
         }
 
-    async def _handle_user_mention(self, user_id: str) -> Optional[Dict]:
+    async def _handle_user_mention(self, user_id: str) -> Dict:
         user_id = int(user_id)
         user = self.guild.get_member(user_id) or self.bot.get_user(user_id)
         if user is None:
             try:
                 user = await self.bot.fetch_user(user_id)
             except discord.NotFound:
-                return
+                raise TestLogError('@Deleted User')
 
         return {'user-mention': self._handle_user(user)}
 
-    async def _handle_channel_mention(self, channel_id: str) -> Optional[Dict]:
+    async def _handle_channel_mention(self, channel_id: str) -> Dict:
         channel_id = int(channel_id)
         channel = self.bot.get_channel(channel_id)
         if channel is None:
             try:
                 channel = await self.bot.fetch_channel(channel_id)
             except discord.NotFound:
-                return
+                raise TestLogError('#deleted-channel')
 
         return {
             'channel-mention': {
@@ -123,10 +128,10 @@ class TestLog:
             }
         }
 
-    def _handle_role_mention(self, role_id: str) -> Optional[Dict]:
+    def _handle_role_mention(self, role_id: str) -> Dict:
         role = self.guild.get_role(int(role_id))
         if role is None:
-            return
+            raise TestLogError('@Deleted Role')
 
         return {
             'role-mention': {
@@ -136,25 +141,25 @@ class TestLog:
         }
 
     def _handle_user(self, user: Union[discord.User, discord.Member]) -> Dict:
-            if user.avatar is not None:
-                self._avatars[f'{user.avatar}.png'] = str(user.avatar_url_as(format='png'))
+        if user.avatar is not None:
+            self._avatars[f'{user.avatar}.png'] = str(user.avatar_url_as(format='png'))
 
-            roles = ['generic']
-            if isinstance(user, discord.Member):
-                roles += [r.name for r in user.roles if not r.is_default()]
+        roles = ['generic']
+        if isinstance(user, discord.Member):
+            roles += [r.name for r in user.roles if not r.is_default()]
 
-            return {
-                'name': user.name,
-                'discriminator': user.discriminator,
-                'avatar': {
-                    'id': user.avatar or str(user.default_avatar.value)
-                },
-                'roles': roles[::-1]
-            }
+        return {
+            'name': user.name,
+            'discriminator': user.discriminator,
+            'avatar': {
+                'id': user.avatar or str(user.default_avatar.value)
+            },
+            'roles': roles[::-1]
+        }
 
     async def _handle_text(self, text: str) -> Dict:
-        url_re = r'<((?:https?|steam)://(?:-\.)?(?:[^\s/?\.#-]+\.?)+(?:/[^\s]*)?)>'
-        out = [{'text': re.sub(url_re, r'\1', text)}]
+        url_re = r'<((?:https?|steam):\/\/(?:-\.)?(?:[^\s\/?\.#-]+\.?)+(?:\/[^\s]*)?)>'
+        out = [{'text': re.sub(url_re, r'\1', text)}]  # TODO: handle urls after codeblocks
 
         regexes = {
             r'\`\`\`(?:[^\`]*?\n)?([^\`]+)\n?\`\`\`':   self._handle_multiline_codeblock,
@@ -175,20 +180,24 @@ class TestLog:
                 if match is None:
                     continue
 
-                processed = await maybe_coro(handler, *match.groups())
-                if processed is None:
-                    continue  # TODO: handle not found users/channels/roles/emojis
+                start = text[:match.start()]
+                end = text[match.end():]
 
-                if match.start() > 0:
-                    out[i] = {'text': text[:match.start()]}
-                    i += 1
+                try:
+                    processed = await maybe_coro(handler, *match.groups())
+                except TestLogError as exc:
+                    out[i] = {'text': start + str(exc) + end}
                 else:
-                    del out[i]
+                    if start:
+                        out[i] = {'text': start}
+                        i += 1
+                    else:
+                        del out[i]
 
-                out.insert(i, processed)
+                    out.insert(i, processed)
 
-                if match.end() < len(text):
-                    out.insert(i + 1, {'text': text[match.end():]})
+                    if end:
+                        out.insert(i + 1, {'text': end})
 
         return {'text': out}
 
@@ -222,7 +231,7 @@ class TestLog:
         for reaction in reactions:
             emoji = reaction.emoji
             chunk = {'count': reaction.count}
-            if isinstance(emoji, (discord.Emoji, discord.PartialEmoji)):
+            if reaction.custom_emoji:
                 self._emojis[f'{emoji.id}.png'] = str(emoji.url)
                 chunk.update({
                     'name': emoji.name,
