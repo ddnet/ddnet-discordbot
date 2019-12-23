@@ -232,6 +232,8 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
         channel = self.bot.get_channel(payload.channel_id)
         user = channel.guild.get_member(payload.user_id)
+        if user is None:
+            return
 
         if channel.id == CHAN_INFO:
             testing_role = channel.guild.get_role(ROLE_TESTING)
