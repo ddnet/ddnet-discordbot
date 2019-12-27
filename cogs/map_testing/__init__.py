@@ -231,6 +231,8 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             return
 
         channel = self.bot.get_channel(payload.channel_id)
+        # TODO d.py 1.3.0:
+        # member = payload.member if payload.event_type == 'REACTION_ADD' else channel.guild.get_member(payload.user_id)
         user = channel.guild.get_member(payload.user_id)
         if user is None:
             return
@@ -360,6 +362,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
     @tasks.loop(hours=1.0)
     async def auto_archive(self):
+        await self.bot.wait_until_ready()
         now = datetime.utcnow()
 
         ann_channel = self.bot.get_channel(CHAN_ANNOUNCEMENTS)
