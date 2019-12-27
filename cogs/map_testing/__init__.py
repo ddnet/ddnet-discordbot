@@ -153,7 +153,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             return
 
         channel = self.bot.get_channel(channel_id)
-        message = await channel.fetch_message(payload.message_id)
+        message = self.bot.get_message(payload.message_id) or await channel.fetch_message(payload.message_id)
 
         isubm = InitialSubmission(message)
         await self.validate_submission(isubm)
@@ -178,7 +178,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         if not is_staff(user, channel):
             return
 
-        message = await channel.fetch_message(payload.message_id)
+        message = self.bot.get_message(payload.message_id) or await channel.fetch_message(payload.message_id)
         if not has_map(message):
             return
 
@@ -251,7 +251,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
                 await user.add_roles(testing_role)
 
         elif channel.id == CHAN_SUBMIT_MAPS:
-            message = await channel.fetch_message(payload.message_id)
+            message = self.bot.get_message(payload.message_id) or await channel.fetch_message(payload.message_id)
             if not has_map(message):
                 return
 
