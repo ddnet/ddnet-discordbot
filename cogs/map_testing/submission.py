@@ -40,7 +40,7 @@ class Submission:
 
     def is_original(self) -> bool:
         # don't match a specific line to ensure compatibility
-        return any(l == self.preview_url for l in self.channel.topic.splitlines())
+        return self.preview_url in self.channel.topic.splitlines()
 
     def is_by_mapper(self) -> bool:
         return self.author.mention in self.channel.topic
