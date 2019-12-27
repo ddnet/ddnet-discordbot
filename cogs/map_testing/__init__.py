@@ -113,19 +113,21 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
     @commands.Cog.listener('on_message')
     async def handle_submission(self, message: discord.Message):
-        if message.author == self.bot.user:
+        author = message.author
+        if author == self.bot.user:
             return
 
         if not has_map(message):
             return
 
-        if message.channel.id == CHAN_SUBMIT_MAPS:
+        channel = message.channel
+        if channel.id == CHAN_SUBMIT_MAPS:
             isubm = InitialSubmission(message)
             await self.validate_submission(isubm)
 
-        elif is_testing(message.channel):
+        elif is_testing(channel):
             subm = Submission(message)
-            if subm.can_bypass():
+            if subm.is_original() and (subm.is_by_mapper() or is_staff(author, channel)):
                 await self.upload_submission(subm)
             else:
                 await subm.set_status(SubmissionState.VALIDATED)
@@ -222,6 +224,9 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         return discord.utils.find(lambda c: c.name[1:] == name, mt_category.text_channels) \
             or discord.utils.find(lambda c: c.name[2:] == name, em_category.text_channels)
 
+    # TODO d.py 1.3.0:
+    # @commands.Cog.listener('on_raw_reaction_add')
+    # @commands.Cog.listener('on_raw_reaction_remove')
     async def handle_perms(self, payload: discord.RawReactionActionEvent, action: str):
         # TODO d.py 1.3.0: action -> payload.event_type == 'REACTION_ADD' || 'REACTION_REMOVE'
         if payload.user_id == self.bot.user.id:

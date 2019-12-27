@@ -38,13 +38,16 @@ class Submission:
     def __str__(self) -> str:
         return self.filename[:-4]
 
-    def can_bypass(self) -> bool:
-        try:
-            mentions, filename = self.channel.topic.split('\n')[1].split(' | ')
-        except (IndexError, ValueError):
-            return False
-        else:
-            return self.author.mention in mentions and filename == self.filename
+    def is_original(self) -> bool:
+        # don't match a specific line to ensure compatibility
+        return any(l == self.preview_url for l in self.channel.topic.splitlines())
+
+    def is_by_mapper(self) -> bool:
+        return self.author.mention in self.channel.topic
+
+    @property
+    def preview_url(self) -> str:
+        return f'https://ddnet.tw/testmaps/?map={self}'
 
     async def buffer(self) -> BytesIO:
         if self._bytes is None:
@@ -110,16 +113,9 @@ class InitialSubmission(Submission):
         except discord.Forbidden:
             pass
 
-    def can_bypass(self):
-        raise NotImplementedError
-
     @property
     def emoji(self) -> str:
         return self.SERVER_TYPES.get(self.server, '')
-
-    @property
-    def preview_url(self) -> str:
-        return f'https://ddnet.tw/testmaps/?map={self}'
 
     async def generate_thumbnail(self) -> Optional[discord.File]:
         tmp = f'{self.DIR}/tmp/{self.message.id}.map'
@@ -158,11 +154,9 @@ class InitialSubmission(Submission):
         # - bot.user:   read_messages=True, manage_messages=True
         overwrites.update(self.channel.category.overwrites)
 
-        # TODO: swap 2nd and 3rd topic line
-        mappers = [f'**{m}**' for m in self.mappers]
-        topic = f'**"{self.name}"** by {human_join(mappers)} [{self.server}]\n' \
-                f'{self.author.mention} | {self.filename}\n' \
-                f'{self.preview_url}'
+        mappers = human_join([f'**{m}**' for m in self.mappers])
+        details = f'**"{self.name}"** by {mappers} [{self.server}]'
+        topic = '\n'.join([details, self.preview_url, self.author.mention])
 
         channel = await self.channel.category.create_text_channel(name, overwrites=overwrites, topic=topic)
 
