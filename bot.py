@@ -111,5 +111,5 @@ class DDNet(commands.Bot):
     async def on_error(self, event: str, *args, **kwargs):
         log.exception('Event %r caused an exception', event)
 
-    async def get_message(self, message_id: int) -> Optional[discord.Message]:
-        return discord.utils.get(self.bot.cached_messages, id=message_id)
+    def get_message(self, message_id: int) -> Optional[discord.Message]:
+        return discord.utils.get(self.cached_messages, id=message_id)
