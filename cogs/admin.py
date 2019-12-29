@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import logging
 import textwrap
 import traceback
 from contextlib import redirect_stdout
-from io import BytesIO, StringIO
+from io import StringIO
 
 import discord
 from discord.ext import commands
 
 from utils.misc import run_process
 
-CONFIRM = '\N{OK HAND SIGN}'
+log = logging.getLogger(__name__)
+
+CONFIRM = '👌'
 
 
 class Admin(commands.Cog, command_attrs=dict(hidden=True)):
@@ -53,10 +56,11 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         data = content.encode('utf-8')
         async with self.bot.session.post('https://mystb.in/documents', data=data) as resp:
             js = await resp.json()
-            if resp.status == 200:
-                return f'<https://mystb.in/{js["key"]}.py>'
-            else:
-                return f'Failed uploading to mystbin: {js["message"]} (status code: {resp.status} {resp.reason})'
+            if resp.status != 200:
+                log.error('Failed uploading to mystb.in: %s (status code: %d %s)', js['message'], resp.status, resp.reason)
+                raise RuntimeError('Could not upload result to mystb.in')
+
+            return f'<https://mystb.in/{js["key"]}.py>'
 
     @commands.command(name='eval')
     async def _eval(self, ctx: commands.Context, *, body: str):
@@ -108,7 +112,10 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
             if len(content) <= 1990:
                 msg = f'```py\n{content}\n```'
             else:
-                msg = await self.mystbin_upload(content)
+                try:
+                    msg = await self.mystbin_upload(content)
+                except RuntimeError as exc:
+                    msg = exc
 
             await ctx.send(msg)
 
@@ -122,9 +129,16 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         if len(content) <= 1992:
             msg = f'```\n{content}\n```'
         else:
-            msg = await self.mystbin_upload(content)
+            try:
+                msg = await self.mystbin_upload(content)
+            except RuntimeError as exc:
+                msg = exc
 
         await ctx.send(msg)
+
+    @commands.command()
+    async def shutdown(self, ctx: commands.Context):
+        await self.bot.close()
 
 
 def setup(bot: commands.Bot) -> None:
