@@ -55,15 +55,18 @@ class Submission:
 
         return BytesIO(self._bytes)
 
+    async def get_file(self) -> discord.File:
+        return discord.File(await self.buffer(), filename=self.filename)
+
     async def set_status(self, status: SubmissionState):
         if self.message.reactions:
-            # TODO: add more checks to only clear reactions as needed to avoid hitting ratelimits
             await self.message.clear_reactions()
 
         await self.message.add_reaction(str(status))
 
     async def pin(self):
-        await self.message.pin()
+        if not self.message.pinned:
+            await self.message.pin()
 
 
 class InitialSubmission(Submission):
@@ -156,11 +159,11 @@ class InitialSubmission(Submission):
 
         mappers = human_join([f'**{m}**' for m in self.mappers])
         details = f'**"{self.name}"** by {mappers} [{self.server}]'
-        topic = '\n'.join([details, self.preview_url, self.author.mention])
+        topic = '\n'.join([details, self.preview_url, self.author.mention, self.message.id])
 
         channel = await self.channel.category.create_text_channel(name, overwrites=overwrites, topic=topic)
 
-        file = discord.File(await self.buffer(), filename=self.filename)
+        file = await self.get_file()
         message = await channel.send(self.author.mention, file=file)
 
         thumbnail = await self.generate_thumbnail()
