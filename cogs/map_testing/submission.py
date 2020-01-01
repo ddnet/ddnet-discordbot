@@ -159,7 +159,7 @@ class InitialSubmission(Submission):
 
         mappers = human_join([f'**{m}**' for m in self.mappers])
         details = f'**"{self.name}"** by {mappers} [{self.server}]'
-        topic = '\n'.join([details, self.preview_url, self.author.mention, self.message.id])
+        topic = '\n'.join([details, self.preview_url, self.author.mention, str(self.message.id)])
 
         channel = await self.channel.category.create_text_channel(name, overwrites=overwrites, topic=topic)
 
