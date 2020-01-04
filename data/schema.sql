@@ -9,6 +9,12 @@ CREATE TABLE IF NOT EXISTS stats_players(
     country CHAR(3)
 );
 
+CREATE TABLE IF NOT EXISTS stats_finishes(
+    name VARCHAR(16) NOT NULL,
+    timestamp DATE NOT NULL,
+    points INT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS stats_commands(
     guild_id BIGINT,
     channel_id BIGINT NOT NULL,

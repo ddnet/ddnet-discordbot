@@ -1,7 +1,8 @@
 import json
+from datetime import datetime
 from functools import partial
 from io import BytesIO
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 import asyncpg
 import discord
@@ -45,6 +46,17 @@ def plural(value: int, name: str) -> str:
         return f'{name}S'
     else:
         return f'{name}s'
+
+def center(text_size: int, area_size: int=0) -> int:
+    return int((area_size - text_size) / 2)
+
+def humanize_points(points: int) -> str:
+    if points < 1000:
+        return str(points)
+    else:
+        points /= 1000
+        points = int(points) if points % 1 == 0 else round(points, 1)
+        return f'{points}K'
 
 
 class Profile(commands.Cog):
@@ -147,7 +159,7 @@ class Profile(commands.Cog):
         buf.seek(0)
         return buf
 
-    @commands.command(aliases=['player', 'points'])
+    @commands.command()
     async def profile(self, ctx: commands.Context, *, player: str=None):
         await ctx.trigger_typing()
 
@@ -163,6 +175,153 @@ class Profile(commands.Cog):
         fn = partial(self.generate_profile_image, record)
         buf = await self.bot.loop.run_in_executor(None, fn)
         file = discord.File(buf, filename=f'profile_{player}.png')
+        await ctx.send(file=file)
+
+    def generate_points_image(self, players: List[str], data: List[Dict]) -> BytesIO:
+        font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 32)
+        font_big = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 48)
+
+        color_light = (100, 100, 100)
+        color_dark = (50, 50, 50)
+        colors = (
+            'orange',
+            'red',
+            'green',
+            'blue',
+            'purple',
+        )
+
+        base = base = Image.open(f'{DIR}/assets/points_background.png')
+        canv = ImageDraw.Draw(base)
+
+        width, height = base.size
+        margin = 100
+
+        end_date = datetime.utcnow().date()
+        start_date = min(r for d in data for r in d.keys())
+        start_date = min(start_date, end_date.replace(year=end_date.year - 1))
+
+        total_points = max(sum(r for r in d.values()) for d in data)
+        total_points = max(total_points, 1000)
+
+        days_mult = (width - margin * 2) / (end_date - start_date).days
+        points_mult = (height - margin * 2) / total_points
+
+        # draw area bg
+        size = (width - margin * 2, height - margin * 2)
+        bg = Image.new('RGBA', size, color=(0, 0, 0, 100))
+        base.alpha_composite(bg, dest=(margin, margin))
+
+        # draw days TODO: optimize
+        prev_x = margin
+        for year in range(start_date.year, end_date.year + 1):
+            date = datetime(year=year, month=1, day=1).date()
+            if date < start_date:
+                continue
+
+            x = margin + (date - start_date).days * days_mult
+            xy = ((x, margin), (x, height - margin))
+            canv.line(xy, fill=color_light, width=2)
+
+            text = str(year - 1)
+            w, h = font_small.getsize(text)
+            area_width = x - prev_x
+            if w < area_width:
+                xy = (prev_x + center(w, area_width), height - margin + h)
+                canv.text(xy, text, fill=color_light, font=font_small)
+
+            prev_x = x
+
+        # draw points
+        thresholds = {
+            15000: 5000,
+            10000: 2500,
+            7500:  2000,
+            5000:  1000,
+            1000:  500,
+            0:     250,
+        }
+
+        steps = next(s for t, s in thresholds.items() if total_points > t)
+
+        for points in range(0, total_points + 1, int(steps / 5)):
+            y = height - margin - points * points_mult
+            xy = ((margin, y), (width - margin, y))
+
+            if points % steps == 0:
+                canv.line(xy, fill=color_light, width=4)
+
+                text = humanize_points(points)
+                w, h = font_small.getsize(text)
+                xy = (margin - w - 12, y + center(h))
+                canv.text(xy, text, fill=color_light, font=font_small)
+            else:
+                canv.line(xy, fill=color_dark, width=2)
+
+        # draw players
+        for dates, color in reversed(list(zip(data, colors))):
+            xy = []
+
+            x = margin
+            y = height - margin
+
+            if start_date not in dates:
+                xy.append((x, y))
+
+            prev_date = start_date
+            for date, points in dates.items():
+                x += (date - prev_date).days * days_mult
+                y -= points * points_mult
+                xy.append((x, y))
+
+                prev_date = date
+
+            if end_date not in dates:
+                xy.append((width - margin, y))
+
+            canv.line(xy, fill=color, width=6)
+
+        # draw header
+        size = 16
+        x = margin
+        y = center(size, margin)
+        for player, color in zip(players, colors):
+            xy = ((x, y), (x + size, y + size))
+            canv.rectangle(xy, fill=color)
+            x += size * 2
+
+            w, h = font_big.getsize(player)
+            xy = (x, 22)
+            canv.text(xy, player, fill=(255, 255, 255), font=font_big)
+            x += w + size * 2
+
+        base.thumbnail((width / 2, height / 2), resample=Image.LANCZOS)  # antialiasing
+
+        buf = BytesIO()
+        base.save(buf, format='png')
+        buf.seek(0)
+        return buf
+
+    @commands.command()
+    async def points(self, ctx: commands.Context, *players: str):
+        await ctx.trigger_typing()
+
+        players = players or [ctx.author.display_name]
+        if len(players) > 5:
+            return await ctx.send('Can at most compare 5 players')
+
+        data = []
+        for player in players:
+            query = 'SELECT timestamp, points FROM stats_finishes WHERE name = $1 ORDER BY timestamp;'
+            records = await self.bot.pool.fetch(query, player)
+            if not records:
+                return await ctx.send(f'Could not find ``{player}``')
+
+            data.append({t: p for t, p in records})
+
+        fn = partial(self.generate_points_image, players, data)
+        buf = await self.bot.loop.run_in_executor(None, fn)
+        file = discord.File(buf, filename=f'profile_{"_".join(players)}.png')
         await ctx.send(file=file)
 
 
