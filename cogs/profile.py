@@ -187,7 +187,7 @@ class Profile(commands.Cog):
             'orange',
             'red',
             'green',
-            'blue',
+            'lightblue',
             'purple',
         )
 
@@ -221,7 +221,7 @@ class Profile(commands.Cog):
 
             x = margin + (date - start_date).days * days_mult
             xy = ((x, margin), (x, height - margin))
-            canv.line(xy, fill=color_light, width=2)
+            canv.line(xy, fill=color_dark, width=2)
 
             text = str(year - 1)
             w, h = font_small.getsize(text)

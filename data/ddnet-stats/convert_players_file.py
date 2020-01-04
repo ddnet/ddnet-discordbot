@@ -68,10 +68,15 @@ def sort_stats(stats_maps: tuple, stats_points: tuple, stats_teamranks: tuple, s
     for player, (maps, countries) in stats_players.items():
         for map_, data in maps.items():
             points = map_points[map_]
-            if points > 0:
-                timestamp = datetime.strptime(data[3].decode(), '%Y-%m-%d %H:%M:%S')
-                date = timestamp.date()
-                out_finishes[player][date] += points
+            if points == 0:
+                continue
+
+            timestamp = datetime.strptime(data[3].decode(), '%Y-%m-%d %H:%M:%S')
+            if timestamp > datetime.utcnow():
+                continue
+
+            date = timestamp.date()
+            out_finishes[player][date] += points
 
         # '', 'AUS', 'BRA', 'CAN', 'CHL', 'CHN', 'FRA', 'GER', 'GER2', 'IRN', 'KSA', 'RUS', 'USA', 'ZAF'
         if countries:
