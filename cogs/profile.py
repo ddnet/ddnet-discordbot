@@ -260,15 +260,15 @@ class Profile(commands.Cog):
 
         # draw players
         for dates, color in reversed(list(zip(data, colors))):
-            xy = []
-
             x = margin
             y = height - margin
+            xy = [(x, y)]
 
-            if start_date not in dates:
+            prev_date = next(iter(dates))
+            if prev_date != start_date:
+                x += (prev_date - start_date).days * days_mult
                 xy.append((x, y))
 
-            prev_date = start_date
             total = 0
             for date, points in dates.items():
                 x += (date - prev_date).days * days_mult
@@ -299,8 +299,8 @@ class Profile(commands.Cog):
             x += size * 2
 
             w, _ = font_big.getsize(player)
-            _, h = font_big.getsize('yA')
-            xy = (x, center(h, margin))  # needs to be hardcoded to align names
+            _, h = font_big.getsize('yA')  # needs to be hardcoded to align names
+            xy = (x, center(h, margin))
             canv.text(xy, player, fill=(255, 255, 255), font=font_big)
             x += w + size * 2
 
