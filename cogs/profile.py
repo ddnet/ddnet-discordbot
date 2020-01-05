@@ -315,7 +315,7 @@ class Profile(commands.Cog):
     async def points(self, ctx: commands.Context, *players: str):
         await ctx.trigger_typing()
 
-        players = players or [ctx.author.display_name]
+        players = set(players) or [ctx.author.display_name]
         if len(players) > 5:
             return await ctx.send('Can at most compare 5 players')
 
