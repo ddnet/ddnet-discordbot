@@ -198,10 +198,10 @@ class Profile(commands.Cog):
         margin = 100
 
         end_date = datetime.utcnow().date()
-        start_date = min(r for d in data for r in d.keys())
+        start_date = min(t for d in data for t in d)
         start_date = min(start_date, end_date.replace(year=end_date.year - 1))
 
-        total_points = max(sum(r for r in d.values()) for d in data)
+        total_points = max(sum(d.values()) for d in data)
         total_points = max(total_points, 1000)
 
         days_mult = (width - margin * 2) / (end_date - start_date).days
@@ -290,8 +290,8 @@ class Profile(commands.Cog):
             canv.rectangle(xy, fill=color)
             x += size * 2
 
-            w, h = font_big.getsize(player)
-            xy = (x, 22)
+            w, _ = font_big.getsize(player)
+            xy = (x, 22)  # needs to be hardcoded to align names
             canv.text(xy, player, fill=(255, 255, 255), font=font_big)
             x += w + size * 2
 
@@ -321,7 +321,7 @@ class Profile(commands.Cog):
 
         fn = partial(self.generate_points_image, players, data)
         buf = await self.bot.loop.run_in_executor(None, fn)
-        file = discord.File(buf, filename=f'profile_{"_".join(players)}.png')
+        file = discord.File(buf, filename=f'points_{"_".join(players)}.png')
         await ctx.send(file=file)
 
 
