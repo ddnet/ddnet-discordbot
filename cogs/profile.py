@@ -269,17 +269,25 @@ class Profile(commands.Cog):
                 xy.append((x, y))
 
             prev_date = start_date
+            total = 0
             for date, points in dates.items():
                 x += (date - prev_date).days * days_mult
                 y -= points * points_mult
                 xy.append((x, y))
 
                 prev_date = date
+                total += points
 
+            x = width - margin
             if end_date not in dates:
-                xy.append((width - margin, y))
+                xy.append((x, y))
 
             canv.line(xy, fill=color, width=6)
+
+            text = humanize_points(total)
+            w, h = font_small.getsize(text)
+            xy = (x + 12, y + center(h))
+            canv.text(xy, text, fill=color, font=font_small)
 
         # draw header
         size = 16
@@ -291,7 +299,8 @@ class Profile(commands.Cog):
             x += size * 2
 
             w, _ = font_big.getsize(player)
-            xy = (x, 22)  # needs to be hardcoded to align names
+            _, h = font_big.getsize('yA')
+            xy = (x, center(h, margin))  # needs to be hardcoded to align names
             canv.text(xy, player, fill=(255, 255, 255), font=font_big)
             x += w + size * 2
 
