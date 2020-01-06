@@ -181,16 +181,20 @@ class Profile(commands.Cog):
 
     def generate_points_image(self, data: Dict[str, List[asyncpg.Record]]) -> BytesIO:
         font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 32)
-        font_big = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 48)
 
         color_light = (100, 100, 100)
         color_dark = (50, 50, 50)
         colors = (
             'orange',
             'red',
-            'green',
-            'lightblue',
-            'purple',
+            'forestgreen',
+            'dodgerblue',
+            'orangered',
+            'orchid',
+            'burlywood',
+            'darkcyan',
+            'royalblue',
+            'olive',
         )
 
         base = base = Image.open(f'{DIR}/assets/points_background.png')
@@ -308,19 +312,28 @@ class Profile(commands.Cog):
             canv.text(xy, text, fill=color, font=font_small)
 
         # draw header
-        size = 16
-        x = margin
-        y = center(size, margin)
-        for player, color in zip(data, colors):
-            xy = ((x, y), (x + size, y + size))
-            canv.rectangle(xy, fill=color)
-            x += size * 2
+        size = 48
+        space = 16
+        while True:
+            font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', size)
+            total = sum(font.getsize(p)[0] for p in data) + space * 4 * len(data) - space * 2
+            if total <= width - margin * 2:
+                break
 
-            w, _ = font_big.getsize(player)
-            _, h = font_big.getsize('yA')  # needs to be hardcoded to align names
+            size -= 1
+            space -= 0.5
+
+        x = margin
+        for player, color in zip(data, colors):
+            y = center(space, margin)
+            xy = ((x, y), (x + space, y + space))
+            canv.rectangle(xy, fill=color)
+            x += space * 2
+
+            _, h = font.getsize('yA')  # needs to be hardcoded to align names
             xy = (x, center(h, margin))
-            canv.text(xy, player, fill=(255, 255, 255), font=font_big)
-            x += w + size * 2
+            canv.text(xy, player, fill='white', font=font)
+            x += w + space * 2
 
         base.thumbnail((width / 2, height / 2), resample=Image.LANCZOS)  # antialiasing
 
@@ -334,8 +347,8 @@ class Profile(commands.Cog):
         await ctx.trigger_typing()
 
         players = players or [ctx.author.display_name]
-        if len(players) > 5:
-            return await ctx.send('Can at most compare 5 players')
+        if len(players) > 10:
+            return await ctx.send('Can at most compare 10 players')
 
         data = {}
         query = 'SELECT timestamp, points FROM stats_finishes WHERE name = $1 ORDER BY timestamp;'
