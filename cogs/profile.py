@@ -305,7 +305,7 @@ class Profile(commands.Cog):
 
         # draw player points
         for y, color in lables:
-            points = (height - margin - y) / points_mult
+            points = int((height - margin - y) / points_mult)
             text = humanize_points(points)
             xy = (width - margin + 8, y + offset)
             canv.text(xy, text, fill=color, font=font_small)
