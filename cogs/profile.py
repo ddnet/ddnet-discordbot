@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from functools import partial
 from io import BytesIO
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import asyncpg
 import discord
@@ -179,7 +179,7 @@ class Profile(commands.Cog):
         file = discord.File(buf, filename=f'profile_{player}.png')
         await ctx.send(file=file)
 
-    def generate_points_image(self, players: List[str], data: List[List[asyncpg.Record]]) -> BytesIO:
+    def generate_points_image(self, data: Dict[str, List[asyncpg.Record]]) -> BytesIO:
         font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 32)
         font_big = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 48)
 
@@ -200,10 +200,10 @@ class Profile(commands.Cog):
         margin = 100
 
         end_date = datetime.utcnow().date()
-        start_date = min(r['timestamp'] for d in data for r in d)
+        start_date = min(r['timestamp'] for d in data for r in d.values())
         start_date = min(start_date, end_date.replace(year=end_date.year - 1))
 
-        total_points = max(sum(r['points'] for r in d) for d in data)
+        total_points = max(sum(r['points'] for r in d.values()) for d in data)
         total_points = max(total_points, 1000)
 
         days_mult = (width - margin * 2) / (end_date - start_date).days
@@ -262,7 +262,7 @@ class Profile(commands.Cog):
 
         # draw players
         lables = []
-        for dates, color in reversed(list(zip(data, colors))):
+        for dates, color in reversed(list(zip(data.values(), colors))):
             x = margin
             y = height - margin
             xy = [(x, y)]
@@ -311,7 +311,7 @@ class Profile(commands.Cog):
         size = 16
         x = margin
         y = center(size, margin)
-        for player, color in zip(players, colors):
+        for player, color in zip(data, colors):
             xy = ((x, y), (x + size, y + size))
             canv.rectangle(xy, fill=color)
             x += size * 2
@@ -333,20 +333,23 @@ class Profile(commands.Cog):
     async def points(self, ctx: commands.Context, *players: str):
         await ctx.trigger_typing()
 
-        players = set(players) or [ctx.author.display_name]
+        players = players or [ctx.author.display_name]
         if len(players) > 5:
             return await ctx.send('Can at most compare 5 players')
 
         data = []
         query = 'SELECT timestamp, points FROM stats_finishes WHERE name = $1 ORDER BY timestamp;'
         for player in players:
+            if player in data:
+                continue
+
             records = await self.bot.pool.fetch(query, player)
             if not records:
                 return await ctx.send(f'Could not find player ``{player}``')
 
-            data.append(records)
+            data[player] = records
 
-        fn = partial(self.generate_points_image, players, data)
+        fn = partial(self.generate_points_image, data)
         buf = await self.bot.loop.run_in_executor(None, fn)
         file = discord.File(buf, filename=f'points_{"_".join(players)}.png')
         await ctx.send(file=file)
