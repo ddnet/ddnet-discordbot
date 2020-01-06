@@ -337,7 +337,7 @@ class Profile(commands.Cog):
         if len(players) > 5:
             return await ctx.send('Can at most compare 5 players')
 
-        data = []
+        data = {}
         query = 'SELECT timestamp, points FROM stats_finishes WHERE name = $1 ORDER BY timestamp;'
         for player in players:
             if player in data:
