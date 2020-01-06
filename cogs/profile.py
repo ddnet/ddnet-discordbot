@@ -267,13 +267,13 @@ class Profile(commands.Cog):
             y = height - margin
             xy = [(x, y)]
 
-            prev_date = dates[0]['timestamp']
-            if prev_date != start_date:
-                x += (prev_date - start_date).days * days_mult
-                xy.append((x, y))
-
+            prev_date = start_date
             for date, points in dates:
-                x += (date - prev_date).days * days_mult
+                delta = (date - prev_date).days * days_mult
+                x += delta
+                if delta / (width - margin * 2) > 0.1:
+                    xy.append((x, y))
+
                 y -= points * points_mult
                 xy.append((x, y))
 
