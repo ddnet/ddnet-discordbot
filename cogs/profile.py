@@ -54,8 +54,10 @@ def humanize_points(points: int) -> str:
     if points < 1000:
         return str(points)
     else:
-        points /= 1000
-        points = int(points) if points % 1 == 0 else round(points, 1)
+        points = round(points / 1000, 1)
+        if points % 1 == 0:
+            points = int(points)
+
         return f'{points}K'
 
 
@@ -253,12 +255,13 @@ class Profile(commands.Cog):
 
                 text = humanize_points(points)
                 w, h = font_small.getsize(text)
-                xy = (margin - w - 12, y + center(h))
+                xy = (margin - w - 8, y + center(h))
                 canv.text(xy, text, fill=color_light, font=font_small)
             else:
                 canv.line(xy, fill=color_dark, width=2)
 
         # draw players
+        lables = []
         for dates, color in reversed(list(zip(data, colors))):
             x = margin
             y = height - margin
@@ -284,9 +287,27 @@ class Profile(commands.Cog):
 
             canv.line(xy, fill=color, width=6)
 
-            text = humanize_points(total)
-            w, h = font_small.getsize(text)
-            xy = (x + 12, y + center(h))
+            lables.append((y, color))
+
+        # remove overlapping lables TODO: optimize
+        _, h = font_small.getsize('0')
+        offset = center(h)
+        for _ in range(len(lables)):
+            lables.sort()
+            for i, (y1, _) in enumerate(lables):
+                if i == len(lables) - 1:
+                    break
+
+                y2 = lables[i + 1][0]
+                if y1 - offset >= y2 + offset and y2 - offset >= y1 + offset:
+                    lables[i] = ((y1 + y2) / 2, 'white')
+                    del lables[i + 1]
+
+        # draw player points
+        for y, color in lables:
+            points = (height - margin - y) / points_mult
+            text = humanize_points(points)
+            xy = (width - margin + 8, y + offset)
             canv.text(xy, text, fill=color, font=font_small)
 
         # draw header
