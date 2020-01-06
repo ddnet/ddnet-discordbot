@@ -200,10 +200,10 @@ class Profile(commands.Cog):
         margin = 100
 
         end_date = datetime.utcnow().date()
-        start_date = min(r['timestamp'] for d in data for r in d.values())
+        start_date = min(r['timestamp'] for d in data.values() for r in d)
         start_date = min(start_date, end_date.replace(year=end_date.year - 1))
 
-        total_points = max(sum(r['points'] for r in d.values()) for d in data)
+        total_points = max(sum(r['points'] for r in d) for d in data.values())
         total_points = max(total_points, 1000)
 
         days_mult = (width - margin * 2) / (end_date - start_date).days
