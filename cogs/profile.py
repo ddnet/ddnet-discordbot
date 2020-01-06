@@ -330,6 +330,7 @@ class Profile(commands.Cog):
             canv.rectangle(xy, fill=color)
             x += space * 2
 
+            w, _ = font.getsize(player)
             _, h = font.getsize('yA')  # needs to be hardcoded to align names
             xy = (x, center(h, margin))
             canv.text(xy, player, fill='white', font=font)
