@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from functools import partial
 from io import BytesIO
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import asyncpg
 import discord
@@ -179,7 +179,7 @@ class Profile(commands.Cog):
         file = discord.File(buf, filename=f'profile_{player}.png')
         await ctx.send(file=file)
 
-    def generate_points_image(self, players: List[str], data: List[Dict]) -> BytesIO:
+    def generate_points_image(self, players: List[str], data: List[List[asyncpg.Record]]) -> BytesIO:
         font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 32)
         font_big = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 48)
 
@@ -200,10 +200,10 @@ class Profile(commands.Cog):
         margin = 100
 
         end_date = datetime.utcnow().date()
-        start_date = min(t for d in data for t in d)
+        start_date = min(r['timestamp'] for d in data for r in d)
         start_date = min(start_date, end_date.replace(year=end_date.year - 1))
 
-        total_points = max(sum(d.values()) for d in data)
+        total_points = max(sum(r['points'] for r in d) for d in data)
         total_points = max(total_points, 1000)
 
         days_mult = (width - margin * 2) / (end_date - start_date).days
@@ -267,23 +267,20 @@ class Profile(commands.Cog):
             y = height - margin
             xy = [(x, y)]
 
-            prev_date = next(iter(dates))
+            prev_date = dates[0]['timestamp']
             if prev_date != start_date:
                 x += (prev_date - start_date).days * days_mult
                 xy.append((x, y))
 
-            total = 0
-            for date, points in dates.items():
+            for date, points in dates:
                 x += (date - prev_date).days * days_mult
                 y -= points * points_mult
                 xy.append((x, y))
 
                 prev_date = date
-                total += points
 
-            x = width - margin
-            if end_date not in dates:
-                xy.append((x, y))
+            if prev_date != end_date:
+                xy.append((width - margin, y))
 
             canv.line(xy, fill=color, width=6)
 
@@ -341,13 +338,13 @@ class Profile(commands.Cog):
             return await ctx.send('Can at most compare 5 players')
 
         data = []
+        query = 'SELECT timestamp, points FROM stats_finishes WHERE name = $1 ORDER BY timestamp;'
         for player in players:
-            query = 'SELECT timestamp, points FROM stats_finishes WHERE name = $1 ORDER BY timestamp;'
             records = await self.bot.pool.fetch(query, player)
             if not records:
-                return await ctx.send(f'Could not find ``{player}``')
+                return await ctx.send(f'Could not find player ``{player}``')
 
-            data.append({t: p for t, p in records})
+            data.append(records)
 
         fn = partial(self.generate_points_image, players, data)
         buf = await self.bot.loop.run_in_executor(None, fn)
