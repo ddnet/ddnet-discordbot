@@ -316,8 +316,8 @@ class Profile(commands.Cog):
         space = 16
         while True:
             font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', size)
-            total = sum(font.getsize(p)[0] for p in data) + space * 4 * len(data) - space * 2
-            if total <= width - margin * 2:
+            combined = sum(font.getsize(p)[0] for p in data) + space * (4 * len(data) - 2)
+            if combined <= width - margin * 2:
                 break
 
             size -= 1
