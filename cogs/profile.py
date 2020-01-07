@@ -232,7 +232,7 @@ class Profile(commands.Cog):
             text = str(year - 1)
             w, h = font_small.getsize(text)
             area_width = x - prev_x
-            if w < area_width:
+            if w <= area_width:
                 xy = (prev_x + center(w, area_width), height - margin + h)
                 canv.text(xy, text, fill=color_light, font=font_small)
 
@@ -249,7 +249,8 @@ class Profile(commands.Cog):
         }
 
         steps = next(s for t, s in thresholds.items() if total_points > t)
-
+        w, _ = font_small.getsize('00.0K')  # max points label width
+        points_margin = center(w, margin)
         for points in range(0, total_points + 1, int(steps / 5)):
             y = height - margin - points * points_mult
             xy = ((margin, y), (width - margin, y))
@@ -259,13 +260,13 @@ class Profile(commands.Cog):
 
                 text = humanize_points(points)
                 w, h = font_small.getsize(text)
-                xy = (margin - w - 8, y + center(h))
+                xy = (margin - points_margin - w, y + center(h))
                 canv.text(xy, text, fill=color_light, font=font_small)
             else:
                 canv.line(xy, fill=color_dark, width=2)
 
         # draw players
-        lables = []
+        labels = []
         for dates, color in reversed(list(zip(data.values(), colors))):
             x = margin
             y = height - margin
@@ -288,32 +289,32 @@ class Profile(commands.Cog):
 
             canv.line(xy, fill=color, width=6)
 
-            lables.append((y, color))
+            labels.append((y, color))
 
-        # remove overlapping lables TODO: optimize
+        # remove overlapping labels TODO: optimize
         _, h = font_small.getsize('0')
         offset = center(h)
-        for _ in range(len(lables)):
-            lables.sort()
-            for i, (y1, _) in enumerate(lables):
-                if i == len(lables) - 1:
+        for _ in range(len(labels)):
+            labels.sort()
+            for i, (y1, _) in enumerate(labels):
+                if i == len(labels) - 1:
                     break
 
-                y2 = lables[i + 1][0]
+                y2 = labels[i + 1][0]
                 if y1 - offset >= y2 + offset and y2 - offset >= y1 + offset:
-                    lables[i] = ((y1 + y2) / 2, 'white')
-                    del lables[i + 1]
+                    labels[i] = ((y1 + y2) / 2, 'white')
+                    del labels[i + 1]
 
         # draw player points
-        for y, color in lables:
+        for y, color in labels:
             points = int((height - margin - y) / points_mult)
             text = humanize_points(points)
-            xy = (width - margin + 8, y + offset)
+            xy = (width - margin + points_margin, y + offset)
             canv.text(xy, text, fill=color, font=font_small)
 
         # draw header
         size = 48
-        space = 16
+        space = size / 3
         while True:
             font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', size)
             combined = sum(font.getsize(p)[0] for p in data) + space * (4 * len(data) - 2)
@@ -321,7 +322,7 @@ class Profile(commands.Cog):
                 break
 
             size -= 1
-            space -= 0.5
+            space -= 1 / 3
 
         x = margin
         for player, color in zip(data, colors):
@@ -331,7 +332,7 @@ class Profile(commands.Cog):
             x += space * 2
 
             w, _ = font.getsize(player)
-            _, h = font.getsize('yA')  # needs to be hardcoded to align names
+            _, h = font.getsize('yA')  # max name height, needs to be hardcoded to align names
             xy = (x, center(h, margin))
             canv.text(xy, player, fill='white', font=font)
             x += w + space * 2
