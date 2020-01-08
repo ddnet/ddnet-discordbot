@@ -32,12 +32,12 @@ async def main():
     config.read('config.ini')
 
     try:
-        pool = await asyncpg.create_pool(user = 'ddnet-discordbot',
-                                         password = config.get('AUTH', 'PSQL'),
-                                         host = 'localhost',
-                                         database = 'ddnet-discordbot')
+        pool = await asyncpg.create_pool(user='ddnet-discordbot',
+                                         password=config.get('AUTH', 'PSQL'),
+                                         host='localhost',
+                                         database='ddnet-discordbot')
 
-        with open('data/schema.sql', 'r') as f:
+        with open('data/schema.psql', 'r') as f:
             await pool.execute(f.read())
     except (ConnectionRefusedError, asyncpg.CannotConnectNowError):
         return log.exception('Failed to connect to PostgreSQL, exiting')

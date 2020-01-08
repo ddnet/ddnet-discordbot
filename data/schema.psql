@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS stats_finishes(
     points INT NOT NULL
 );
 
+CREATE INDEX IF NOT EXISTS finishes_idx ON stats_finishes (name);
+
 CREATE TABLE IF NOT EXISTS stats_commands(
     guild_id BIGINT,
     channel_id BIGINT NOT NULL,
