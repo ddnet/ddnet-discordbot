@@ -71,7 +71,7 @@ def sort_stats(stats_maps: tuple, stats_points: tuple, stats_teamranks: tuple, s
 
             timestamp = data[3]
             if timestamp.startswith(b'2030'):
-                continue  # 2030 is used as the identifier for corrupt records
+                continue
 
             out_finishes[player][timestamp[:10]] += points
 
@@ -83,7 +83,8 @@ def sort_stats(stats_maps: tuple, stats_points: tuple, stats_teamranks: tuple, s
                 countries[b'EUR'] = eu_finishes
 
             # sort alphabetically to get consistent results
-            out[player]['country'] = max(sorted(countries.items()), key=lambda c: c[1])[0]
+            country = max(sorted(countries.items()), key=lambda c: c[1])[0]
+            out[player]['country'] = country
 
     return out, out_finishes
 
@@ -127,8 +128,8 @@ async def main():
 
 if __name__ == '__main__':
     try:
-        status = asyncio.run(main())
+        result = asyncio.run(main())
     except Exception as exc:
         print(f'[{TIMESTAMP}] Failed to update: {exc}')
     else:
-        print(f'[{TIMESTAMP}] Successfully updated: {status}')
+        print(f'[{TIMESTAMP}] Successfully updated: {result}')
