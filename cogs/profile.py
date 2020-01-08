@@ -180,7 +180,7 @@ class Profile(commands.Cog):
         await ctx.send(file=file)
 
     def generate_points_image(self, data: Dict[str, List[asyncpg.Record]]) -> BytesIO:
-        font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 32)
+        font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
 
         color_light = (100, 100, 100)
         color_dark = (50, 50, 50)
@@ -197,11 +197,14 @@ class Profile(commands.Cog):
             'olive',
         )
 
-        base = base = Image.open(f'{DIR}/assets/points_background.png')
+        base = Image.open(f'{DIR}/assets/points_background.png')
         canv = ImageDraw.Draw(base)
 
         width, height = base.size
-        margin = 100
+        margin = 50
+
+        plot_width = width - margin * 2
+        plot_height = height - margin * 2
 
         end_date = datetime.utcnow().date()
         start_date = min(r['timestamp'] for d in data.values() for r in d)
@@ -210,12 +213,11 @@ class Profile(commands.Cog):
         total_points = max(sum(r['points'] for r in d) for d in data.values())
         total_points = max(total_points, 1000)
 
-        days_mult = (width - margin * 2) / (end_date - start_date).days
-        points_mult = (height - margin * 2) / total_points
+        days_mult = plot_width / (end_date - start_date).days
+        points_mult = plot_height / total_points
 
         # draw area bg
-        size = (width - margin * 2, height - margin * 2)
-        bg = Image.new('RGBA', size, color=(0, 0, 0, 100))
+        bg = Image.new('RGBA', (plot_width, plot_height), color=(0, 0, 0, 100))
         base.alpha_composite(bg, dest=(margin, margin))
 
         # draw days TODO: optimize
@@ -227,7 +229,7 @@ class Profile(commands.Cog):
 
             x = margin + (date - start_date).days * days_mult
             xy = ((x, margin), (x, height - margin))
-            canv.line(xy, fill=color_dark, width=2)
+            canv.line(xy, fill=color_dark, width=1)
 
             text = str(year - 1)
             w, h = font_small.getsize(text)
@@ -256,40 +258,46 @@ class Profile(commands.Cog):
             xy = ((margin, y), (width - margin, y))
 
             if points % steps == 0:
-                canv.line(xy, fill=color_light, width=4)
+                canv.line(xy, fill=color_light, width=2)
 
                 text = humanize_points(points)
                 w, h = font_small.getsize(text)
                 xy = (margin - points_margin - w, y + center(h))
                 canv.text(xy, text, fill=color_light, font=font_small)
             else:
-                canv.line(xy, fill=color_dark, width=2)
+                canv.line(xy, fill=color_dark, width=1)
 
         # draw players
+        plot = Image.new('RGBA', (plot_width * 2, plot_height * 2), color=(0, 0, 0, 0))
+        plot_canv = ImageDraw.Draw(plot)
+
         labels = []
         for dates, color in reversed(list(zip(data.values(), colors))):
-            x = margin
-            y = height - margin
+            x = 0
+            y = plot_height * 2
             xy = [(x, y)]
 
             prev_date = start_date
             for date, points in dates:
-                delta = (date - prev_date).days * days_mult
+                delta = (date - prev_date).days * days_mult * 2
                 x += delta
-                if delta / (width - margin * 2) > 0.1:
+                if delta / (plot_width * 2) > 0.1:
                     xy.append((x, y))
 
-                y -= points * points_mult
+                y -= points * points_mult * 2
                 xy.append((x, y))
 
                 prev_date = date
 
             if prev_date != end_date:
-                xy.append((width - margin, y))
+                xy.append((plot_width * 2, y))
 
-            canv.line(xy, fill=color, width=6)
+            plot_canv.line(xy, fill=color, width=6)
 
-            labels.append((y, color))
+            labels.append((margin + y / 2, color))
+
+        plot.thumbnail((plot_width, plot_height), resample=Image.LANCZOS)  # antialiasing
+        base.alpha_composite(plot, dest=(margin, margin))
 
         # remove overlapping labels TODO: optimize
         _, h = font_small.getsize('0')
@@ -313,12 +321,12 @@ class Profile(commands.Cog):
             canv.text(xy, text, fill=color, font=font_small)
 
         # draw header
-        size = 48
+        size = 24
         space = size / 3
         while True:
             font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', size)
             combined = sum(font.getsize(p)[0] for p in data) + space * (4 * len(data) - 2)
-            if combined <= width - margin * 2:
+            if combined <= plot_width:
                 break
 
             size -= 1
@@ -336,8 +344,6 @@ class Profile(commands.Cog):
             xy = (x, center(h, margin))
             canv.text(xy, player, fill='white', font=font)
             x += w + space * 2
-
-        base.thumbnail((width / 2, height / 2), resample=Image.LANCZOS)  # antialiasing
 
         buf = BytesIO()
         base.save(buf, format='png')
