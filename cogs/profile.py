@@ -261,14 +261,15 @@ class Profile(commands.Cog):
                 canv.line(xy, fill=color_dark, width=1)
 
         # draw players
-        size = (plot_width * 2, (plot_height + 2) * 2)
+        extra = 2
+        size = (plot_width * 2, (plot_height + extra * 2) * 2)
         plot = Image.new('RGBA', size, color=(0, 0, 0, 0))
         plot_canv = ImageDraw.Draw(plot)
 
         labels = []
         for dates, color in reversed(list(zip(data.values(), colors))):
             x = 0
-            y = plot_height * 2
+            y = (plot_height + extra) * 2
             xy = [(x, y)]
 
             prev_date = start_date
@@ -288,11 +289,11 @@ class Profile(commands.Cog):
 
             plot_canv.line(xy, fill=color, width=6)
 
-            labels.append((margin + y / 2, color))
+            labels.append((margin - extra + y / 2, color))
 
-        size = (plot_width, plot_height + 2)
+        size = (plot_width, plot_height + extra * 2)
         plot = plot.resize(size, resample=Image.LANCZOS, reducing_gap=1.0)  # antialiasing
-        base.alpha_composite(plot, dest=(margin, margin))
+        base.alpha_composite(plot, dest=(margin, margin - extra))
 
         # remove overlapping labels TODO: optimize
         _, h = font_small.getsize('0')
