@@ -9,6 +9,8 @@ import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
+from utils.image import center, round_rectangle
+
 DIR = 'data/ddnet-stats'
 
 COLOR_DEFAULT = (255, 255, 255)
@@ -23,7 +25,7 @@ def get_background(points: int) -> Tuple[Image.Image, Tuple[int, int, int]]:
         if points <= int(threshold):
             break
 
-    image = Image.open(f'{DIR}/assets/backgrounds/{background}.png')
+    image = Image.open(f'{DIR}/assets/backgrounds/{background}.png').convert('RGBA')
     color = tuple(color)
     return image, color
 
@@ -35,9 +37,6 @@ def get_flag(country: str) -> Image.Image:
     flag = country if country in flags else 'UNK'
     return Image.open(f'{DIR}/assets/flags/{flag}.png')
 
-def center_text(width_context: int, width_text: int) -> int:
-    return (width_context - width_text) / 2
-
 def plural(value: int, name: str) -> str:
     if abs(value) == 1:
         return name
@@ -46,9 +45,6 @@ def plural(value: int, name: str) -> str:
         return f'{name}S'
     else:
         return f'{name}s'
-
-def center(text_size: int, area_size: int=0) -> int:
-    return int((area_size - text_size) / 2)
 
 def humanize_points(points: int) -> str:
     if points < 1000:
@@ -66,28 +62,24 @@ class Profile(commands.Cog):
         self.bot = bot
 
     def generate_profile_image(self, stats: asyncpg.Record) -> BytesIO:
-        base = Image.new('RGBA', (800, 256))
         # Fonts
         font_normal_24 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
         font_bold_38 = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 38)
         font_bold_48 = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 48)
         font_bold_36 = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 36)
 
-        background, colored = get_background(stats['total_points'])
-        base.paste(background)
-        box = Image.open(f'{DIR}/assets/box.png').convert('RGBA')  # Context field
-        base.alpha_composite(box, (32, 32))
+        base, colored = get_background(stats['total_points'])
         canv = ImageDraw.Draw(base)
+
+        bg = round_rectangle((736, 192), 12, color=(0, 0, 0, 175))
+        base.alpha_composite(bg, dest=(32, 32))
 
         # Name field
         name = stats['name']
-        name_bg_corner = Image.open(f'{DIR}/assets/name_badge.png').convert('RGBA')
-
-        rect_width = 124 + font_bold_38.getsize(name)[0]
-        base.alpha_composite(name_bg_corner, (48, 48))
-        name_bg = Image.new('RGBA', (abs(73 - rect_width), 50), (150, 150 , 150, 74))
-        base.alpha_composite(name_bg, (73, 48))
-        base.alpha_composite(name_bg_corner.rotate(180), (rect_width, 48))
+        w, _ = font_bold_38.getsize(name)
+        size = (16 + w + 39 + 25 * 2, 50)
+        name_bg = round_rectangle(size, 26, color=(150, 150, 150, 75))
+        base.alpha_composite(name_bg, dest=(48, 48))
 
         flag = get_flag(stats['country'])
         base.alpha_composite(flag, (73, 59))
@@ -100,7 +92,7 @@ class Profile(commands.Cog):
         rank = stats['total_rank']
 
         text_width = font_bold_48.getsize(f'#{rank}')[0]
-        width = center_text(284, text_width) + 24
+        width = center(text_width, 284) + 24
         canv.text((width, 112), f'#{rank}', fill=COLOR_DEFAULT, font=font_bold_48)
 
         # Second row
@@ -108,7 +100,7 @@ class Profile(commands.Cog):
         suffix = plural(points, ' POINT')
 
         text_width = font_bold_36.getsize(str(points))[0] + font_normal_24.getsize(suffix)[0]
-        width = center_text(284, text_width) + 24
+        width = center(text_width, 284) + 24
         canv.text((width, 163), str(points), fill=colored, font=font_bold_36)
         width += font_bold_36.getsize(str(points))[0]
         canv.text((width, 174), suffix, fill=colored, font=font_normal_24)
