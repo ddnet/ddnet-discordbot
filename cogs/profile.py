@@ -10,6 +10,7 @@ from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
 from utils.image import center, round_rectangle
+from utils.text import escape_backticks
 
 DIR = 'data/ddnet-stats'
 
@@ -348,7 +349,7 @@ class Profile(commands.Cog):
     async def points(self, ctx: commands.Context, *players: str):
         await ctx.trigger_typing()
 
-        players = players or [ctx.author.display_name]
+        players = [p for p in players if p] or [ctx.author.display_name]
         if len(players) > 10:
             return await ctx.send('Can at most compare 10 players')
 
@@ -360,7 +361,7 @@ class Profile(commands.Cog):
 
             records = await self.bot.pool.fetch(query, player)
             if not records:
-                return await ctx.send(f'Could not find player ``{player}``')
+                return await ctx.send(f'Could not find player ``{escape_backticks(player)}``')
 
             data[player] = records
 
