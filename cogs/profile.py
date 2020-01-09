@@ -255,7 +255,7 @@ class Profile(commands.Cog):
         points_margin = center(w, margin)
         for points in range(0, total_points + 1, int(steps / 5)):
             y = height - margin - points * points_mult
-            xy = ((margin, y), (width - margin, y))
+            xy = ((margin, y), (width - margin - 1, y))
 
             if points % steps == 0:
                 canv.line(xy, fill=color_light, width=2)
@@ -268,7 +268,8 @@ class Profile(commands.Cog):
                 canv.line(xy, fill=color_dark, width=1)
 
         # draw players
-        plot = Image.new('RGBA', (plot_width * 2, plot_height * 2), color=(0, 0, 0, 0))
+        size = (plot_width * 2, (plot_height + 2) * 2)
+        plot = Image.new('RGBA', size, color=(0, 0, 0, 0))
         plot_canv = ImageDraw.Draw(plot)
 
         labels = []
@@ -296,7 +297,8 @@ class Profile(commands.Cog):
 
             labels.append((margin + y / 2, color))
 
-        plot.thumbnail((plot_width, plot_height), resample=Image.LANCZOS)  # antialiasing
+        size = (plot_width, plot_height + 2)
+        plot = plot.resize(size, resample=Image.LANCZOS, reducing_gap=1.0)  # antialiasing
         base.alpha_composite(plot, dest=(margin, margin))
 
         # remove overlapping labels TODO: optimize
