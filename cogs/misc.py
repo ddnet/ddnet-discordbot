@@ -57,7 +57,7 @@ def human_timedelta(delta: timedelta, accuracy=4) -> str:
         ('s', seconds),
     )
 
-    return ' '.join([f'{v}{u}' for u, v in units if v > 0][:accuracy])
+    return ' '.join([f'{v}{u}' for u, v in units if v > 0][:accuracy]) or '0s'
 
 
 class Misc(commands.Cog):
