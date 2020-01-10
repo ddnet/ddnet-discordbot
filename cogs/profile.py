@@ -26,7 +26,7 @@ def get_background(points: int) -> Tuple[Image.Image, Tuple[int, int, int]]:
         if points <= int(threshold):
             break
 
-    image = Image.open(f'{DIR}/assets/backgrounds/{background}.png').convert('RGBA')
+    image = Image.open(f'{DIR}/assets/backgrounds/{background}.png')
     color = tuple(color)
     return image, color
 
