@@ -8,9 +8,10 @@ def center(size: int, area_size: int=0) -> int:
 
 def round_rectangle(size: Tuple[int, int], radius: int, *, color: Tuple[int, int, int, int]) -> Image:
     width, height = size
+
+    radius = min(width, height, radius * 2)
     width *= 2
     height *= 2
-    radius *= 2
 
     corner = Image.new('RGBA', (radius, radius))
     draw = ImageDraw.Draw(corner)
