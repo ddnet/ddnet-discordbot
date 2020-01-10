@@ -79,7 +79,7 @@ class Profile(commands.Cog):
         name = stats['name']
         w, _ = font_bold_38.getsize(name)
         size = (16 + w + 39 + 25 * 2, 50)
-        name_bg = round_rectangle(size, 26, color=(150, 150, 150, 75))
+        name_bg = round_rectangle(size, 25, color=(150, 150, 150, 75))
         base.alpha_composite(name_bg, dest=(48, 48))
 
         flag = get_flag(stats['country'])
