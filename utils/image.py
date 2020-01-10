@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw
 def center(size: int, area_size: int=0) -> int:
     return int((area_size - size) / 2)
 
-def round_rectangle(size: Tuple[int, int], radius: int, *, color: Tuple[int, int, int, int]) -> Image:
+def round_rectangle(size: Tuple[int, int], radius: int, *, color: Tuple[int, int, int, int]) -> Image.Image:
     width, height = size
 
     radius = min(width, height, radius * 2)
