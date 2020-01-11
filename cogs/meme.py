@@ -9,6 +9,8 @@ from typing import List
 import discord
 from discord.ext import commands
 
+DIR = 'data/assets'
+
 
 def wrap(font: ImageFont, text: str, line_width: int) -> List[str]:
     words = text.split()
@@ -38,9 +40,9 @@ class Memes(commands.Cog):
         self.bot = bot
 
     def generate(self, type_: str, text1: str, text2: str) -> BytesIO:
-        base = Image.open(f'data/memes/{type_}.png')
+        base = Image.open(f'{DIR}/memes/{type_}.png')
         canv = ImageDraw.Draw(base)
-        font = ImageFont.truetype('data/ddnet-stats/fonts/normal.ttf', 46)
+        font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 46)
 
         canv.text((600, 100), wrap(font, text1, 400), fill='black', font=font)
         if text2 is not None:
@@ -92,9 +94,9 @@ class Memes(commands.Cog):
         await ctx.send(file=file)
 
     def generate_teebob(self, text: str) -> BytesIO:
-        base = Image.open('data/memes/teebob.png')
+        base = Image.open(f'{DIR}/memes/teebob.png')
         canv = ImageDraw.Draw(base)
-        font = ImageFont.truetype('data/ddnet-stats/fonts/normal.ttf', 40)
+        font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 40)
 
         canv.text((100, 120), wrap(font, text, 250), fill='black', font=font)
 
@@ -111,9 +113,9 @@ class Memes(commands.Cog):
         await ctx.send(file=file)
 
     def generate_clown(self, text1: str, text2: str, text3: str, text4: str) -> BytesIO:
-        base = Image.open('data/memes/clown.png')
+        base = Image.open(f'{DIR}/memes/clown.png')
         canv = ImageDraw.Draw(base)
-        font = ImageFont.truetype('data/ddnet-stats/fonts/normal.ttf', 30)
+        font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 30)
 
         canv.text((10, 10), wrap(font, text1, 310), fill='black', font=font)
         canv.text((10, 180), wrap(font, text2, 310), fill='black', font=font)

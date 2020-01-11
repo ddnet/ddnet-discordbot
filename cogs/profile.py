@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 from utils.image import center, round_rectangle
 from utils.text import escape_backticks, plural
 
-DIR = 'data/ddnet-stats'
+DIR = 'data/assets'
 
 
 def humanize_points(points: int) -> str:
@@ -54,7 +54,7 @@ class Profile(commands.Cog):
         }
 
         img, color = next(e for t, e in thresholds.items() if data['total_points'] >= t)
-        base = Image.open(f'{DIR}/assets/backgrounds/{img}.png')
+        base = Image.open(f'{DIR}/profile_backgrounds/{img}.png')
 
         canv = ImageDraw.Draw(base)
 
@@ -70,9 +70,9 @@ class Profile(commands.Cog):
 
         # draw name
         try:
-            flag = Image.open(f'{DIR}/assets/flags/{data["country"]}.png')
+            flag = Image.open(f'{DIR}/flags/{data["country"]}.png')
         except FileNotFoundError:
-            flag = Image.open(f'{DIR}/assets/flags/UNK.png')
+            flag = Image.open(f'{DIR}/flags/UNK.png')
 
         flag_w, flag_h = flag.size
 
@@ -193,7 +193,7 @@ class Profile(commands.Cog):
             'olive',
         )
 
-        base = Image.open(f'{DIR}/assets/points_background.png')
+        base = Image.open(f'{DIR}/points_background.png')
         canv = ImageDraw.Draw(base)
 
         width, height = base.size
