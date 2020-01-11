@@ -81,7 +81,7 @@ class Profile(commands.Cog):
         _, h = font_bold.getsize('yA')  # hardcoded to align names
 
         name_height = 50
-        radius = name_height / 2
+        radius = int(name_height / 2)
 
         size = (flag_w + w + radius * 2, name_height)
         name_bg = round_rectangle(size, radius, color=(150, 150, 150, 75))
