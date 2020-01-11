@@ -1,8 +1,7 @@
-import json
 from datetime import datetime
 from functools import partial
 from io import BytesIO
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import asyncpg
 import discord
@@ -10,42 +9,10 @@ from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
 from utils.image import center, round_rectangle
-from utils.text import escape_backticks
+from utils.text import escape_backticks, plural
 
 DIR = 'data/ddnet-stats'
 
-COLOR_DEFAULT = (255, 255, 255)
-COLOR_GREY = (150, 150, 150)
-
-
-def get_background(points: int) -> Tuple[Image.Image, Tuple[int, int, int]]:
-    with open(f'{DIR}/assets/backgrounds/thresholds.json', 'r', encoding='utf-8') as f:
-        thresholds = json.loads(f.read())
-
-    for threshold, (background, color) in thresholds.items():
-        if points <= int(threshold):
-            break
-
-    image = Image.open(f'{DIR}/assets/backgrounds/{background}.png')
-    color = tuple(color)
-    return image, color
-
-def get_flag(country: str) -> Image.Image:
-    with open(f'{DIR}/assets/flags/valid_flags.json', 'r', encoding='utf-8') as f:
-        flags = json.loads(f.read())
-
-    country = country.strip()
-    flag = country if country in flags else 'UNK'
-    return Image.open(f'{DIR}/assets/flags/{flag}.png')
-
-def plural(value: int, name: str) -> str:
-    if abs(value) == 1:
-        return name
-
-    if name.isupper():
-        return f'{name}S'
-    else:
-        return f'{name}s'
 
 def humanize_points(points: int) -> str:
     if points < 1000:
@@ -62,92 +29,128 @@ class Profile(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    def generate_profile_image(self, stats: asyncpg.Record) -> BytesIO:
-        # Fonts
-        font_normal_24 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
-        font_bold_38 = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 38)
-        font_bold_48 = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 48)
-        font_bold_36 = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 36)
+    def generate_profile_image(self, data: asyncpg.Record) -> BytesIO:
+        font_normal = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
+        font_bold = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 34)
+        font_big = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 48)
 
-        base, colored = get_background(stats['total_points'])
+        thresholds = {
+            18000: ('justice_2', (184, 81, 50)),
+            16000: ('back_in_the_days_3', (156, 162, 142)),
+            14000: ('heartcore', (86, 79, 81)),
+            12000: ('aurora', (55, 103, 156)),
+            10000: ('narcissistic', (122, 32, 43)),
+            9000:  ('aim_10', (93, 128, 144)),
+            8000:  ('barren', (196, 172, 140)),
+            7000:  ('back_in_time', (148, 156, 161)),
+            6000:  ('nostalgia', (161, 140, 148)),
+            5000:  ('sweet_shot', (229, 148, 166)),
+            4000:  ('chained', (183, 188, 198)),
+            3000:  ('intothenight', (60, 76, 89)),
+            2000:  ('darkvine', (145, 148, 177)),
+            1000:  ('crimson_woods', (108, 12, 12)),
+            1:     ('kobra_4', (148, 167, 75)),
+            0:     ('stronghold', (156, 188, 220)),
+        }
+
+        img, color = next(e for t, e in thresholds.items() if data['total_points'] >= t)
+        base = Image.open(f'{DIR}/assets/backgrounds/{img}.png')
+
         canv = ImageDraw.Draw(base)
 
-        bg = round_rectangle((736, 192), 12, color=(0, 0, 0, 175))
-        base.alpha_composite(bg, dest=(32, 32))
+        width, height = base.size
+        outer = 32
+        inner = int(outer / 2)
+        margin = outer + inner
 
-        # Name field
-        name = stats['name']
-        w, _ = font_bold_38.getsize(name)
-        size = (16 + w + 39 + 25 * 2, 50)
-        name_bg = round_rectangle(size, 25, color=(150, 150, 150, 75))
-        base.alpha_composite(name_bg, dest=(48, 48))
+        # draw bg
+        size = (width - outer * 2, height - outer * 2)
+        bg = round_rectangle(size, 12, color=(0, 0, 0, 150))
+        base.alpha_composite(bg, dest=(outer, outer))
 
-        flag = get_flag(stats['country'])
-        base.alpha_composite(flag, (73, 59))
+        # draw name
+        try:
+            flag = Image.open(f'{DIR}/assets/flags/{data["country"]}.png')
+        except FileNotFoundError:
+            flag = Image.open(f'{DIR}/assets/flags/UNK.png')
 
-        canv.text((124, 48), name, COLOR_DEFAULT, font_bold_38)
+        flag_w, flag_h = flag.size
 
-        # Points field
+        name = ' ' + data['name']
+        w, _ = font_bold.getsize(name)
+        _, h = font_bold.getsize('yA')  # hardcoded to align names
 
-        # First row
-        rank = stats['total_rank']
+        name_height = 50
+        radius = name_height / 2
 
-        text_width = font_bold_48.getsize(f'#{rank}')[0]
-        width = center(text_width, 284) + 24
-        canv.text((width, 112), f'#{rank}', fill=COLOR_DEFAULT, font=font_bold_48)
+        size = (flag_w + w + radius * 2, name_height)
+        name_bg = round_rectangle(size, radius, color=(150, 150, 150, 75))
+        base.alpha_composite(name_bg, dest=(margin, margin))
 
-        # Second row
-        points = stats['total_points']
-        suffix = plural(points, ' POINT')
+        x = margin + radius
+        dest = (x, margin + center(flag_h, name_height))
+        base.alpha_composite(flag, dest=dest)
 
-        text_width = font_bold_36.getsize(str(points))[0] + font_normal_24.getsize(suffix)[0]
-        width = center(text_width, 284) + 24
-        canv.text((width, 163), str(points), fill=colored, font=font_bold_36)
-        width += font_bold_36.getsize(str(points))[0]
-        canv.text((width, 174), suffix, fill=colored, font=font_normal_24)
+        xy = (x + flag_w, margin + center(h, name_height))
+        canv.text(xy, name, fill='white', font=font_bold)
 
-        # Border
-        canv.line(((312, 112), (312, 207)), fill=COLOR_DEFAULT, width=3)
+        # draw points
+        points_width = (width - margin * 2) / 3 + inner * 2
 
-        # Ranks field
-        # TODO: clean this up
-        borders = ((125, 154), (165, 194))
+        x = margin + points_width + inner
+        y = margin + name_height + inner
 
-        conf = (
-            ('TEAM RANK', stats['team_rank'], stats['team_points'], (119, 130)),
-            ('RANK', stats['solo_rank'], stats['solo_points'], (159, 170))
-        )
+        xy = ((x, y), (x, height - margin))
+        canv.line(xy, fill='white', width=3)
 
-        tmp_abc = []
-        for rank_type, rank, points, heights in conf:
-            major, minor = heights
-            abc = [[f'{rank_type} ', font_normal_24, COLOR_DEFAULT, minor]]
-            if rank:
-                text = plural(points, ' POINT')
-                abc.extend((
-                    ['#', font_bold_36, COLOR_DEFAULT, major],
-                    [str(rank), font_bold_36, COLOR_DEFAULT, major],
-                    ['   ', font_bold_36, COLOR_DEFAULT, major],  # Placeholder for the border
-                    [str(points), font_bold_36, colored, major],
-                    [text, font_normal_24, colored, minor]
-                ))
+        text = f'#{data["total_rank"]}'
+        w, h = font_big.getsize(text)
+        xy = (margin + center(w, points_width - outer), y)
+        canv.text(xy, text, fill='white', font=font_big)
+
+        offset = h * 0.25  # true drawn height is only 3 / 4
+
+        text = str(data['total_points'])
+        w, h = font_bold.getsize(text)
+        suffix = plural(data['total_points'], ' point').upper()
+        w2, h2 = font_normal.getsize(suffix)
+
+        x = margin + center(w + w2, points_width - outer)
+        y = height - margin - offset
+
+        canv.text((x, y - h), text, fill=color, font=font_bold)
+        canv.text((x + w, y - h2), suffix, fill=color, font=font_normal)
+
+        # draw ranks
+        types = {
+            'TEAM RANK ': (data['team_rank'], data['team_points']),
+            'RANK ': (data['solo_rank'], data['solo_points'])
+        }
+
+        _, h = font_bold.getsize('A')
+        yy = (margin + name_height + inner + h * 1.25, height - margin - h * 0.5)
+
+        for (type_, (rank, points)), y in zip(types.items(), yy):
+            line = [(type_, 'white', font_normal)]
+            if rank is None:
+                line.append(('UNRANKED', (150, 150, 150), font_bold))
             else:
-                abc.append(['UNRANKED', font_bold_36, COLOR_GREY, major])
+                line.extend((
+                    (f'#{rank}', 'white', font_bold),
+                    ('   ', 'white', font_bold),  # border placeholder
+                    (str(points), color, font_bold),
+                    (plural(points, ' point').upper(), color, font_normal),
+                ))
 
-            tmp_abc.append(abc)
-
-        teamrank_abc, rank_abc = tmp_abc
-        for n, abc in enumerate((teamrank_abc, rank_abc)):
-            width = 752
-            for text, font, color, height in abc[::-1]:  # Draw from right to left
-                # Account for drawn text width before drawing since text is drawn left to right
-                width -= font.getsize(text)[0]
+            x = width - margin
+            for text, color_, font in line[::-1]:
+                w, h = font.getsize(text)
+                x -= w  # adjust x before drawing since we're drawing reverse
                 if text == '   ':
-                    # Add half the width again since the border should be in the middle
-                    x = width + font.getsize(text)[0] / 2
-                    canv.line(((x, borders[n][0]), (x, borders[n][1])), fill=COLOR_DEFAULT, width=1)
+                    xy = ((x + w / 2, y - h * 0.75), (x + w / 2, y - 1))  # fix line width overflow
+                    canv.line(xy, fill=color_, width=1)
                 else:
-                    canv.text((width, height), text, color, font=font)
+                    canv.text((x, y - h), text, fill=color_, font=font)
 
         buf = BytesIO()
         base.save(buf, format='png')

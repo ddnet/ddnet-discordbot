@@ -39,3 +39,6 @@ def human_join(seq: List[str], delim: str=', ', final: str=' & ') -> str:
 
 def sanitize(text: str) -> str:
     return re.sub(r'[\^<>{}"/|;:,~!?@#$%^=&*\]\\()\[+]', '', text.replace(' ', '_'))
+
+def plural(value: int, singular: str) -> str:
+    return singular if abs(value) == 1 else singular + 's'
