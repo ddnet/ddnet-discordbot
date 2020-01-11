@@ -97,7 +97,7 @@ class Profile(commands.Cog):
         # draw points
         points_width = (width - margin * 2) / 3 + inner * 2
 
-        x = margin + points_width + inner
+        x = margin + points_width
         y = margin + name_height + inner
 
         xy = ((x, y), (x, height - margin))
