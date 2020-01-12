@@ -4,7 +4,6 @@
 import asyncio
 import logging
 from configparser import ConfigParser
-from datetime import datetime
 
 import aiohttp
 import asyncpg
@@ -15,14 +14,12 @@ from bot import DDNet
 uvloop.install()
 loop = asyncio.get_event_loop()
 
-TIMESTAMP = datetime.utcnow().strftime('%Y-%m-%d_%H.%M.%S.%f')
-
 logging.getLogger('discord').setLevel(logging.INFO)
 logging.getLogger('discord.http').setLevel(logging.WARNING)
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
-handler = logging.FileHandler(filename=f'logs/{TIMESTAMP}.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(f'logs/bot.log', encoding='utf-8')
 fmt = logging.Formatter('[%(asctime)s][%(levelname)s][%(name)s]: %(message)s', '%Y-%m-%d %H:%M:%S')
 handler.setFormatter(fmt)
 log.addHandler(handler)
