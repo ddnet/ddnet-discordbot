@@ -153,7 +153,7 @@ class Profile(commands.Cog):
                     canv.text((x, y - h), text, fill=color_, font=font)
 
         buf = BytesIO()
-        base.save(buf, format='png')
+        base.convert('RGB').save(buf, format='png')
         buf.seek(0)
         return buf
 
@@ -345,7 +345,7 @@ class Profile(commands.Cog):
             x += w + space * 2
 
         buf = BytesIO()
-        base.save(buf, format='png')
+        base.convert('RGB').save(buf, format='png')
         buf.seek(0)
         return buf
 
