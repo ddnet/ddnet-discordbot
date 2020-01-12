@@ -216,16 +216,19 @@ class Profile(commands.Cog):
         bg = Image.new('RGBA', (plot_width, plot_height), color=(0, 0, 0, 100))
         base.alpha_composite(bg, dest=(margin, margin))
 
-        # draw days TODO: optimize
+        # draw years
         prev_x = margin
-        for year in range(start_date.year, end_date.year + 1):
+        for year in range(start_date.year, end_date.year + 2):
             date = datetime(year=year, month=1, day=1).date()
             if date < start_date:
                 continue
 
-            x = margin + (date - start_date).days * days_mult
-            xy = ((x, margin), (x, height - margin))
-            canv.line(xy, fill=color_dark, width=1)
+            if date > end_date:
+                x = width - margin
+            else:
+                x = margin + (date - start_date).days * days_mult
+                xy = ((x, margin), (x, height - margin))
+                canv.line(xy, fill=color_dark, width=1)
 
             text = str(year - 1)
             w, h = font_small.getsize(text)
