@@ -19,7 +19,7 @@ logging.getLogger('discord.http').setLevel(logging.WARNING)
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
-handler = logging.FileHandler(f'logs/bot.log', encoding='utf-8')
+handler = logging.FileHandler('logs/bot.log', 'a', encoding='utf-8')
 fmt = logging.Formatter('[%(asctime)s][%(levelname)s][%(name)s]: %(message)s', '%Y-%m-%d %H:%M:%S')
 handler.setFormatter(fmt)
 log.addHandler(handler)
