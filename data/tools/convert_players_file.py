@@ -3,7 +3,6 @@
 
 import asyncio
 from collections import defaultdict
-from configparser import ConfigParser
 from datetime import datetime
 from io import BytesIO
 from typing import Tuple
@@ -13,9 +12,6 @@ import msgpack
 import requests
 
 TIMESTAMP = datetime.utcnow().strftime('%Y-%m-%d %H:%M')
-
-config = ConfigParser()
-config.read('ddnet-discordbot/config.ini')
 
 PLAYERS_FILE_URL = 'https://ddnet.tw/players.msgpack'
 
@@ -105,11 +101,7 @@ async def update_database(stats: dict, stats_finishes: dict) -> str:
         for timestamp, points in dates.items()
     ]
 
-    con = await asyncpg.connect(user='ddnet-discordbot',
-                                password=config.get('AUTH', 'PSQL'),
-                                host='localhost',
-                                database='ddnet-discordbot')
-
+    con = await asyncpg.connect()
     async with con.transaction():
         await con.execute('TRUNCATE stats_players RESTART IDENTITY;')
         players = await con.copy_records_to_table('stats_players', records=records)
