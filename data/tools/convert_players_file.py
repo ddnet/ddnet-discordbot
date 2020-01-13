@@ -103,9 +103,8 @@ async def update_database(stats: dict, stats_finishes: dict) -> str:
 
     con = await asyncpg.connect()
     async with con.transaction():
-        await con.execute('TRUNCATE stats_players RESTART IDENTITY;')
+        await con.execute('TRUNCATE stats_players, stats_finishes RESTART IDENTITY;')
         players = await con.copy_records_to_table('stats_players', records=records)
-        await con.execute('TRUNCATE stats_finishes RESTART IDENTITY;')
         finishes = await con.copy_records_to_table('stats_finishes', records=records_finishes)
 
     await con.close()
