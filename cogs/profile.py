@@ -95,9 +95,9 @@ class Profile(commands.Cog):
         canv.text(xy, name, fill='white', font=font_bold)
 
         # draw points
-        points_width = (width - margin * 2) / 3 + inner * 2
+        points_width = (width - margin * 2) / 3
 
-        x = margin + points_width
+        x = margin + points_width + inner
         y = margin + name_height + inner
 
         xy = ((x, y), (x, height - margin))
@@ -105,7 +105,7 @@ class Profile(commands.Cog):
 
         text = f'#{data["total_rank"]}'
         w, h = font_big.getsize(text)
-        xy = (margin + center(w, points_width - outer), y)
+        xy = (margin + center(w, points_width), y)
         canv.text(xy, text, fill='white', font=font_big)
 
         offset = h * 0.25  # true drawn height is only 3 / 4
@@ -115,7 +115,7 @@ class Profile(commands.Cog):
         suffix = plural(data['total_points'], ' point').upper()
         w2, h2 = font_normal.getsize(suffix)
 
-        x = margin + center(w + w2, points_width - outer)
+        x = margin + center(w + w2, points_width)
         y = height - margin - offset
 
         canv.text((x, y - h), text, fill=color, font=font_bold)
