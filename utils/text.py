@@ -5,6 +5,16 @@ import re
 from typing import List
 
 import discord
+from discord.ext import commands
+
+
+class clean_content(commands.clean_content):
+    def __init__(self):
+        super().__init__(fix_channel_mentions=True)
+
+    async def convert(self, ctx: commands.Context, argument: str) -> str:
+        argument = re.sub(r'<a?(:[a-zA-Z0-9_]+:)[0-9]{17,21}>', r'\1', argument)
+        return await super().convert(ctx, argument)
 
 
 def escape_backticks(text: str) -> str:

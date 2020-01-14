@@ -9,7 +9,7 @@ from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
 from utils.image import center, round_rectangle
-from utils.text import escape_backticks, plural
+from utils.text import clean_content, escape_backticks, plural
 
 DIR = 'data/assets'
 
@@ -158,12 +158,10 @@ class Profile(commands.Cog):
         return buf
 
     @commands.command()
-    async def profile(self, ctx: commands.Context, *, player: str=None):
+    async def profile(self, ctx: commands.Context, *, player: clean_content=None):
         await ctx.trigger_typing()
 
         player = player or ctx.author.display_name
-        for user in ctx.message.mentions:
-            player = player.replace(user.mention, user.display_name)
 
         query = 'SELECT * FROM stats_players WHERE name = $1;'
         record = await self.bot.pool.fetchrow(query, player)
@@ -353,7 +351,7 @@ class Profile(commands.Cog):
         return buf
 
     @commands.command()
-    async def points(self, ctx: commands.Context, *players: str):
+    async def points(self, ctx: commands.Context, *players: clean_content):
         await ctx.trigger_typing()
 
         players = [p for p in players if p] or [ctx.author.display_name]

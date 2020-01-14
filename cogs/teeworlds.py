@@ -11,7 +11,7 @@ import discord
 from discord.ext import commands
 
 from data.countryflags import COUNTRYFLAGS, FLAG_UNK
-from utils.text import escape
+from utils.text import clean_content, escape
 
 log = logging.getLogger(__name__)
 
@@ -359,11 +359,9 @@ class Teeworlds(commands.Cog):
             return [Server(**s) for s in js]
 
     @commands.command()
-    async def find(self, ctx: commands.Context, *, player: str=None):
+    async def find(self, ctx: commands.Context, *, player: clean_content=None):
         """Find a player on a DDNet server"""
         player = player or ctx.author.display_name
-        for user in ctx.message.mentions:
-            player = player.replace(user.mention, user.display_name)
 
         try:
             servers = await self.fetch_servers()
