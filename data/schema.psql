@@ -1,5 +1,5 @@
-CREATE TABLE IF NOT EXISTS stats_players(
-	name VARCHAR(16) PRIMARY KEY UNIQUE NOT NULL,
+CREATE TABLE stats_players(
+	name VARCHAR(15) PRIMARY KEY,
 	total_points INT,
     total_rank INT,
     team_points INT,
@@ -9,15 +9,37 @@ CREATE TABLE IF NOT EXISTS stats_players(
     country CHAR(3)
 );
 
-CREATE TABLE IF NOT EXISTS stats_finishes(
-    name VARCHAR(16) NOT NULL,
+CREATE TABLE stats_finishes(
+    name VARCHAR(15) NOT NULL,
     timestamp DATE NOT NULL,
     points INT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS finishes_idx ON stats_finishes (name);
+CREATE INDEX finishes_idx ON stats_finishes (name);
 
-CREATE TABLE IF NOT EXISTS stats_commands(
+CREATE TABLE stats_maps_static(
+    name VARCHAR(512) PRIMARY KEY,
+    timestamp TIMESTAMP NOT NULL,
+    mappers VARCHAR,
+    tiles VARCHAR(14)[] NOT NULL,
+    color VARCHAR(7) NOT NULL
+);
+
+CREATE TYPE map_rank AS (
+    player VARCHAR(15),
+    rank INT,
+    time FLOAT
+);
+
+CREATE TABLE stats_maps(
+    name VARCHAR(100) REFERENCES stats_maps_static(name) ON DELETE CASCADE,
+    server VARCHAR(9) NOT NULL,
+    points INT NOT NULL,
+    finishers INT NOT NUll,
+    ranks map_rank[] NOT NULL
+);
+
+CREATE TABLE stats_commands(
     guild_id BIGINT,
     channel_id BIGINT NOT NULL,
     author_id BIGINT NOT NULL,
@@ -25,7 +47,7 @@ CREATE TABLE IF NOT EXISTS stats_commands(
     command VARCHAR(32) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS records_webhooks(
-    id BIGINT PRIMARY KEY UNIQUE NOT NULL,
+CREATE TABLE records_webhooks(
+    id BIGINT PRIMARY KEY,
     token TEXT NOT NULL
 );

@@ -6,10 +6,10 @@ from typing import Dict, List
 import asyncpg
 import discord
 from discord.ext import commands
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from utils.image import auto_font, center, round_rectangle
-from utils.text import clean_content, escape_backticks, plural
+from utils.text import clean_content, escape_backticks, normalize, plural
 
 DIR = 'data/assets'
 
@@ -374,6 +374,175 @@ class Profile(commands.Cog):
     async def points_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.ArgumentParsingError):
             await ctx.send('<players> contain unmatched or unescaped quotation mark')
+
+    def generate_map_image(self, data: asyncpg.Record) -> BytesIO:
+        font_48 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 46)
+        font_36 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 36)
+        font_32 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 32)
+        font_26 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 26)
+        font_24 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
+        font_22 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 20)
+        font_20 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 20)
+        font_16 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
+
+        name = data['name']
+        color = data['color']
+
+        base = Image.open(f'{DIR}/map_backgrounds/{normalize(name)}.png')
+        base = base.filter(ImageFilter.GaussianBlur(radius=3))
+        canv = ImageDraw.Draw(base)
+
+        width, height = base.size
+        outer = 32
+        inner = int(outer / 2)
+        margin = outer + inner
+
+        # draw bg
+        size = (width - outer * 2, height - outer * 2)
+        bg = round_rectangle(size, 12, color=(0, 0, 0, 175))
+        base.alpha_composite(bg, dest=(outer, outer))
+
+        # draw header
+        mappers = data['mappers']
+
+        name_height = 50
+        radius = int(name_height / 2)
+
+        text = name if mappers is None else f'{name} by {mappers}'
+        font = auto_font(font_36, text, width - margin * 2 - radius * 2)
+        w, _ = font.getsize(text)
+        _, h = font.getsize('yA')
+
+        size = (w + radius * 2, name_height)
+        name_bg = round_rectangle(size, radius, color=(150, 150, 150, 75))
+        base.alpha_composite(name_bg, dest=(margin, margin))
+
+        xy = (margin + radius, margin + center(h, name_height))
+        canv.text(xy, text, fill='white', font=font)
+
+        # draw info
+        server = data['server']
+        points = data['points']
+        finishers = data['finishers']
+        timestamp = data['timestamp']
+
+        info_width = (width - margin * 2) / 2.5
+
+        x = margin + info_width + inner
+        y = margin + name_height + inner
+        xy = ((x, margin + name_height + inner), (x, height - margin))
+        canv.line(xy, fill='white', width=3)  # border
+
+        y += inner
+
+        servers = {
+            'Novice':       (1, 0),
+            'Moderate':     (2, 5),
+            'Brutal':       (3, 15),
+            'Insane':       (4, 30),
+            'Dummy':        (5, 5),
+            'DDmaX':        (4, 0),
+            'Oldschool':    (6, 0),
+            'Solo':         (4, 0),
+            'Race':         (2, 0),
+        }
+
+        mult, offset = servers[server]
+        stars = int((points - offset) / mult)
+
+        lines = (
+            ((server.upper(), 'white', font_32),),
+            (('★' * stars + '☆' * (5 - stars), 'white', font_48),),
+            ((str(points), color, font_26),
+             (plural(points, ' point').upper(), 'white', font_20)),
+            ((str(finishers), color, font_22),
+             (plural(finishers, ' finisher').upper(), 'white', font_16)),
+            (('RELEASED ', 'white', font_16),
+             (timestamp.strftime('%b %d %Y').upper(), color, font_22))
+        )
+
+        for line in lines:
+            sizes = [f.getsize(t) for t, _, f in line]
+            x = margin + center(sum(w for w, _ in sizes), info_width)
+            y += max(h for _, h in sizes)
+            for (text, color_, font), (w, h) in zip(line, sizes):
+                canv.text((x, y - h), text, fill=color_, font=font)
+                x += w
+
+            y += inner
+
+        xy = ((margin, y), (margin + info_width, y))
+        canv.line(xy, fill='white', width=3)  # border
+        y += inner
+
+        # draw tiles
+        tiles = data['tiles']
+        if tiles:
+            # TODO: wrap tiles over multiple rows
+            size = 40
+            while size * len(tiles) > info_width:
+                size -= 1
+
+            x = margin + center(size * len(tiles), info_width)
+            y += center(size, height - margin - y)
+            for tile in tiles:
+                tile = Image.open(f'{DIR}/tiles/{tile}.png').resize((size, size))
+                base.alpha_composite(tile, dest=(x, y))
+                x += size
+
+        # draw ranks
+        font = font_24
+        ranks = data['ranks']
+
+        def humanize_time(time):
+            return '%02d:%02d' % divmod(abs(time), 60)
+
+        time_w, _ = font.getsize(humanize_time(max(r['timestamp'] for r in ranks)))
+        rank_w, _ = font.getsize(f'#{max(r["rank"] for r in ranks)}')
+        _, h = font.getsize('yA')
+
+        y = margin + name_height + inner + 5
+        for player, rank, time in ranks:
+            x = margin + info_width + inner * 2
+            text = f'#{rank}'
+            w, _ = font.getsize(text)
+            canv.text((x, y), text, fill='white', font=font)
+            x += rank_w + inner
+
+            x += time_w
+            text = humanize_time(time)
+            w, _ = font.getsize(text)
+            canv.text((x - w, y), text, fill=color, font=font)
+            x += inner
+
+            _, h = font.getsize(player)
+            font_player = auto_font(font, player, width - margin - x)
+            _, h_new = font_player.getsize(player)
+            canv.text((x, y - center(h - h_new)), player, fill='white', font=font_player)
+            y += h + inner
+
+        buf = BytesIO()
+        base.convert('RGB').save(buf, format='png')
+        buf.seek(0)
+        return buf
+
+    @commands.command()
+    async def map(self, ctx: commands.Context, *, name: clean_content):
+        await ctx.trigger_typing()
+
+        query = """SELECT * FROM stats_maps_static
+                   INNER JOIN stats_maps ON stats_maps_static.name = stats_maps.name
+                   WHERE stats_maps_static.name = $1;
+                """
+
+        record = await self.bot.pool.fetchrow(query, name)
+        if not record:
+            return await ctx.send('Could not find that map')
+
+        fn = partial(self.generate_map_image, record)
+        buf = await self.bot.loop.run_in_executor(None, fn)
+        file = discord.File(buf, filename=f'map_{name}.png')
+        await ctx.send(file=file)
 
 
 def setup(bot: commands.Bot):

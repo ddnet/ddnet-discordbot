@@ -50,5 +50,8 @@ def human_join(seq: List[str], delim: str=', ', final: str=' & ') -> str:
 def sanitize(text: str) -> str:
     return re.sub(r'[\^<>{}"/|;:,.~!?@#$%^=&*\]\\()\[+]', '', text.replace(' ', '_'))
 
+def normalize(text: str) -> str:
+    return re.sub(br'[^a-zA-Z0-9]', br'_', text.encode()).decode()
+
 def plural(value: int, singular: str) -> str:
     return singular if abs(value) == 1 else singular + 's'

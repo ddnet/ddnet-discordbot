@@ -32,9 +32,6 @@ async def main():
         pool = await asyncpg.create_pool()
     except (ConnectionRefusedError, asyncpg.CannotConnectNowError):
         return log.exception('Failed to connect to PostgreSQL, exiting')
-    else:
-        with open('data/schema.psql', 'r') as f:
-            await pool.execute(f.read())
 
     session = aiohttp.ClientSession(loop=loop)
 

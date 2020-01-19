@@ -5,7 +5,6 @@ import asyncio
 from collections import defaultdict
 from datetime import datetime
 from io import BytesIO
-from typing import Tuple
 
 import asyncpg
 import msgpack
@@ -15,7 +14,7 @@ TIMESTAMP = datetime.utcnow().strftime('%Y-%m-%d %H:%M')
 
 PLAYERS_FILE_URL = 'https://ddnet.tw/players.msgpack'
 
-def unpack_stats() -> Tuple[tuple, tuple, tuple, dict]:
+def unpack_stats():
     resp = requests.get(PLAYERS_FILE_URL)
     buf = BytesIO(resp.content)
     buf.seek(0)
@@ -34,9 +33,16 @@ def unpack_stats() -> Tuple[tuple, tuple, tuple, dict]:
 
     return stats_maps, stats_points, stats_teamranks, stats_ranks, stats_players
 
-def sort_stats(stats_maps: tuple, stats_points: tuple, stats_teamranks: tuple, stats_ranks: tuple, stats_players: dict) -> dict:
-    out = defaultdict(dict)
-    out_finishes = defaultdict(lambda: defaultdict(int))
+def sort_stats(stats_maps, stats_points, stats_teamranks, stats_ranks, stats_players):
+    out = {
+        'players': defaultdict(dict),
+        'finishes': defaultdict(lambda: defaultdict(int)),
+        'maps': {
+            map_: [server.decode(), points, finishers, []]
+            for server, maps in stats_maps.items()
+            for map_, points, finishers in maps
+        }
+    }
 
     types = (
         ('points', stats_points),
@@ -56,20 +62,16 @@ def sort_stats(stats_maps: tuple, stats_points: tuple, stats_teamranks: tuple, s
             else:
                 skips += 1
 
-            out[player][type_] = (rank, points)
+            out['players'][player][type_] = (rank, points)
 
-    map_points = {m: p for maps in stats_maps.values() for m, p, _ in maps}
     for player, (maps, countries) in stats_players.items():
-        for map_, data in maps.items():
-            points = map_points[map_]
-            if points == 0:
-                continue
+        for map_, (_, rank, _, timestamp, time) in maps.items():
+            if 1 <= rank <= 10:  # there are invalid rank 0s for some reason
+                out['maps'][map_][3].append((player.decode(), rank, time))
 
-            timestamp = data[3]
-            if timestamp.startswith(b'2030'):
-                continue  # 2030 is used as the identifier for corrupt records
-
-            out_finishes[player][timestamp[:10]] += points
+            points = out['maps'][map_][1]
+            if points > 0 and not timestamp.startswith(b'2030'):  # 2030 is used as the identifier for corrupt records
+                out['finishes'][player][timestamp[:10]] += points
 
         # '', 'AUS', 'BRA', 'CAN', 'CHL', 'CHN', 'FRA', 'GER', 'GER2', 'IRN', 'KSA', 'RUS', 'USA', 'ZAF'
         if countries:
@@ -79,47 +81,51 @@ def sort_stats(stats_maps: tuple, stats_points: tuple, stats_teamranks: tuple, s
                 countries[b'EUR'] = eu_finishes
 
             # sort alphabetically to get consistent results
-            out[player]['country'] = max(sorted(countries.items()), key=lambda c: c[1])[0]
+            out['players'][player]['country'] = max(sorted(countries.items()), key=lambda c: c[1])[0]
 
-    return out, out_finishes
+    return out
 
-async def update_database(stats: dict, stats_finishes: dict) -> str:
-    records = []
-    default = (None, None)
-    for player, details in stats.items():
-        records.append((
+async def update_database(data):
+    tables = defaultdict(list)
+
+    for player, details in data['players'].items():
+        tables['stats_players'].append((
             player.decode(),
-            *details.get('points', default),
-            *details.get('teamrank', default),
-            *details.get('rank', default),
+            *details.get('points', (None, None)),
+            *details.get('teamrank', (None, None)),
+            *details.get('rank', (None, None)),
             details.get('country', b'UNK').decode()
         ))
 
-    records_finishes = [
+    tables['stats_finishes'] = [
         (player.decode(), datetime.strptime(timestamp.decode(), '%Y-%m-%d'), points)
-        for player, dates in stats_finishes.items()
+        for player, dates in data['finishes'].items()
         for timestamp, points in dates.items()
     ]
 
+    for map_, details in data['maps'].items():
+        ranks = sorted(details.pop(3), key=lambda r: (r[1], r[0]))[:10]
+        tables['stats_maps'].append((map_.decode(), *details, ranks))
+
     con = await asyncpg.connect()
     async with con.transaction():
-        await con.execute('TRUNCATE stats_players, stats_finishes RESTART IDENTITY;')
-        players = await con.copy_records_to_table('stats_players', records=records)
-        finishes = await con.copy_records_to_table('stats_finishes', records=records_finishes)
+        status = []
+        for table, records in tables.items():
+            await con.execute(f'TRUNCATE {table} RESTART IDENTITY;')
+            msg = await con.copy_records_to_table(table, records=records)
+            status.append(f'{table}: {msg}')
 
     await con.close()
 
-    return f'stats_players: {players} stats_finishes: {finishes}'
+    return ', '.join(status)
 
-async def main():
+def main():
     stats = unpack_stats()
-    stats = sort_stats(*stats)
-    return await update_database(*stats)
+    data = sort_stats(*stats)
+    status = asyncio.run(update_database(data))
+
+    print(f'[{TIMESTAMP}] Successfully updated: {status}')
+
 
 if __name__ == '__main__':
-    try:
-        status = asyncio.run(main())
-    except Exception as exc:
-        print(f'[{TIMESTAMP}] Failed to update: {exc}')
-    else:
-        print(f'[{TIMESTAMP}] Successfully updated: {status}')
+    main()
