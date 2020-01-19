@@ -380,10 +380,7 @@ class Profile(commands.Cog):
         font_36 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 36)
         font_32 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 32)
         font_26 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 26)
-        font_24 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
-        font_22 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 20)
         font_20 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 20)
-        font_16 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
 
         name = data['name']
         color = data['color']
@@ -455,10 +452,10 @@ class Profile(commands.Cog):
             (('★' * stars + '☆' * (5 - stars), 'white', font_48),),
             ((str(points), color, font_26),
              (plural(points, ' point').upper(), 'white', font_20)),
-            ((str(finishers), color, font_22),
-             (plural(finishers, ' finisher').upper(), 'white', font_16)),
-            (('RELEASED ', 'white', font_16),
-             (timestamp.strftime('%b %d %Y').upper(), color, font_22))
+            ((str(finishers), color, font_26),
+             (plural(finishers, ' finisher').upper(), 'white', font_20)),
+            (('RELEASED ', 'white', font_20),
+             (timestamp.strftime('%b %d %Y').upper(), color, font_26))
         )
 
         for line in lines:
@@ -491,17 +488,20 @@ class Profile(commands.Cog):
                 x += size
 
         # draw ranks
-        font = font_24
+        font = font_26
         ranks = data['ranks']
 
         def humanize_time(time):
-            return '%02d:%02d' % divmod(abs(time), 60)
+            return '%02d:%02.02f' % divmod(abs(time), 60)
 
         time_w, _ = font.getsize(humanize_time(max(r['time'] for r in ranks)))
         rank_w, _ = font.getsize(f'#{max(r["rank"] for r in ranks)}')
         _, h = font.getsize('yA')
 
-        y = margin + name_height + inner + 5
+        y = margin + name_height + inner
+        space = (height - margin - y - h * 10) / 12
+        y += space
+
         for player, rank, time in ranks:
             x = margin + info_width + inner * 2
             text = f'#{rank}'
@@ -519,7 +519,7 @@ class Profile(commands.Cog):
             font_player = auto_font(font, player, width - margin - x)
             _, h_new = font_player.getsize(player)
             canv.text((x, y - center(h - h_new)), player, fill='white', font=font_player)
-            y += h + inner
+            y += h + space
 
         buf = BytesIO()
         base.convert('RGB').save(buf, format='png')
