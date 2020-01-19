@@ -67,7 +67,7 @@ def get_data() -> List[Tuple[str, datetime, str, List[str], str]]:
 
     resp = requests.get(RELEASES_FILE_URL)
     for line in resp.text.splitlines():
-        timestamp, server, details = line.split('\t')
+        timestamp, _, details = line.split('\t')
 
         try:
             _, map_, mappers = details.split('|')
@@ -80,7 +80,6 @@ def get_data() -> List[Tuple[str, datetime, str, List[str], str]]:
 
         out.append((
             map_,
-            server,
             datetime.strptime(timestamp, '%Y-%m-%d %H:%M'),
             mappers,
             get_tiles(map_),
