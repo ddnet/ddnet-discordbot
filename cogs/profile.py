@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.image import center, round_rectangle
+from utils.image import auto_font, center, round_rectangle
 from utils.text import clean_content, escape_backticks, plural
 
 DIR = 'data/assets'
@@ -321,16 +321,11 @@ class Profile(commands.Cog):
             canv.text(xy, text, fill=color, font=font_small)
 
         # draw header
-        size = 24
-        space = size / 3
-        while True:
-            font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', size)
-            combined = sum(font.getsize(p)[0] for p in data) + space * (4 * len(data) - 2)
-            if combined <= plot_width:
-                break
+        def check(w: int, size: int) -> float:
+            return w + (size / 3) * (4 * len(data) - 2)
 
-            size -= 1
-            space -= 1 / 3
+        font = auto_font((f'{DIR}/fonts/normal.ttf', 24), ''.join(data), plot_width, check=check)
+        space = font.size / 3
 
         x = margin
         for player, color in zip(data, colors):

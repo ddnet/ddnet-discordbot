@@ -1,6 +1,6 @@
-from typing import Tuple
+from typing import Callable, Tuple, Union
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 
 def center(size: int, area_size: int=0) -> int:
@@ -25,3 +25,13 @@ def round_rectangle(size: Tuple[int, int], radius: int, *, color: Tuple[int, int
     rect.paste(corner.rotate(270), (width - radius, 0))                 # upper right
 
     return rect.resize(size, resample=Image.LANCZOS, reducing_gap=1.0)  # antialiasing
+
+def auto_font(font: Union[ImageFont.FreeTypeFont, Tuple[str, int]], text: str, max_width: int,
+              *, check: Callable=lambda w, _: w) -> ImageFont.FreeTypeFont:
+    if isinstance(font, tuple):
+        font = ImageFont.truetype(*font)
+
+    while check(font.getsize(text)[0], font.size) > max_width:
+        font = ImageFont.truetype(font.path, font.size - 1)
+
+    return font
