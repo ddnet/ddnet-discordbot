@@ -497,7 +497,7 @@ class Profile(commands.Cog):
         def humanize_time(time):
             return '%02d:%02d' % divmod(abs(time), 60)
 
-        time_w, _ = font.getsize(humanize_time(max(r['timestamp'] for r in ranks)))
+        time_w, _ = font.getsize(humanize_time(max(r['time'] for r in ranks)))
         rank_w, _ = font.getsize(f'#{max(r["rank"] for r in ranks)}')
         _, h = font.getsize('yA')
 
