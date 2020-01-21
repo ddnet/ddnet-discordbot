@@ -13,7 +13,7 @@ import requests
 from colorthief import ColorThief
 from PIL import Image
 
-from utils.hsp import clamp_luminance
+from utils.color import pack_rgb
 from utils.text import normalize
 
 TIMESTAMP = datetime.utcnow().strftime('%Y-%m-%d %H:%M')
@@ -40,8 +40,8 @@ VALID_TILES = (
 
 BG_SIZE = (800, 500)
 
-def get_tiles(map_: str) -> List[str]:
-    resp = requests.get(MSGPACK_URL.format(map_))
+def get_tiles(name: str) -> List[str]:
+    resp = requests.get(MSGPACK_URL.format(name))
     buf = BytesIO(resp.content)
 
     unpacker = msgpack.Unpacker(buf, use_list=False, raw=False)
@@ -50,17 +50,17 @@ def get_tiles(map_: str) -> List[str]:
     tiles = unpacker.unpack()   # tiles
     return [t for t in tiles if t in VALID_TILES]
 
-def get_background(map_: str) -> str:
-    map_ = normalize(map_)
+def get_background(name: str) -> int:
+    name = normalize(name)
 
-    resp = requests.get(THUMBNAIL_URL.format(map_))
+    resp = requests.get(THUMBNAIL_URL.format(name))
     buf = BytesIO(resp.content)
 
     img = Image.open(buf).convert('RGBA').resize(BG_SIZE)
-    img.save(BG_PATH.format(map_))
+    img.save(BG_PATH.format(name))
 
     color = ColorThief(buf).get_color(quality=1)
-    return '#%02x%02x%02x' % clamp_luminance(color, 0.7)
+    return pack_rgb(color)
 
 def get_data() -> List[Tuple[str, datetime, str, List[str], str]]:
     out = []
@@ -70,20 +70,20 @@ def get_data() -> List[Tuple[str, datetime, str, List[str], str]]:
         timestamp, _, details = line.split('\t')
 
         try:
-            _, map_, mappers = details.split('|')
+            _, name, mappers = details.split('|')
         except ValueError:
-            _, map_ = details.split('|')
+            _, name = details.split('|')
             mappers = None
 
-        if os.path.isfile(BG_PATH.format(normalize(map_))):
+        if os.path.isfile(BG_PATH.format(normalize(name))):
             continue
 
         out.append((
-            map_,
+            name,
             datetime.strptime(timestamp, '%Y-%m-%d %H:%M'),
             mappers,
-            get_tiles(map_),
-            get_background(map_)
+            get_tiles(name),
+            get_background(name)
         ))
 
     return out
@@ -92,7 +92,9 @@ async def update_database(data):
     con = await asyncpg.connect()
     async with con.transaction():
         query = """INSERT INTO stats_maps_static (name, timestamp, mappers, tiles, color)
-                   VALUES ($1, $2, $3, $4, $5);
+                   VALUES ($1, $2, $3, $4, $5)
+                   ON CONFLICT (name) DO UPDATE
+                   SET timestamp = $2, mappers = $3, tiles = $4, color = $5;
                 """
         await con.executemany(query, data)
 

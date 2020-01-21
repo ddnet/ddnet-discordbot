@@ -1,5 +1,5 @@
 import math
-from typing import Tuple
+from typing import Tuple, Union
 
 # http://alienryderflex.com/hsp.html
 
@@ -7,7 +7,10 @@ PR = 0.299
 PG = 0.587
 PB = 0.114
 
-def rgb_to_hsp(rgb: Tuple[int, int, int]) -> Tuple[float, float, float]:
+def rgb_to_hsp(rgb: Union[int, Tuple[int, int, int]]) -> Tuple[float, float, float]:
+    if isinstance(rgb, int):
+        rgb = unpack_rgb(rgb)
+
     if not all(0 <= v <= 255 for v in rgb):
         raise ValueError('RGB values have to be on a scale of 0 to 255')
 
@@ -125,6 +128,13 @@ def hsp_to_rgb(hsp: Tuple[float, float, float]) -> Tuple[int, int, int]:
 
     return tuple(round(v / mult * 255) for v in (r, g, b))
 
-def clamp_luminance(rgb: Tuple[int, int, int], degrees: float) -> Tuple[int, int, int]:
+def clamp_luminance(rgb: Union[int, Tuple[int, int, int]], degrees: float) -> Tuple[int, int, int]:
     h, s, p = rgb_to_hsp(rgb)
     return hsp_to_rgb((h, s, max(p, degrees)))
+
+def pack_rgb(rgb: Tuple[int, int, int]) -> int:
+    r, g, b = rgb
+    return (b << 16) | (g << 8) | r
+
+def unpack_rgb(rgb: int) -> Tuple[int, int, int]:
+    return (0xff & rgb, (0xff00 & rgb) >> 8, (0xff0000 & rgb) >> 16)

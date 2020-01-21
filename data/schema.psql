@@ -22,7 +22,7 @@ CREATE TABLE stats_maps_static(
     timestamp TIMESTAMP NOT NULL,
     mappers VARCHAR,
     tiles VARCHAR(14)[] NOT NULL,
-    color VARCHAR(7) NOT NULL
+    color INT NOT NULL
 );
 
 CREATE TYPE map_rank AS (
@@ -32,7 +32,7 @@ CREATE TYPE map_rank AS (
 );
 
 CREATE TABLE stats_maps(
-    name VARCHAR(100) REFERENCES stats_maps_static(name) ON DELETE CASCADE,
+    name VARCHAR(100) PRIMARY KEY REFERENCES stats_maps_static(name) ON DELETE CASCADE,
     server VARCHAR(9) NOT NULL,
     points INT NOT NULL,
     finishers INT NOT NUll,

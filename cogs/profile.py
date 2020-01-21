@@ -8,6 +8,7 @@ import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+from utils.color import clamp_luminance
 from utils.image import auto_font, center, round_rectangle
 from utils.text import clean_content, escape_backticks, normalize, plural
 
@@ -386,7 +387,9 @@ class Profile(commands.Cog):
         font_16 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
 
         name = data['name']
+
         color = data['color']
+        color = clamp_luminance(color, 0.7)
 
         base = Image.open(f'{DIR}/map_backgrounds/{normalize(name)}.png')
         base = base.filter(ImageFilter.GaussianBlur(radius=3))
@@ -503,12 +506,10 @@ class Profile(commands.Cog):
 
         y = margin + name_height + inner
         space = (height - margin - y - h * 10) / 11
-        y += space
         for player, rank, time in ranks:
+            y += space
             x = margin + info_width + inner * 2
-            text = f'#{rank}'
-            w, _ = font.getsize(text)
-            canv.text((x, y), text, fill='white', font=font)
+            canv.text((x, y), f'#{rank}', fill='white', font=font)
             x += rank_w + inner
 
             x += time_w
@@ -521,7 +522,7 @@ class Profile(commands.Cog):
             font_player = auto_font(font, player, width - margin - x)
             _, h_new = font_player.getsize(player)
             canv.text((x, y - center(h_org - h_new)), player, fill='white', font=font_player)
-            y += h + space
+            y += h
 
         buf = BytesIO()
         base.convert('RGB').save(buf, format='png')

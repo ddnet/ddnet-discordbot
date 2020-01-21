@@ -1,5 +1,6 @@
 Pillow
 asyncpg
+colorthief
 discord.py
 msgpack-python
 psutil
