@@ -45,8 +45,9 @@ class DDNet(commands.Bot):
             else:
                 log.info('Successfully loaded extension %r', extension)
 
-    async def on_ready(self):
         self.start_time = datetime.utcnow()
+
+    async def on_ready(self):
         log.info('Logged in as %s (ID: %d)', self.user, self.user.id)
 
     async def on_resumed(self):
