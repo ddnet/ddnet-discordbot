@@ -680,6 +680,11 @@ class Profile(commands.Cog):
         file = discord.File(buf, filename=f'hours_{"_".join(players)}.png')
         await ctx.send(file=file)
 
+    @hours.error
+    async def hours_error(self, ctx: commands.Context, error: commands.CommandError):
+        if isinstance(error, commands.ArgumentParsingError):
+            await ctx.send('<players> contain unmatched or unescaped quotation mark')
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Profile(bot))
