@@ -18,9 +18,9 @@ CREATE TABLE stats_finishes(
 CREATE INDEX finishes_idx ON stats_finishes (name);
 
 CREATE TABLE stats_maps_static(
-    name VARCHAR(512) PRIMARY KEY,
+    name VARCHAR(128) PRIMARY KEY,
     timestamp TIMESTAMP NOT NULL,
-    mappers VARCHAR,
+    mappers VARCHAR(128),
     tiles VARCHAR(14)[] NOT NULL,
     color INT NOT NULL
 );
@@ -32,12 +32,55 @@ CREATE TYPE map_rank AS (
 );
 
 CREATE TABLE stats_maps(
-    name VARCHAR(100) PRIMARY KEY REFERENCES stats_maps_static(name) ON DELETE CASCADE,
+    name VARCHAR(128) PRIMARY KEY REFERENCES stats_maps_static(name) ON DELETE CASCADE,
     server VARCHAR(9) NOT NULL,
     points INT NOT NULL,
     finishers INT NOT NUll,
     ranks map_rank[] NOT NULL
 );
+
+CREATE TABLE record_race(
+    map VARCHAR(128),
+    name VARCHAR(15),
+    timestamp TIMESTAMP,
+    time FLOAT,
+    server CHAR(4),
+    cp1 FLOAT,
+    cp2 FLOAT,
+    cp3 FLOAT,
+    cp4 FLOAT,
+    cp5 FLOAT,
+    cp6 FLOAT,
+    cp7 FLOAT.
+    cp8 FLOAT,
+    cp9 FLOAT,
+    cp10 FLOAT,
+    cp11 FLOAT,
+    cp12 FLOAT,
+    cp13 FLOAT,
+    cp14 FLOAT,
+    cp15 FLOAT,
+    cp16 FLOAT,
+    cp17 FLOAT,
+    cp18 FLOAT,
+    cp19 FLOAT,
+    cp20 FLOAT,
+    cp21 FLOAT,
+    cp22 FLOAT,
+    cp23 FLOAT,
+    cp24 FLOAT,
+    cp25 FLOAT,
+    gameid VARCHAR(64),
+    ddnet7 SMALLINT
+);
+
+CREATE TABLE stats_hours(
+    name VARCHAR(15) NOT NULL,
+    hour SMALLINT NOT NULL,
+    finishes INT NOT NULL
+);
+
+CREATE INDEX hours_idx ON stats_hours (name);
 
 CREATE TABLE stats_commands(
     guild_id BIGINT,

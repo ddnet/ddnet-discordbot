@@ -547,6 +547,139 @@ class Profile(commands.Cog):
         file = discord.File(buf, filename=f'map_{name}.png')
         await ctx.send(file=file)
 
+    def generate_hours_image(self, data: Dict[str, List[asyncpg.Record]]) -> BytesIO:
+        font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
+
+        color_light = (100, 100, 100)
+        colors = (
+            'orange',
+            'red',
+            'forestgreen',
+            'dodgerblue',
+            'orangered',
+            'orchid',
+            'burlywood',
+            'darkcyan',
+            'royalblue',
+            'olive',
+        )
+
+        base = Image.open(f'{DIR}/hours_background.png')
+        canv = ImageDraw.Draw(base)
+
+        width, height = base.size
+        margin = 50
+
+        plot_width = width - margin * 2
+        plot_height = height - margin * 2
+
+        # draw area bg
+        bg = Image.new('RGBA', (plot_width, plot_height), color=(0, 0, 0, 100))
+        base.alpha_composite(bg, dest=(margin, margin))
+
+        # draw hours
+        x = margin
+        y = height - margin
+        hour_width = plot_width / 24
+        now = datetime.utcnow()
+        for hour in range(25):
+            xy = ((x, margin), (x, y))
+            canv.line(xy, fill=color_light, width=1)
+
+            if 0 <= hour <= 23:
+                text = str(hour)
+                w, h = font_small.getsize(text)
+                xy = (x + center(w, hour_width), y + h)
+                color = 'green' if hour == now.hour else color_light
+                canv.text(xy, text, fill=color, font=font_small)
+
+            x += hour_width
+
+        # draw players
+        extra = 2
+        size = (plot_width * 2, (plot_height + extra * 2) * 2)
+        plot = Image.new('RGBA', size, color=(0, 0, 0, 0))
+        plot_canv = ImageDraw.Draw(plot)
+
+        for hours, color in reversed(list(zip(data.values(), colors))):
+            hours = [
+                next((h['finishes'] for h in hours if h['hour'] == i), 0)
+                for i in range(24)
+            ]
+
+            mult = lambda f: plot_height * 2 * (1 - f / max(hours)) + extra
+
+            x = -hour_width
+            xy = [(x, mult(hours[-1]))]
+            for finishes in hours:
+                x += hour_width * 2
+                y = mult(finishes)
+
+                rect_xy = ((x - 5, y - 5), (x + 5, y + 5))
+                plot_canv.rectangle(rect_xy, fill=color)
+
+                xy.append((x, y))
+
+            xy.append((x + hour_width * 2, mult(hours[0])))
+            plot_canv.line(xy, fill=color, width=6)
+
+        size = (plot_width, plot_height + extra * 2)
+        plot = plot.resize(size, resample=Image.LANCZOS, reducing_gap=1.0)  # antialiasing
+        base.alpha_composite(plot, dest=(margin, margin - extra))
+
+        # draw header
+        def check(w: int, size: int) -> int:
+            return w + (size / 3) * (4 * len(data) - 2)
+
+        font = auto_font((f'{DIR}/fonts/normal.ttf', 24), ''.join(data), plot_width, check=check)
+        space = font.size / 3
+
+        x = margin
+        _, h = font.getsize('yA')  # max name height, needs to be hardcoded to align names
+        for player, color in zip(data, colors):
+            y = center(space, margin)
+            xy = ((x, y), (x + space, y + space))
+            canv.rectangle(xy, fill=color)
+            x += space * 2
+
+            w, _ = font.getsize(player)
+            xy = (x, center(h, margin))
+            canv.text(xy, player, fill='white', font=font)
+            x += w + space * 2
+
+        buf = BytesIO()
+        base.convert('RGB').save(buf, format='png')
+        buf.seek(0)
+        return buf
+
+    @commands.command()
+    async def hours(self, ctx: commands.Context, *players: clean_content):
+        """Show DDNet activity of up to 10 players based on finishes per hour.
+           Hours are in UTC +0. Green indicates the current hour. Stats are updated daily.
+        """
+        await ctx.trigger_typing()
+
+        players = [p for p in players if p] or [ctx.author.display_name]
+        if len(players) > 10:
+            return await ctx.send('Can at most compare 10 players')
+
+        data = {}
+        query = 'SELECT hour, finishes FROM stats_hours WHERE name = $1;'
+        for player in players:
+            if player in data:
+                continue
+
+            records = await self.bot.pool.fetch(query, player)
+            if not records:
+                return await ctx.send(f'Could not find player ``{escape_backticks(player)}``')
+
+            data[player] = records
+
+        fn = partial(self.generate_hours_image, data)
+        buf = await self.bot.loop.run_in_executor(None, fn)
+        file = discord.File(buf, filename=f'hours_{"_".join(players)}.png')
+        await ctx.send(file=file)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Profile(bot))
