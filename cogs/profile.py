@@ -30,6 +30,10 @@ class Profile(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    def is_blocked(self, player: str) -> bool:
+        with open('blocked_players.cfg', 'r', encoding='utf-8') as f:
+            return player in f.read().splitlines()
+
     def generate_profile_image(self, data: asyncpg.Record) -> BytesIO:
         font_normal = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
         font_bold = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 34)
@@ -163,6 +167,8 @@ class Profile(commands.Cog):
         await ctx.trigger_typing()
 
         player = player or ctx.author.display_name
+        if self.is_blocked(player):
+            return await ctx.send('That player is blocked from this command')
 
         query = 'SELECT * FROM stats_players WHERE name = $1;'
         record = await self.bot.pool.fetchrow(query, player)
@@ -357,6 +363,9 @@ class Profile(commands.Cog):
         data = {}
         query = 'SELECT timestamp, points FROM stats_finishes WHERE name = $1 ORDER BY timestamp;'
         for player in players:
+            if self.is_blocked(player):
+                return await ctx.send(f'Player ``{escape_backticks(player)}`` is blocked from this command')
+
             if player in data:
                 continue
 
@@ -666,6 +675,9 @@ class Profile(commands.Cog):
         data = {}
         query = 'SELECT hour, finishes FROM stats_hours WHERE name = $1;'
         for player in players:
+            if self.is_blocked(player):
+                return await ctx.send(f'Player ``{escape_backticks(player)}`` is blocked from this command')
+
             if player in data:
                 continue
 

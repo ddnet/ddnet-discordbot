@@ -2,3 +2,4 @@ __pycache__/
 .venv/
 config.ini
 *.log
+blocked_players.cfg
