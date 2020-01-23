@@ -592,7 +592,7 @@ class Profile(commands.Cog):
         hour_width = plot_width / 24
         now = datetime.utcnow()
         for hour in range(25):
-            xy = ((x, margin), (x, y))
+            xy = ((x, margin), (x, y - 1))  # fix overflow
             canv.line(xy, fill=color_light, width=1)
 
             if 0 <= hour <= 23:
