@@ -59,8 +59,9 @@ class Submission:
         return discord.File(await self.buffer(), filename=self.filename)
 
     async def set_status(self, status: SubmissionState):
-        if self.message.reactions:
-            await self.message.clear_reactions()
+        for reaction in self.message.reactions:
+            if any(str(s) == str(reaction) for s in SubmissionState):
+                await self.message.clear_reaction(reaction)
 
         await self.message.add_reaction(str(status))
 

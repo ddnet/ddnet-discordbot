@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-from typing import Union
+from typing import Optional, Union
 
 import discord
 from discord.ext import commands
@@ -12,10 +12,8 @@ VOTE_NO     = '<:f4:397431204552376320>'
 
 
 class Votes(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self):
         self._votes = {}
-        self._vote_callers = set()
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user: Union[discord.Member, discord.User]):
@@ -59,41 +57,19 @@ class Votes(commands.Cog):
 
         self._votes[message.id] = 0
 
-    def cog_check(self, ctx: commands.Context) -> bool:
-        return ctx.guild and (ctx.channel.id, ctx.author.id) not in self._vote_callers
-
-    async def cog_command_error(self, ctx: commands.Context, error: Exception):
-        if isinstance(error, commands.CheckFailure) and ctx.guild and not isinstance(error, commands.MissingPermissions):
-            await ctx.send('You can only call one vote at a time')
-        elif isinstance(error, commands.BadArgument):
-            await ctx.send('Could not find that user')
-
-    async def _kick(self, ctx: commands.Context, user: discord.Member, reason: str) -> int:
-        channel = ctx.channel
-        author = ctx.author
-
-        msg = f'{author} called for vote to kick {user} ({reason})'
-        try:
-            message = await ctx.send(msg)
-        except discord.Forbidden:
-            return
+    async def _kick(self, ctx: commands.Context, user: discord.Member, reason: Optional[str]) -> int:
+        reason = reason or 'No reason given'
+        msg = f'{ctx.author} called for vote to kick {user} ({reason})'
+        message = await ctx.send(msg)
 
         self._votes[message.id] = 0
-        self._vote_callers.add((channel.id, author.id))
 
-        try:
-            await message.add_reaction(VOTE_YES)
-            await message.add_reaction(VOTE_NO)
-        except discord.Forbidden:
-            # *shrug*
-            pass
+        await message.add_reaction(VOTE_YES)
+        await message.add_reaction(VOTE_NO)
 
         i = 30
         while i >= 0:
-            try:
-                await message.edit(content=f'{msg} — {i}s left')
-            except discord.Forbidden:
-                pass
+            await message.edit(content=f'{msg} — {i}s left')
 
             # update countdown only every 5 seconds at first to avoid being rate limited
             seconds = 5 if i > 5 else 1
@@ -102,27 +78,34 @@ class Votes(commands.Cog):
 
         result = self._votes.pop(message.id, 0)
         result_msg = f'Vote passed. {user} kicked by vote ({reason})' if result > 0 else 'Vote failed'
-
-        try:
-            await ctx.send(result_msg)
-        except discord.Forbidden:
-            pass
-
-        self._vote_callers.remove((channel.id, author.id))
+        await ctx.send(result_msg)
 
         return result
 
     @commands.command()
-    async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str='No reason given'):
+    @commands.guild_only()
+    @commands.max_concurrency(1, commands.BucketType.channel)
+    async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str=None):
         await self._kick(ctx, user, reason)
 
     @commands.command()
+    @commands.guild_only()
+    @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.has_permissions(kick_members=True)
-    async def actualkick(self, ctx: commands.Context, user: discord.Member, *, reason: str='No reason given'):
+    @commands.bot_has_permission(kick_members=True)
+    async def actualkick(self, ctx: commands.Context, user: discord.Member, *, reason: str=None):
         result = await self._kick(ctx, user, reason)
         if result > 0:
             await user.kick()
 
+    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
+        if isinstance(error, commands.MaxConcurrencyReached):
+            await ctx.send(f'You can only call {error.number} vote at a time')
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Could not find that user')
+        if isinstance(error, commands.BotMissingPermissions):
+            await ctx.send('I can\'t kick members')
+
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Votes(bot))
+    bot.add_cog(Votes())

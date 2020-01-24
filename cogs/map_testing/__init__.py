@@ -57,8 +57,7 @@ def testing_check():
 
 class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
     def __init__(self, bot: commands.Bot):
-        self.bot = bot
-        TestLog.bot = bot
+        self.bot = TestLog.bot = bot
 
         self._active_submissions = set()
 
@@ -141,8 +140,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         if 'author' in data and int(data['author']['id']) == self.bot.user.id:
             return
 
-        channel_id = int(data['channel_id'])  # TODO d.py 1.3.0: -> payload.channel_id
-        if channel_id != CHAN_SUBMIT_MAPS:
+        if payload.channel_id != CHAN_SUBMIT_MAPS:
             return
 
         if not ('attachments' in data and data['attachments'][0]['filename'].endswith('.map')):
@@ -152,7 +150,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         if 'reactions' in data and data['reactions'][0]['emoji']['name'] == str(SubmissionState.PROCESSED):
             return
 
-        channel = self.bot.get_channel(channel_id)
+        channel = self.bot.get_channel(payload.channel_id)
         message = self.bot.get_message(payload.message_id) or await channel.fetch_message(payload.message_id)
 
         isubm = InitialSubmission(message)
@@ -264,31 +262,32 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         return discord.utils.find(lambda c: c.name[1:] == name, mt_category.text_channels) \
             or discord.utils.find(lambda c: c.name[2:] == name, em_category.text_channels)
 
-    # TODO d.py 1.3.0:
-    # @commands.Cog.listener('on_raw_reaction_add')
-    # @commands.Cog.listener('on_raw_reaction_remove')
-    async def handle_perms(self, payload: discord.RawReactionActionEvent, action: str):
-        # TODO d.py 1.3.0: action -> payload.event_type == 'REACTION_ADD' || 'REACTION_REMOVE'
+    @commands.Cog.listener('on_raw_reaction_add')
+    @commands.Cog.listener('on_raw_reaction_remove')
+    async def handle_perms(self, payload: discord.RawReactionActionEvent):
         if payload.user_id == self.bot.user.id:
             return
 
         if str(payload.emoji) != str(SubmissionState.PROCESSED):
             return
 
+        action = payload.event_type
         channel = self.bot.get_channel(payload.channel_id)
-        # TODO d.py 1.3.0:
-        # member = payload.member if payload.event_type == 'REACTION_ADD' else channel.guild.get_member(payload.user_id)
-        user = channel.guild.get_member(payload.user_id)
-        if user is None:
-            return
+        guild = channel.guild
+        if action == 'REACTION_ADD':
+            member = payload.member
+        else:
+            member = guild.get_member(payload.user_id)
+            if member is None:
+                return
 
         if channel.id == CHAN_INFO:
-            testing_role = channel.guild.get_role(ROLE_TESTING)
-            if testing_role in user.roles:
-                if action == 'remove':
-                    await user.remove_roles(testing_role)
-            elif action == 'add':
-                await user.add_roles(testing_role)
+            testing_role = guild.get_role(ROLE_TESTING)
+            if testing_role in member.roles:
+                if action == 'REACTION_REMOVE':
+                    await member.remove_roles(testing_role)
+            elif action == 'REACTION_ADD':
+                await member.add_roles(testing_role)
 
         elif channel.id == CHAN_SUBMIT_MAPS:
             message = self.bot.get_message(payload.message_id) or await channel.fetch_message(payload.message_id)
@@ -297,23 +296,15 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
             map_channel = self.get_map_channel(message.attachments[0].filename[:-4])
             if map_channel is None:
-                if action == 'add':
-                    await message.remove_reaction(payload.emoji, user)
+                if action == 'REACTION_ADD':
+                    await message.remove_reaction(payload.emoji, member)
                 return
 
-            if map_channel.overwrites_for(user).read_messages:
-                if action == 'remove':
-                    await map_channel.set_permissions(user, overwrite=None)
-            elif action == 'add':
-                await map_channel.set_permissions(user, read_messages=True)
-
-    @commands.Cog.listener('on_raw_reaction_add')
-    async def handle_perms_add(self, payload: discord.RawReactionActionEvent):
-        await self.handle_perms(payload, 'add')
-
-    @commands.Cog.listener('on_raw_reaction_remove')
-    async def handle_perms_remove(self, payload: discord.RawReactionActionEvent):
-        await self.handle_perms(payload, 'remove')
+            if map_channel.overwrites_for(member).read_messages:
+                if action == 'REACTION_REMOVE':
+                    await map_channel.set_permissions(member, overwrite=None)
+            elif action == 'REACTION_ADD':
+                await map_channel.set_permissions(member, read_messages=True)
 
     async def move_map_channel(self, channel: discord.TextChannel, *, state: MapState):
         prev_state = next((s for s in MapState if str(s) == channel.name[0]), MapState.TESTING)
