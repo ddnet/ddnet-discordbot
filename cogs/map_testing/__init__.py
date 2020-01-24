@@ -307,21 +307,26 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
                 await map_channel.set_permissions(member, read_messages=True)
 
     async def move_map_channel(self, channel: discord.TextChannel, *, state: MapState):
-        prev_state = next((s for s in MapState if str(s) == channel.name[0]), MapState.TESTING)
+        name = channel.name
+
+        prev_state = next((s for s in MapState if str(s) == name[0]), MapState.TESTING)
         if prev_state is state:
             return
 
-        if prev_state is MapState.TESTING:
-            name = channel.name
-        else:
-            name = channel.name[1:]
+        if prev_state is not MapState.TESTING:
+            name = name[1:]
 
         if state is MapState.TESTING:
             category = self.bot.get_channel(CAT_MAP_TESTING)
+            position = category.channels[-1].position + 1
         else:
             category = self.bot.get_channel(CAT_EVALUATED_MAPS)
+            try:
+                position = category.channels[0].position - 1
+            except IndexError:
+                position = 0
 
-        await channel.edit(name=str(state) + name, category=category)
+        await channel.edit(name=str(state) + name, position=position, category=category)
 
     @commands.command()
     @testing_check()
