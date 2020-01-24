@@ -66,7 +66,7 @@ class DDNet(commands.Bot):
         await self.process_commands(message)
 
     def global_check(self, ctx: commands.Context) -> bool:
-        return ctx.channel.permissions_for(ctx.author).send_messages
+        return ctx.guild is None or ctx.channel.permissions_for(ctx.guild.me).send_messages
 
     async def on_command(self, ctx: commands.Context):
         if ctx.guild is None:
