@@ -92,7 +92,7 @@ class Votes(commands.Cog):
     @commands.guild_only()
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.has_permissions(kick_members=True)
-    @commands.bot_has_permission(kick_members=True)
+    @commands.bot_has_permissions(kick_members=True)
     async def actualkick(self, ctx: commands.Context, user: discord.Member, *, reason: str=None):
         result = await self._kick(ctx, user, reason)
         if result > 0:
