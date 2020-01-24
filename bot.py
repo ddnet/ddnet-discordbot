@@ -47,6 +47,8 @@ class DDNet(commands.Bot):
 
         self.start_time = datetime.utcnow()
 
+        self.add_check(self.global_check)
+
     async def on_ready(self):
         log.info('Logged in as %s (ID: %d)', self.user, self.user.id)
 
@@ -62,6 +64,9 @@ class DDNet(commands.Bot):
     async def on_message(self, message: discord.Message):
         await self.wait_until_ready()
         await self.process_commands(message)
+
+    def global_check(self, ctx: commands.Context) -> bool:
+        return ctx.channel.permissions_for(ctx.author).send_messages
 
     async def on_command(self, ctx: commands.Context):
         if ctx.guild is None:
