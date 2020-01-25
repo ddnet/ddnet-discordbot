@@ -67,8 +67,8 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         self.auto_archive.cancel()
 
     async def ddnet_upload(self, asset_type: str, buf: BytesIO, filename: str):
-        url = self.bot.config.get('DDNET_UPLOAD', 'URL')
-        headers = {'X-DDNet-Token': self.bot.config.get('DDNET_UPLOAD', 'TOKEN')}
+        url = self.bot.config.get('DDNET', 'UPLOAD')
+        headers = {'X-DDNet-Token': self.bot.config.get('DDNET', 'TOKEN')}
 
         if asset_type == 'map':
             name = 'map_name'
@@ -325,6 +325,19 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         except discord.Forbidden as exc:
             log.error('Failed moving map channel #%s on release: %s', map_channel, exc.text)
 
+    async def ddnet_delete(self, filename: str):
+        url = self.bot.config.get('DDNET', 'DELETE')
+        headers = {'X-DDNet-Token': self.bot.config.get('DDNET', 'TOKEN')}
+        data = {'map_name': filename}
+
+        async with self.bot.session.post(url, data=data, headers=headers) as resp:
+            if resp.status != 200:
+                fmt = 'Failed deleting map %r on ddnet.tw: %s (status code: %d %s)'
+                log.error(fmt, filename, await resp.text(), resp.status, resp.reason)
+                raise RuntimeError('Could not delete map on ddnet.tw')
+
+            log.info('Successfully delete map %r on ddnet.tw', filename)
+
     async def archive_testlog(self, testlog: TestLog) -> bool:
         failed = False
 
@@ -355,6 +368,12 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
                 except RuntimeError:
                     failed = True
                     continue
+
+        if testlog.map is not None:
+            try:
+                await self.ddnet_delete(testlog.map)
+            except RuntimeError:
+                pass
 
         return not failed
 

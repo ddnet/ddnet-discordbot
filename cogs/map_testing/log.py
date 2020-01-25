@@ -1,7 +1,7 @@
 import asyncio
 import json
 import re
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import discord
 
@@ -51,6 +51,12 @@ class TestLog:
             return ''
 
         return self.channel.topic.split('\n')[0].replace('**', '')  # strip markdown bolding
+
+    @property
+    def map(self) -> Optional[str]:
+        preview_url_re = r'https://ddnet\.tw/testmaps/\?map=(?P<name>.*)'
+        match = re.search(preview_url_re, self.channel.topic)
+        return match and match.group('name')
 
     @property
     def url(self) -> str:
