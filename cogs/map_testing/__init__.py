@@ -201,46 +201,6 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         await self.upload_submission(subm)
         log.info('%s approved submission %r in channel #%s', user, subm.filename, channel)
 
-    @commands.Cog.listener('on_raw_message_delete')
-    async def handle_submission_repost(self, payload: discord.RawMessageDeleteEvent):
-        if payload.channel_id != CHAN_SUBMIT_MAPS:
-            return
-
-        submit_channel = self.bot.get_channel(CHAN_SUBMIT_MAPS)
-        map_channels = [
-            *self.bot.get_channel(CAT_MAP_TESTING).text_channels,
-            *self.bot.get_channel(CAT_EVALUATED_MAPS).text_channels
-        ]
-
-        message_id = str(payload.message_id)
-
-        map_channel = discord.utils.find(lambda c: message_id in c.topic, map_channels)
-        if map_channel is None:
-            return
-
-        topic = map_channel.topic
-        content = topic.splitlines[0].replace('**', '')
-
-        try:
-            original_message = await map_channel.history(limit=1, oldest_first=True).next()
-        except discord.NoMoreItems:
-            found = False
-        else:
-            found = True
-
-        if not found or original_message.author != self.bot.user or not has_map(original_message):
-            log.error('Failed reposting initial submission of map channel #%s', map_channel)
-            return
-
-        original_subm = Submission(original_message)
-        file = await original_subm.get_file()
-
-        new_message = await submit_channel.send(content, file=file)
-        new_isubm = InitialSubmission(new_message)
-        await new_isubm.set_status(SubmissionState.PROCESSED)
-
-        await map_channel.edit(topic=topic.replace(message_id, str(new_message.id)))
-
     @commands.Cog.listener('on_message')
     async def handle_unwanted_message(self, message: discord.Message):
         author = message.author
@@ -349,10 +309,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
     def get_map_channel_from_ann(self, content: str) -> Optional[discord.TextChannel]:
         map_url_re = r'\[(?P<name>.+)\]\(<?https:\/\/ddnet\.tw\/maps\/\?map=.+?>?\)'
         match = re.search(map_url_re, content)
-        if match is None:
-            return
-
-        return self.get_map_channel(match.group('name'))
+        return match and self.get_map_channel(match.group('name'))
 
     @commands.Cog.listener('on_message')
     async def handle_map_release(self, message: discord.Message):
