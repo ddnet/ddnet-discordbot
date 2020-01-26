@@ -54,7 +54,7 @@ class TestLog:
 
     @property
     def map(self) -> Optional[str]:
-        preview_url_re = r'https://ddnet\.tw/testmaps/\?map=(?P<name>.*)'
+        preview_url_re = r'https://ddnet\.tw/testmaps/\?map=(?P<name>\S+)'
         match = re.search(preview_url_re, self.channel.topic)
         return match and match.group('name')
 
