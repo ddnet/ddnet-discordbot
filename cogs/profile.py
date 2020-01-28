@@ -1,5 +1,4 @@
 from datetime import datetime
-from functools import partial
 from io import BytesIO
 from typing import Dict, List
 
@@ -10,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from utils.color import clamp_luminance
 from utils.image import auto_font, center, round_rectangle
+from utils.misc import run_in_executor
 from utils.text import clean_content, escape_backticks, normalize, plural
 
 DIR = 'data/assets'
@@ -175,8 +175,7 @@ class Profile(commands.Cog):
         if not record:
             return await ctx.send('Could not find that player')
 
-        fn = partial(self.generate_profile_image, record)
-        buf = await self.bot.loop.run_in_executor(None, fn)
+        buf = await run_in_executor(self.generate_profile_image, record)
         file = discord.File(buf, filename=f'profile_{player}.png')
         await ctx.send(file=file)
 
@@ -375,8 +374,7 @@ class Profile(commands.Cog):
 
             data[player] = records
 
-        fn = partial(self.generate_points_image, data)
-        buf = await self.bot.loop.run_in_executor(None, fn)
+        buf = await run_in_executor(self.generate_points_image, data)
         file = discord.File(buf, filename=f'points_{"_".join(players)}.png')
         await ctx.send(file=file)
 
@@ -551,8 +549,7 @@ class Profile(commands.Cog):
         if not record:
             return await ctx.send('Could not find that map')
 
-        fn = partial(self.generate_map_image, record)
-        buf = await self.bot.loop.run_in_executor(None, fn)
+        buf = await run_in_executor(self.generate_map_image, record)
         file = discord.File(buf, filename=f'map_{name}.png')
         await ctx.send(file=file)
 
@@ -687,8 +684,7 @@ class Profile(commands.Cog):
 
             data[player] = records
 
-        fn = partial(self.generate_hours_image, data)
-        buf = await self.bot.loop.run_in_executor(None, fn)
+        buf = await run_in_executor(self.generate_hours_image, data)
         file = discord.File(buf, filename=f'hours_{"_".join(players)}.png')
         await ctx.send(file=file)
 

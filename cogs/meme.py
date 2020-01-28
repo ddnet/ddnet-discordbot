@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-from functools import partial
 from typing import List
 
 import discord
 from discord.ext import commands
+from PIL import Image, ImageDraw, ImageFont
+
+from utils.misc import run_in_executor
 
 DIR = 'data/assets'
 
@@ -54,8 +55,7 @@ class Memes(commands.Cog):
         return buf
 
     async def executor(self, type_: str, text1: str, text2: str=None) -> discord.File:
-        fn = partial(self.generate, type_, text1, text2)
-        buf = await self.bot.loop.run_in_executor(None, fn)
+        buf = await run_in_executor(self.generate, type_, text1, text2)
         return discord.File(buf, filename=f'{type_}.png')
 
     @commands.command()
@@ -107,8 +107,7 @@ class Memes(commands.Cog):
 
     @commands.command()
     async def teebob(self, ctx: commands.Context, *, text: str):
-        fn = partial(self.generate_teebob, text)
-        buf = await self.bot.loop.run_in_executor(None, fn)
+        buf = await run_in_executor(self.generate_teebob, text)
         file = discord.File(buf, filename='teebob.png')
         await ctx.send(file=file)
 
@@ -129,8 +128,7 @@ class Memes(commands.Cog):
 
     @commands.command()
     async def clown(self, ctx: commands.Context, text1: str, text2: str, text3: str, text4: str):
-        fn = partial(self.generate_clown, text1, text2, text3, text4)
-        buf = await self.bot.loop.run_in_executor(None, fn)
+        buf = await run_in_executor(self.generate_clown, text1, text2, text3, text4)
         file = discord.File(buf, filename='clown.png')
         await ctx.send(file=file)
 
