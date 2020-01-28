@@ -123,7 +123,10 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     async def sh(self, ctx: commands.Context, *, cmd: str):
         await ctx.trigger_typing()
 
-        stdout, stderr = await run_process(cmd)
+        try:
+            stdout, stderr = await run_process(cmd)
+        except RuntimeError as exc:
+            return await ctx.send(exc)
 
         content = f'$ {cmd}\n\nstdout:\n{stdout}\nstderr:\n{stderr}'
         if len(content) <= 1992:

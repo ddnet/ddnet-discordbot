@@ -18,13 +18,9 @@ async def run_process(cmd: str, timeout: float=90.0) -> Tuple[str, str]:
     except asyncio.TimeoutError:
         proc.terminate()
         await proc.wait()
-        stdout = ''
-        stderr = 'Process timed out'
+        raise RuntimeError('Process timed out')
     else:
-        stdout = stdout.decode()
-        stderr = stderr.decode()
-
-    return stdout, stderr
+        return stdout.decode(), stderr.decode()
 
 async def run_in_executor(func: Callable, *args, **kwargs):
     loop = asyncio.get_event_loop()

@@ -128,11 +128,15 @@ class InitialSubmission(Submission):
         with open(tmp, 'wb') as f:
             f.write(buf.getvalue())
 
-        cmd = f'{self.DIR}/render_map {tmp} --size 1280'
-        error = await run_process(cmd)  # render_map prints errors to stdout
-        if any(error):
-            log.error('Failed to generate thumbnail of map %r (%d): %s', self.filename, self.message.id, ' '.join(error))
-            return  # drop silently
+        try:
+            stdout, stderr = await run_process(f'{self.DIR}/render_map {tmp} --size 1280')
+        except RuntimeError as exc:
+            error = str(exc)
+        else:
+            error = ' '.join(e for e in (stdout, stderr) if e)  # render_map prints errors to stdout
+
+        if error:
+            return log.error('Failed to generate thumbnail of map %r (%d): %s', self.filename, self.message.id, error)
 
         with open(f'{tmp}.png', 'rb') as f:
             buf = BytesIO(f.read())
