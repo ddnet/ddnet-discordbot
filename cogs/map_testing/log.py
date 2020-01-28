@@ -1,22 +1,16 @@
-import asyncio
 import json
 import re
 from typing import Dict, List, Optional, Union
 
 import discord
 
-# TODO: generalize this
+from utils.misc import maybe_coroutine
+
 def format_size(size):
     for unit in ('B', 'KB', 'MB'):
         if size < 1024.0:
             return round(size, 2), unit
         size /= 1024.0
-
-async def maybe_coro(func, *args):
-    if asyncio.iscoroutinefunction(func):
-        return await func(*args)
-    else:
-        return func(*args)
 
 
 class TestLogError(Exception):
@@ -190,7 +184,7 @@ class TestLog:
                 end = text[match.end():]
 
                 try:
-                    processed = await maybe_coro(handler, *match.groups())
+                    processed = await maybe_coroutine(handler, *match.groups())
                 except TestLogError as exc:
                     out[i] = {'text': start + str(exc) + end}
                 else:
@@ -261,7 +255,7 @@ class TestLog:
             self._messages.append({
                 'author': self._handle_user(message.author),
                 'timestamp': message.created_at.isoformat(),
-                'content': [await maybe_coro(h, a) for h, a in content_handlers if a]
+                'content': [await maybe_coroutine(h, a) for h, a in content_handlers if a]
             })
 
     @classmethod
