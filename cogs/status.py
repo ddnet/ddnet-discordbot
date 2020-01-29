@@ -227,7 +227,7 @@ class ServerStatus:
 
         rows = []
         for server in self.servers:
-            rows.append(f'{server.flag} `{server:^4}|{server.status:^4}|{humanize_pps(server.packets.rx):>7}|{humanize_pps(server.packets.tx):>7}`')
+            rows.append(f'{server.flag} `{str(server):^4}|{server.status:^4}|{humanize_pps(server.packets.rx):>7}|{humanize_pps(server.packets.tx):>7}`')
 
         desc = '\n'.join([header] + rows)
         return discord.Embed(title='Server Status', description=desc, url=self.URL, timestamp=self.timestamp)
