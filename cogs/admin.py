@@ -128,9 +128,18 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         except RuntimeError as exc:
             return await ctx.send(exc)
 
-        content = f'$ {cmd}\n\nstdout:\n{stdout}\nstderr:\n{stderr}'
-        if len(content) <= 1992:
-            msg = f'```\n{content}\n```'
+        content = []
+        if stdout:
+            content.append(stdout)
+        if stderr:
+            content.append(f'stderr:\n{stderr}')
+
+        if not content:
+            return await ctx.message.add_reaction(CONFIRM)
+
+        content = '\n'.join([f'$ {cmd}'] + content)
+        if len(content) <= 1990:
+            msg = f'```sh\n{content}\n```'
         else:
             try:
                 msg = await self.mystbin_upload(content)
