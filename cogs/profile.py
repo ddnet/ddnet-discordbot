@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from utils.color import clamp_luminance
 from utils.image import auto_font, center, round_rectangle
-from utils.misc import run_in_executor
+from utils.misc import executor
 from utils.text import clean_content, escape_backticks, normalize, plural
 
 DIR = 'data/assets'
@@ -34,6 +34,7 @@ class Profile(commands.Cog):
         with open('blocked_players.cfg', 'r', encoding='utf-8') as f:
             return player in f.read().splitlines()
 
+    @executor
     def generate_profile_image(self, data: asyncpg.Record) -> BytesIO:
         font_normal = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
         font_bold = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 34)
@@ -175,10 +176,11 @@ class Profile(commands.Cog):
         if not record:
             return await ctx.send('Could not find that player')
 
-        buf = await run_in_executor(self.generate_profile_image, record)
+        buf = await self.generate_profile_image(record)
         file = discord.File(buf, filename=f'profile_{player}.png')
         await ctx.send(file=file)
 
+    @executor
     def generate_points_image(self, data: Dict[str, List[asyncpg.Record]]) -> BytesIO:
         font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
 
@@ -374,7 +376,7 @@ class Profile(commands.Cog):
 
             data[player] = records
 
-        buf = await run_in_executor(self.generate_points_image, data)
+        buf = await self.generate_points_image(data)
         file = discord.File(buf, filename=f'points_{"_".join(players)}.png')
         await ctx.send(file=file)
 
@@ -383,6 +385,7 @@ class Profile(commands.Cog):
         if isinstance(error, commands.ArgumentParsingError):
             await ctx.send('<players> contain unmatched or unescaped quotation mark')
 
+    @executor
     def generate_map_image(self, data: asyncpg.Record) -> BytesIO:
         font_48 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 46)
         font_36 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 36)
@@ -549,10 +552,11 @@ class Profile(commands.Cog):
         if not record:
             return await ctx.send('Could not find that map')
 
-        buf = await run_in_executor(self.generate_map_image, record)
+        buf = await self.generate_map_image(record)
         file = discord.File(buf, filename=f'map_{name}.png')
         await ctx.send(file=file)
 
+    @executor
     def generate_hours_image(self, data: Dict[str, List[asyncpg.Record]]) -> BytesIO:
         font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
 
@@ -684,7 +688,7 @@ class Profile(commands.Cog):
 
             data[player] = records
 
-        buf = await run_in_executor(self.generate_hours_image, data)
+        buf = await self.generate_hours_image(data)
         file = discord.File(buf, filename=f'hours_{"_".join(players)}.png')
         await ctx.send(file=file)
 

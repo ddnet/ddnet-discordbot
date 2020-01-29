@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
+import functools
 import os
 from asyncio.subprocess import PIPE
-from functools import partial
 from typing import Awaitable, Callable, Tuple, Union
 
 SHELL = os.getenv('SHELL')
@@ -22,10 +22,13 @@ async def run_process(cmd: str, timeout: float=90.0) -> Tuple[str, str]:
     else:
         return stdout.decode(), stderr.decode()
 
-async def run_in_executor(func: Callable, *args, **kwargs):
-    loop = asyncio.get_event_loop()
-    fn = partial(func, *args, **kwargs)
-    return await loop.run_in_executor(None, fn)
+def executor(func: Callable):
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        loop = asyncio.get_event_loop()
+        fn = functools.partial(func, *args, **kwargs)
+        return await loop.run_in_executor(None, fn)
+    return wrapper
 
 async def maybe_coroutine(func: Union[Awaitable, Callable], *args, **kwargs):
     if asyncio.iscoroutinefunction(func):

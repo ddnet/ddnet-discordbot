@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.misc import run_in_executor
+from utils.misc import executor
 
 DIR = 'data/assets'
 
@@ -40,6 +40,7 @@ class Memes(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    @executor
     def generate(self, type_: str, text1: str, text2: str) -> BytesIO:
         base = Image.open(f'{DIR}/memes/{type_}.png')
         canv = ImageDraw.Draw(base)
@@ -55,7 +56,7 @@ class Memes(commands.Cog):
         return buf
 
     async def executor(self, type_: str, text1: str, text2: str=None) -> discord.File:
-        buf = await run_in_executor(self.generate, type_, text1, text2)
+        buf = await self.generate(type_, text1, text2)
         return discord.File(buf, filename=f'{type_}.png')
 
     @commands.command()
@@ -93,6 +94,7 @@ class Memes(commands.Cog):
         file = await self.executor('ohno', text)
         await ctx.send(file=file)
 
+    @executor
     def generate_teebob(self, text: str) -> BytesIO:
         base = Image.open(f'{DIR}/memes/teebob.png')
         canv = ImageDraw.Draw(base)
@@ -107,10 +109,11 @@ class Memes(commands.Cog):
 
     @commands.command()
     async def teebob(self, ctx: commands.Context, *, text: str):
-        buf = await run_in_executor(self.generate_teebob, text)
+        buf = await self.generate_teebob(text)
         file = discord.File(buf, filename='teebob.png')
         await ctx.send(file=file)
 
+    @executor
     def generate_clown(self, text1: str, text2: str, text3: str, text4: str) -> BytesIO:
         base = Image.open(f'{DIR}/memes/clown.png')
         canv = ImageDraw.Draw(base)
@@ -128,7 +131,7 @@ class Memes(commands.Cog):
 
     @commands.command()
     async def clown(self, ctx: commands.Context, text1: str, text2: str, text3: str, text4: str):
-        buf = await run_in_executor(self.generate_clown, text1, text2, text3, text4)
+        buf = await self.generate_clown(text1, text2, text3, text4)
         file = discord.File(buf, filename='clown.png')
         await ctx.send(file=file)
 
