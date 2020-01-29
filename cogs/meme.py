@@ -55,43 +55,43 @@ class Memes(commands.Cog):
         buf.seek(0)
         return buf
 
-    async def executor(self, type_: str, text1: str, text2: str=None) -> discord.File:
+    async def _executor(self, type_: str, text1: str, text2: str=None) -> discord.File:
         buf = await self.generate(type_, text1, text2)
         return discord.File(buf, filename=f'{type_}.png')
 
     @commands.command()
     async def angry(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self.executor('angry', text1, text2)
+        file = await self._executor('angry', text1, text2)
         await ctx.send(file=file)
 
     @commands.command()
     async def happy(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self.executor('happy', text1, text2)
+        file = await self._executor('happy', text1, text2)
         await ctx.send(file=file)
 
     @commands.command()
     async def sleep(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self.executor('sleep', text1, text2)
+        file = await self._executor('sleep', text1, text2)
         await ctx.send(file=file)
 
     @commands.command()
     async def angryjao(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self.executor('angryjao', text1, text2)
+        file = await self._executor('angryjao', text1, text2)
         await ctx.send(file=file)
 
     @commands.command()
     async def teeward(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self.executor('teeward', text1, text2)
+        file = await self._executor('teeward', text1, text2)
         await ctx.send(file=file)
 
     @commands.command()
     async def drake(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self.executor('drake', text1, text2)
+        file = await self._executor('drake', text1, text2)
         await ctx.send(file=file)
 
     @commands.command()
     async def ohno(self, ctx: commands.Context, *, text: str):
-        file = await self.executor('ohno', text)
+        file = await self._executor('ohno', text)
         await ctx.send(file=file)
 
     @executor
