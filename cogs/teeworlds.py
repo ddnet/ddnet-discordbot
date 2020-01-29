@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import asyncio
 import logging
 from collections import namedtuple
 from datetime import datetime
@@ -11,6 +10,7 @@ import discord
 from discord.ext import commands
 
 from data.countryflags import COUNTRYFLAGS, FLAG_UNK
+from utils.menu import Pages
 from utils.text import clean_content, escape
 
 log = logging.getLogger(__name__)
@@ -19,22 +19,19 @@ log = logging.getLogger(__name__)
 BASE_URL = 'https://ddnet.tw'
 
 class Player:
-    __slots__ = ('name', 'clan', 'score', 'country', '_playing', 'url')
+    __slots__ = ('name', 'clan', 'score', 'country', 'playing', 'url')
 
     def __init__(self, **kwargs):
         self.name = kwargs.pop('name')
         self.clan = kwargs.pop('clan')
         self.score = kwargs.pop('score')
         self.country = kwargs.pop('country')
-        self._playing = kwargs.pop('playing')
+        self.playing = kwargs.pop('playing')
 
         try:
             self.url = BASE_URL + kwargs.pop('url')
         except KeyError:
             self.url = None
-
-    def is_playing(self) -> bool:
-        return self._playing
 
     def is_connected(self) -> bool:
         # https://github.com/ddnet/ddnet/blob/38f91d3891eefc392f60f77b1b82ecdb3a47ec62/src/engine/client/serverbrowser.cpp#L348
@@ -60,14 +57,11 @@ class Player:
         if self.clan:
             line.append(escape(self.clan))
 
-        if self._playing:
+        if self.playing:
             score = self.time if time_score else self.score
             line = [self.flag, f'`{score}`'] + line
 
         return ' '.join(line)
-
-
-Scoreboard = namedtuple('Scoreboard', 'title pages')
 
 
 class Server:
@@ -92,7 +86,7 @@ class Server:
             self.map_url = None
 
     def __contains__(self, item) -> bool:
-        return any(p.name == item and p.is_connected() for p in self._clients)
+        return any(p.name == item for p in self.clients)
 
     @property
     def title(self) -> str:
@@ -129,130 +123,40 @@ class Server:
         return any(t in gametype for t in ('race', 'fastcap', 'ddnet', 'blockz', 'infectionz'))
 
     @property
-    def players(self) -> List[Player]:
-        return [p for p in self._clients if p.is_playing() and p.is_connected()]
+    def clients(self) -> List[Player]:
+        return [p for p in self._clients if p.is_connected()]
 
     @property
-    def spectators(self) -> List[Player]:
-        return [p for p in self._clients if not p.is_playing() and p.is_connected()]
+    def embeds(self) -> List[discord.Embed]:
+        embeds = []
 
-    @property
-    def scoreboard(self) -> Scoreboard:
-        title = f'Players [{len(self.players)}/{self.max_players}]'
+        base = discord.Embed(title=self.title, url=self.map_url, timestamp=self.timestamp, color=self.color)
+        base.set_footer(text=self.address)
+
+        spectators = sorted([p for p in self.clients if not p.playing], key=lambda p: p.name.lower())
+        if spectators:
+            name = f'Spectators [{len(spectators)}/{self.max_clients}]'
+            value = ', '.join(p.format() for p in spectators)
+            base.add_field(name=name, value=value, inline=False)
 
         # https://github.com/ddnet/ddnet/blob/38f91d3891eefc392f60f77b1b82ecdb3a47ec62/src/game/client/gameclient.cpp#L1381-L1406
-        players = sorted(self.players, key=lambda p: (self.time_score and p.score == -9999, -p.score, p.name.lower()))
-        pages = [
-            (
-                '\n'.join(p.format(self.time_score) for p in players[i:i+8]),
-                '\n'.join(p.format(self.time_score) for p in players[i+8:i+16])
-            )
-            for i in range(0, len(players), 16)
-        ]
+        players = sorted(
+            [p for p in self.clients if p.playing],
+            key=lambda p: (self.time_score and p.score == -9999, -p.score, p.name.lower())
+        )
+        if players:
+            names = (f'Players [{len(players)}/{self.max_players}]', '\u200b')
+            for i in range(0, len(players), 16):
+                embed = base.copy()
+                for j, name in enumerate(names):
+                    pslice = players[i + 8 * j:i + 8 * (j + 1)]
+                    if pslice:
+                        value = '\n'.join(p.format(self.time_score) for p in pslice)
+                        embed.insert_field_at(j, name=name, value=value)
 
-        return Scoreboard(title=title, pages=pages)
+                embeds.append(embed)
 
-    @property
-    def specboard(self) -> Scoreboard:
-        title = f'Spectators [{len(self.spectators)}/{self.max_clients}]'
-
-        spectators = sorted(self.spectators, key=lambda p: p.name.lower())
-        page = ', '.join(p.format() for p in spectators)
-
-        return Scoreboard(title=title, pages=[page])
-
-
-class ServerPaginator:
-    def __init__(self, ctx: commands.Context, server: Server):
-        self.ctx = ctx
-        self.bot = ctx.bot
-        self.server = server
-        self.message = None
-        self.current_page = 0
-        self.num_pages = len(server.scoreboard.pages)
-
-        self.paginating = self.num_pages > 1
-        self.emojis = {
-            '\N{BLACK LEFT-POINTING TRIANGLE}': self.prev_page,
-            '\N{BLACK RIGHT-POINTING TRIANGLE}': self.next_page
-        }
-
-    def gen_embed(self, server: Server, page: int) -> discord.Embed:
-        embed = discord.Embed(title=server.title, url=server.map_url, color=server.color, timestamp=server.timestamp)
-
-        if server.players:
-            embed.add_field(name=server.scoreboard.title, value=server.scoreboard.pages[page][0])
-            if server.scoreboard.pages[page][1]:
-                embed.add_field(name='\u200b', value=server.scoreboard.pages[page][1])
-
-        if server.spectators:
-            embed.add_field(name=server.specboard.title, value=server.specboard.pages[0], inline=False)
-
-        embed.set_footer(text=f'{server.address} (Page {page + 1}/{self.num_pages})')
-
-        return embed
-
-    async def show_page(self, page: int):
-        embed = self.gen_embed(self.server, page)
-        if self.message is None:
-            self.message = await self.ctx.send(embed=embed)
-            if self.paginating:
-                for emoji in self.emojis:
-                    await self.message.add_reaction(emoji)
-        else:
-            await self.message.edit(embed=embed)
-
-        self.current_page = page
-
-    async def start_paginating(self):
-        await self.show_page(0)
-
-        def check(reaction: discord.Reaction, user: discord.User) -> bool:
-            if user is None or user != self.ctx.author:
-                return False
-
-            if reaction.message.id != self.message.id:
-                return False
-
-            emoji = str(reaction)
-            if emoji in self.emojis:
-                self.match = self.emojis[emoji]
-                return True
-
-            return False
-
-        while self.paginating:
-            # TODO: break on message deleted
-            try:
-                reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=120.0)
-            except asyncio.TimeoutError:
-                try:
-                    await self.message.clear_reactions()
-                except discord.Forbidden:
-                    pass
-                finally:
-                    break
-
-            try:
-                await reaction.remove(user)
-            except (discord.Forbidden, discord.NotFound):
-                pass
-
-            await self.match()
-
-    async def prev_page(self):
-        page = self.current_page - 1
-        if page == -1:
-            page = self.num_pages - 1
-
-        await self.show_page(page)
-
-    async def next_page(self):
-        page = self.current_page + 1
-        if page == self.num_pages:
-            page = 0
-
-        await self.show_page(page)
+        return embeds or [base]
 
 
 Packets = namedtuple('Packets', 'rx tx')
@@ -372,10 +276,10 @@ class Teeworlds(commands.Cog):
         if not servers:
             return await ctx.send('Could not find that player')
 
-        server = max(servers, key=lambda s: len(s.players) + len(s.spectators))
+        server = max(servers, key=lambda s: len(s.clients))
 
-        paginator = ServerPaginator(ctx, server)
-        await paginator.start_paginating()
+        menu = Pages(server.embeds)
+        await menu.start(ctx)
 
     async def fetch_status(self) -> ServerStatus:
         url = f'{BASE_URL}/status/json/stats.json'
