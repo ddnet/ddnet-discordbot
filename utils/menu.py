@@ -6,10 +6,7 @@ from discord.ext import commands, menus
 
 class Pages(menus.Menu):
     def __init__(self, pages: List[discord.Embed]):
-        try:
-            super().__init__(clear_reactions_after=True, check_embeds=True)
-        except menus.MenuError:
-            raise discord.Forbidden
+        super().__init__(clear_reactions_after=True)
 
         self.pages = pages
         self.num_pages = len(pages)
