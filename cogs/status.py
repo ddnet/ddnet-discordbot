@@ -216,7 +216,6 @@ class ServerStatus:
 
     def __init__(self, servers: List[Dict], updated: str):
         self.servers = [ServerInfo(**s) for s in servers]
-        self._updated = float(updated)
         self.timestamp = datetime.utcfromtimestamp(float(updated))
 
     @property
