@@ -55,3 +55,25 @@ def normalize(text: str) -> str:
 
 def plural(value: int, singular: str) -> str:
     return singular if abs(value) == 1 else singular + 's'
+
+def render_table(header: List[str], rows: List[List[str]]):
+    widths = [max(len(r[i]) for r in rows + [header]) for i in range(len(header))]
+
+    out = [
+        '|'.join(c.center(w) for c, w in zip(header, widths)),
+        '+'.join('-' * w for w in widths)
+    ]
+
+    for row in rows:
+        columns = []
+        for column, width in zip(row, widths):
+            try:
+                float(column)
+            except ValueError:
+                columns.append(column.ljust(width))
+            else:
+                columns.append(column.rjust(width))
+
+        out.append('|'.join(columns))
+
+    return '\n'.join(out)

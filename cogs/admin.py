@@ -3,6 +3,7 @@
 
 import logging
 import textwrap
+import time
 import traceback
 from contextlib import redirect_stdout
 from io import StringIO
@@ -11,6 +12,7 @@ import discord
 from discord.ext import commands
 
 from utils.misc import run_process
+from utils.text import plural, render_table
 
 log = logging.getLogger(__name__)
 
@@ -143,6 +145,33 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             try:
                 msg = await self.mystbin_upload(content)
+            except RuntimeError as exc:
+                msg = exc
+
+        await ctx.send(msg)
+
+    @commands.command()
+    async def sql(self, ctx: commands.Context, *, query: str):
+        try:
+            start = time.perf_counter()
+            records = await self.bot.pool.fetch(query)
+            duration = (time.perf_counter() - start) * 1000.0
+        except Exception:
+            return await ctx.send(f'```py\n{traceback.format_exc()}\n```')
+
+        if not records:
+            return await ctx.message.add_reaction(CONFIRM)
+
+        header = list(records[0].keys())
+        rows = [[str(v) for v in r.values()] for r in records]
+        table = render_table(header, rows)
+        num = len(records)
+        footer = f'{num} {plural(num, "row")} in {duration:.2f}ms'
+
+        msg = f'```\n{table}\n```\n*{footer}*'
+        if len(msg) > 2000:
+            try:
+                msg = await self.mystbin_upload(f'{table}\n{footer}')
             except RuntimeError as exc:
                 msg = exc
 
