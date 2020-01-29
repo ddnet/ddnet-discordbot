@@ -61,7 +61,7 @@ def render_table(header: List[str], rows: List[List[str]]):
 
     out = [
         ' | '.join(c.center(w) for c, w in zip(header, widths)),
-        '-+-'.join('-' * '-' * w for w in widths)
+        '-+-'.join('-' * w for w in widths)
     ]
 
     for row in rows:
