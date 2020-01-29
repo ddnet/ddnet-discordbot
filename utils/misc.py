@@ -16,8 +16,7 @@ async def run_process(cmd: str, timeout: float=90.0) -> Tuple[str, str]:
     try:
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
-        proc.terminate()
-        await proc.wait()
+        proc.kill()
         raise RuntimeError('Process timed out')
     else:
         return stdout.decode(), stderr.decode()
