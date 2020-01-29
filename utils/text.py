@@ -60,8 +60,8 @@ def render_table(header: List[str], rows: List[List[str]]):
     widths = [max(len(r[i]) for r in rows + [header]) for i in range(len(header))]
 
     out = [
-        '|'.join(c.center(w) for c, w in zip(header, widths)),
-        '+'.join('-' * w for w in widths)
+        ' | '.join(c.center(w) for c, w in zip(header, widths)),
+        '-+-'.join('-' * '-' * w for w in widths)
     ]
 
     for row in rows:
@@ -74,6 +74,6 @@ def render_table(header: List[str], rows: List[List[str]]):
             else:
                 columns.append(column.rjust(width))
 
-        out.append('|'.join(columns))
+        out.append(' | '.join(columns))
 
     return '\n'.join(out)
