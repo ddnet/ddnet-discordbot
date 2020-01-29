@@ -20,7 +20,7 @@ initial_extensions = (
     'cogs.misc',
     'cogs.profile',
     'cogs.records',
-    'cogs.teeworlds',
+    'cogs.status',
     'cogs.votes',
 )
 

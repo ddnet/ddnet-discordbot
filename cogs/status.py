@@ -102,19 +102,19 @@ class Server:
         # https://github.com/ddnet/ddnet/blob/f1b54d32b909a3c6fc9e1dc6c37475a1d7c21ec4/src/game/client/components/menus_browser.cpp#L442-L457
         gametype = self.gametype.lower()
         if self.gametype in ('DM', 'TDM', 'CTF'):
-            return 0x82FF7F  # Vanilla
+            return 0x82ff7f  # Vanilla
         elif 'catch' in gametype:
-            return 0xFCFF7F  # Catch
+            return 0xfcff7f  # Catch
         elif any(t in gametype for t in ('idm', 'itdm', 'ictf')):
-            return 0xFF7F7F  # Instagib
+            return 0xff7f7f  # Instagib
         elif 'fng' in gametype:
-            return 0xFC7FFF  # FNG
+            return 0xfc7fff  # FNG
         elif any(t in gametype for t in ('ddracenet', 'ddnet', 'blockz', 'infectionz')):
-            return 0x7EBFFD  # DDNet
+            return 0x7ebffd  # DDNet
         elif any(t in gametype for t in ('ddrace', 'mkrace')):
-            return 0xBF7FFF  # DDRace
+            return 0xbf7fff  # DDRace
         elif any(t in gametype for t in ('race', 'fastcap')):
-            return 0x7FFFE0  # Race
+            return 0x7fffe0  # Race
 
     @property
     def time_score(self) -> bool:
@@ -159,11 +159,10 @@ class Server:
         return embeds or [base]
 
 
-Packets = namedtuple('Packets', 'rx tx')
-
-
 class ServerInfo:
-    __slots__ = ('host', '_online', 'packets')
+    __slots__ = ('host', 'online', 'packets')
+
+    Packets = namedtuple('Packets', 'rx tx')
 
     PPS_THRESHOLD = 3000  # we usually get max 2 kpps legit traffic so this should be a safe threshold
     PPS_RATIO_MIN = 500  # ratio is not reliable for low traffic
@@ -176,22 +175,21 @@ class ServerInfo:
         'RUS':  '🇷🇺',
         'CHL':  '🇨🇱',
         'USA':  '🇺🇸',
-        'BRA':  '🇧🇷',
         'ZAF':  '🇿🇦',
         'CHN':  '🇨🇳',
     }
 
     def __init__(self, **kwargs):
         self.host = kwargs.pop('type')
-        self._online = kwargs.pop('online4')
+        self.online = kwargs.pop('online4')
 
-        self.packets = Packets(kwargs.pop('packets_rx', -1), kwargs.pop('packets_tx', -1))
+        self.packets = self.Packets(kwargs.pop('packets_rx', -1), kwargs.pop('packets_tx', -1))
+
+    def __str__(self) -> str:
+        return 'MAIN' if self.is_main() else self.host.split('.')[0].upper()
 
     def is_main(self) -> bool:
         return self.host == 'ddnet.tw'
-
-    def is_online(self) -> bool:
-        return self._online
 
     def is_under_attack(self) -> bool:
         return self.packets.rx > self.PPS_THRESHOLD \
@@ -199,7 +197,7 @@ class ServerInfo:
 
     @property
     def status(self) -> str:
-        if not self.is_online():
+        if not self.online:
             return 'down'
         elif self.is_under_attack():
             return 'ddos'  # not necessarily correct but easy to understand
@@ -207,28 +205,8 @@ class ServerInfo:
             return 'up'
 
     @property
-    def country(self) -> str:
-        if self.is_main():
-            return 'MAIN'
-
-        # monkey patch BRA so that country abbreviations are consistent
-        return self.host.split('.')[0].upper().replace('BR', 'BRA')
-
-    @property
     def flag(self) -> str:
         return self.COUNTRYFLAGS.get(self.country, FLAG_UNK)
-
-    def format(self) -> str:
-        def humanize_pps(pps: int) -> str:
-            if pps < 0:
-                return ''
-            elif pps < 1000:
-                return str(pps)
-            else:
-                return f'{round(pps / 1000, 2)}k'
-
-        return f'{self.flag} `{self.country:^4}|{self.status:^4}|' \
-               f'{humanize_pps(self.packets.rx):>7}|{humanize_pps(self.packets.tx):>7}`'
 
 
 class ServerStatus:
@@ -238,16 +216,26 @@ class ServerStatus:
 
     def __init__(self, servers: List[Dict], updated: str):
         self.servers = [ServerInfo(**s) for s in servers]
+        self._updated = float(updated)
         self.timestamp = datetime.utcfromtimestamp(float(updated))
 
     @property
     def embed(self) -> discord.Embed:
         header = f'{FLAG_UNK} `srv | +- | ▲ pps | ▼ pps `'
-        desc = '\n'.join([header] + [s.format() for s in self.servers])
+
+        def humanize_pps(pps: int) -> str:
+            return '' if pps < 0 else str(pps) if pps < 1000 else f'{round(pps / 1000, 2)}k'
+
+        rows = []
+        for server in self.servers:
+            rows.append(f'{server.flag} `{server:^4}|{server.status:^4}|'
+                        f'{humanize_pps(server.packets.rx):>7}|{humanize_pps(server.packets.tx):>7}`')
+
+        desc = '\n'.join([header] + rows)
         return discord.Embed(title='Server Status', description=desc, url=self.URL, timestamp=self.timestamp)
 
 
-class Teeworlds(commands.Cog):
+class Status(commands.Cog, name='DDNet Status'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -304,4 +292,4 @@ class Teeworlds(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Teeworlds(bot))
+    bot.add_cog(Status(bot))
