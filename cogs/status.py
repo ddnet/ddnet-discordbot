@@ -206,7 +206,7 @@ class ServerInfo:
 
     @property
     def flag(self) -> str:
-        return self.COUNTRYFLAGS.get(self.country, FLAG_UNK)
+        return self.COUNTRYFLAGS.get(str(self), FLAG_UNK)
 
 
 class ServerStatus:
