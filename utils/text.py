@@ -56,7 +56,7 @@ def normalize(text: str) -> str:
 def plural(value: int, singular: str) -> str:
     return singular if abs(value) == 1 else singular + 's'
 
-def render_table(header: List[str], rows: List[List[str]]):
+def render_table(header: List[str], rows: List[List[str]]) -> str:
     widths = [max(len(r[i]) for r in rows + [header]) for i in range(len(header))]
 
     out = [

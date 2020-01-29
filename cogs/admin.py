@@ -67,7 +67,6 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     @commands.command(name='eval')
     async def _eval(self, ctx: commands.Context, *, body: str):
         env = {
-            'self': self,
             'bot': self.bot,
             'ctx': ctx,
             'channel': ctx.channel,
@@ -79,70 +78,59 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
         env.update(globals())
 
-        content = None
-        stdout = StringIO()
-
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
 
         try:
             exec(to_compile, env)
         except Exception as exc:
-            return await ctx.send(f'```py\n{exc.__class__.__name__}: {exc}\n```')
-
-        func = env['func']
-        try:
-            with redirect_stdout(stdout):
-                ret = await func()
-        except Exception:
-            value = stdout.getvalue()
-            content = value + traceback.format_exc()
+            content = f'{exc.__class__.__name__}: {exc}'
         else:
-            value = stdout.getvalue()
+            stdout = StringIO()
+            func = env['func']
             try:
-                await ctx.message.add_reaction(CONFIRM)
-            except discord.HTTPException:
-                pass
-
-            if ret is None:
-                if value:
-                    content = value
+                with redirect_stdout(stdout):
+                    ret = await func()
+            except Exception:
+                content = stdout.getvalue() + traceback.format_exc()
             else:
-                self._last_result = ret
-                content = value + str(ret)
+                content = stdout.getvalue()
+                if ret is not None:
+                    self._last_result = ret
+                    content += str(ret)
 
-        if content:
-            if len(content) <= 1990:
-                msg = f'```py\n{content}\n```'
-            else:
-                try:
-                    msg = await self.mystbin_upload(content)
-                except RuntimeError as exc:
-                    msg = exc
+        if not content:
+            return await ctx.message.add_reaction(CONFIRM)
 
-            await ctx.send(msg)
+        msg = f'```py\n{content}\n```'
+        if len(msg) > 2000:
+            try:
+                msg = await self.mystbin_upload(content)
+            except RuntimeError as exc:
+                msg = exc
+
+        await ctx.send(msg)
 
     @commands.command()
     async def sh(self, ctx: commands.Context, *, cmd: str):
         await ctx.trigger_typing()
 
+        content = []
         try:
             stdout, stderr = await run_process(cmd)
         except RuntimeError as exc:
-            return await ctx.send(exc)
-
-        content = []
-        if stdout:
-            content.append(stdout)
-        if stderr:
-            content.append(f'stderr:\n{stderr}')
+            content.append(str(exc))
+        else:
+            if stdout:
+                content.append(stdout)
+            if stderr:
+                content.append(f'stderr:\n{stderr}')
 
         if not content:
             return await ctx.message.add_reaction(CONFIRM)
 
         content = '\n'.join([f'$ {cmd}'] + content)
-        if len(content) <= 1990:
-            msg = f'```sh\n{content}\n```'
-        else:
+        msg = f'```sh\n{content}\n```'
+        if len(msg) > 2000:
             try:
                 msg = await self.mystbin_upload(content)
             except RuntimeError as exc:
