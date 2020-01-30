@@ -180,7 +180,7 @@ class Misc(commands.Cog):
             return await ctx.send(exc)
 
         city = data['name']
-        country = data['sys'].get(['country'])
+        country = data['sys'].get('country')
         condition = data['weather'][0]['id']
         description = data['weather'][0]['description']
         temp = data['main']['temp']  # K
