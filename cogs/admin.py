@@ -54,19 +54,21 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             await ctx.message.add_reaction(CONFIRM)
 
-    async def mystbin_upload(self, content: str) -> str:
+    async def hastebin_upload(self, content: str) -> str:
         data = content.encode('utf-8')
-        async with self.bot.session.post('https://mystb.in/documents', data=data) as resp:
+        async with self.bot.session.post('https://hastebin.com/documents', data=data) as resp:
             js = await resp.json()
             if resp.status != 200:
-                log.error('Failed uploading to mystb.in: %s (status code: %d %s)', js['message'], resp.status, resp.reason)
-                raise RuntimeError('Could not upload result to mystb.in')
+                fmt = 'Failed uploading to hastebin.com: %s (status code: %d %s)'
+                log.error(fmt, js['message'], resp.status, resp.reason)
+                raise RuntimeError('Could not upload to hastebin')
 
-            return f'<https://mystb.in/{js["key"]}.py>'
+            return f'<https://hastebin.com/{js["key"]}.py>'
 
     @commands.command(name='eval')
     async def _eval(self, ctx: commands.Context, *, body: str):
         env = {
+            'self': self,
             'bot': self.bot,
             'ctx': ctx,
             'channel': ctx.channel,
@@ -104,7 +106,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         msg = f'```py\n{content}\n```'
         if len(msg) > 2000:
             try:
-                msg = await self.mystbin_upload(content)
+                msg = await self.hastebin_upload(content)
             except RuntimeError as exc:
                 msg = exc
 
@@ -132,7 +134,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         msg = f'```sh\n{content}\n```'
         if len(msg) > 2000:
             try:
-                msg = await self.mystbin_upload(content)
+                msg = await self.hastebin_upload(content)
             except RuntimeError as exc:
                 msg = exc
 
@@ -159,7 +161,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         msg = f'```\n{table}\n```\n*{footer}*'
         if len(msg) > 2000:
             try:
-                msg = await self.mystbin_upload(f'{table}\n{footer}')
+                msg = await self.hastebin_upload(f'{table}\n{footer}')
             except RuntimeError as exc:
                 msg = exc
 
