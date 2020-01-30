@@ -10,6 +10,7 @@ import discord
 import psutil
 from discord.ext import commands
 
+from data.countryflags import FLAG_UNK
 from utils.misc import run_process
 
 log = logging.getLogger(__name__)
@@ -41,9 +42,6 @@ def get_weather_emoji(condition: int) -> str:
         return '\N{CLOUD}'
     else:
         return ''
-
-def get_time_emoji(now: int, sunrise: int, sunset: int) -> str:
-    return '\N{SUN WITH FACE}' if sunrise <= now < sunset else '\N{FULL MOON WITH FACE}'
 
 def human_timedelta(delta: timedelta, accuracy=4) -> str:
     hours, remainder = divmod(int(delta.total_seconds()), 3600)
@@ -175,51 +173,58 @@ class Misc(commands.Cog):
 
     @commands.command()
     async def weather(self, ctx: commands.Context, *, city: str):
-        """Shows weather information of a city"""
+        """Show weather information of a city"""
         try:
             data = await self.fetch_weather_data(city)
         except RuntimeError as exc:
             return await ctx.send(exc)
 
         city = data['name']
-        country = data['sys']['country']
+        country = data['sys'].get(['country'])
         condition = data['weather'][0]['id']
         description = data['weather'][0]['description']
         temp = data['main']['temp']  # K
-        celcius = temp - 273.15
-        rankine = temp * 9/5
-        fahrenheit = temp * 9/5 - 459.67
         wind = data['wind']['speed']  # m/s
         humidity = data['main']['humidity']  # %
         cloudiness = data['clouds']['all']  # %
+
+        if country is None:
+            flag = FLAG_UNK
+        else:
+            flag = f':flag_{country.lower()}:'
+            city += f', {country}'
+
         emoji = get_weather_emoji(condition)
 
-        msg = f':flag_{country.lower()}: |  **Weather for {city}, {country}**\n' \
+        celcius = temp - 273.15
+        fahrenheit = temp * 9 / 5 - 459.67
+
+        msg = f'{flag} |  **Weather for {city}**\n' \
               f'**Weather:** {emoji} ({description})\n' \
-              f'**Temp:** {celcius:0.1f} °C / {fahrenheit:0.1f} °F / {rankine:0.1f} °R\n' \
+              f'**Temp:** {celcius:0.1f} °C / {fahrenheit:0.1f} °F\n' \
               f'**Wind:** {wind} m/s **Humidity:** {humidity}% **Cloudiness:** {cloudiness}%'
 
         await ctx.send(msg)
 
     @commands.command()
     async def time(self, ctx: commands.Context, *, city: str):
-        """Shows the time and date of a city"""
-        now = datetime.utcnow()
-
+        """Show the date and time of a city"""
         try:
             data = await self.fetch_weather_data(city)
         except RuntimeError as exc:
             return await ctx.send(exc)
 
+        now = datetime.utcnow()
+
         offset = data['timezone']
-        utc = offset / 60 / 60
-        utc = int(utc) if utc % 1 == 0 else round(utc, 1)
-        time = now + timedelta(seconds=offset)
         sunrise = data['sys']['sunrise']
         sunset = data['sys']['sunset']
-        emoji = get_time_emoji(int(now.timestamp()), sunrise, sunset)
 
-        await ctx.send(f'{emoji} **{time.strftime("%d/%m/%Y %H:%M:%S")}** (UTC {utc:+})')
+        emoji = '🌞' if sunrise <= now.timestamp() < sunset else '🌝'
+        timestamp = (now + timedelta(seconds=offset)).strftime('%d/%m/%Y %H:%M:%S')
+        hours, minutes = divmod(offset / 60, 60)
+
+        await ctx.send(f'{emoji} **{timestamp}** (UTC {hours:+03.0f}:{minutes:02.0f})')
 
     @commands.command()
     @commands.guild_only()

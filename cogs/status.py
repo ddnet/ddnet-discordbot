@@ -15,8 +15,8 @@ from utils.text import clean_content, escape
 
 log = logging.getLogger(__name__)
 
-
 BASE_URL = 'https://ddnet.tw'
+
 
 class Player:
     __slots__ = ('name', 'clan', 'score', 'country', 'playing', 'url')
