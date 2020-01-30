@@ -8,7 +8,6 @@ import traceback
 from contextlib import redirect_stdout
 from io import StringIO
 
-import discord
 from discord.ext import commands
 
 from utils.misc import run_process
