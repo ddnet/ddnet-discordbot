@@ -66,8 +66,13 @@ class Submission:
         await self.message.add_reaction(str(status))
 
     async def pin(self):
-        if not self.message.pinned:
+        if self.message.pinned:
+            return
+
+        try:
             await self.message.pin()
+        except discord.HTTPException:
+            pass
 
 
 class InitialSubmission(Submission):
