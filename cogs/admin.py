@@ -152,7 +152,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
             return await ctx.message.add_reaction(CONFIRM)
 
         header = list(records[0].keys())
-        rows = [['' if v is None else repr(v) for v in r.values()] for r in records]
+        rows = [['' if v is None else str(v) for v in r.values()] for r in records]
         table = render_table(header, rows)
         num = len(records)
         footer = f'{num} {plural(num, "row")} in {duration:.2f}ms'
