@@ -142,7 +142,7 @@ class Misc(commands.Cog):
             elif resp.status == 404:
                 raise RuntimeError('Could not find that city')
             else:
-                fmt = 'Failed to fetch weather data for %r: %s (status code: %d %s)'
+                fmt = 'Failed to fetch weather data for city %r: %s (status code: %d %s)'
                 log.error(fmt, city, js['message'], resp.status, resp.reason)
                 raise RuntimeError('Could not fetch weather information')
 
