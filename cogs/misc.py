@@ -17,32 +17,6 @@ log = logging.getLogger(__name__)
 
 GH_URL = 'https://github.com/12pm/ddnet-discordbot'
 
-def get_weather_emoji(condition: int) -> str:
-    # https://openweathermap.org/weather-conditions
-    if 200 <= condition < 300:
-        # Thunderstorm
-        return '\N{CLOUD WITH LIGHTNING}'
-    elif 300 <= condition < 400:
-        # Drizzle
-        return '\N{CLOUD WITH RAIN}'
-    elif 500 <= condition < 600:
-        # Rain
-        return '\N{CLOUD WITH RAIN}'
-    elif 600 <= condition < 700:
-        # Snow
-        return '\N{SNOWFLAKE}'
-    elif 700 <= condition < 800:
-        # Atmosphere
-        return '\N{DASH SYMBOL}'
-    elif condition == 800:
-        # Clear
-        return '\N{BLACK SUN WITH RAYS}'
-    elif 801 <= condition < 810:
-        # Clouds
-        return '\N{CLOUD}'
-    else:
-        return ''
-
 def human_timedelta(delta: timedelta, accuracy=4) -> str:
     hours, remainder = divmod(int(delta.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -56,6 +30,25 @@ def human_timedelta(delta: timedelta, accuracy=4) -> str:
     )
 
     return ' '.join([f'{v}{u}' for u, v in units if v > 0][:accuracy]) or '0s'
+
+
+class Temp:
+    __slots__ = ('kelvin', 'celcius', 'fahrenheit')
+
+    def __init__(self, kelvin: float):
+        self.kelvin = kelvin
+        self.celcius = kelvin - 273.15
+        self.fahrenheit = kelvin * 9 / 5 - 459.67
+
+    def __format__(self, format_spec: str) -> str:
+        if format_spec == 'K':
+            return f'{self.kelvin:0.1f} K'
+        if format_spec == 'C':
+            return f'{self.celcius:0.1f} °C'
+        elif format_spec == 'F':
+            return f'{self.fahrenheit:0.1f} °F'
+        else:
+            raise ValueError(f'Unknown format code {format_spec!r}')
 
 
 class Misc(commands.Cog):
@@ -183,7 +176,8 @@ class Misc(commands.Cog):
         country = data['sys'].get('country')
         condition = data['weather'][0]['id']
         description = data['weather'][0]['description']
-        temp = data['main']['temp']  # K
+        temp = Temp(data['main']['temp'])  # K
+        feels_like = Temp(data['main']['feels_like'])  # K
         wind = data['wind']['speed']  # m/s
         humidity = data['main']['humidity']  # %
         cloudiness = data['clouds']['all']  # %
@@ -194,14 +188,22 @@ class Misc(commands.Cog):
             flag = f':flag_{country.lower()}:'
             city += f', {country}'
 
-        emoji = get_weather_emoji(condition)
+        # https://openweathermap.org/weather-conditions
+        conditions = {
+            range(200, 300): '🌩️',  # thunderstorm
+            range(300, 400): '🌧️',  # drizzle
+            range(500, 600): '🌧️',  # rain
+            range(600, 700): '❄️',  # snow
+            range(700, 800): '💨',  # atmosphere
+            range(800, 801): '☀️',  # clear
+            range(801, 810): '☁️',  # clouds
+        }
 
-        celcius = temp - 273.15
-        fahrenheit = temp * 9 / 5 - 459.67
+        emoji = next((e for t, e in conditions.items() if condition in t), '')
 
         msg = f'{flag} |  **Weather for {city}**\n' \
               f'**Weather:** {emoji} ({description})\n' \
-              f'**Temp:** {celcius:0.1f} °C / {fahrenheit:0.1f} °F\n' \
+              f'**Temp:** {temp:C} / {temp:F} **Feels like:** {feels_like:C} / {feels_like:F}\n' \
               f'**Wind:** {wind} m/s **Humidity:** {humidity}% **Cloudiness:** {cloudiness}%'
 
         await ctx.send(msg)
