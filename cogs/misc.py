@@ -32,25 +32,6 @@ def human_timedelta(delta: timedelta, accuracy=4) -> str:
     return ' '.join([f'{v}{u}' for u, v in units if v > 0][:accuracy]) or '0s'
 
 
-class Temp:
-    __slots__ = ('kelvin', 'celcius', 'fahrenheit')
-
-    def __init__(self, kelvin: float):
-        self.kelvin = kelvin
-        self.celcius = kelvin - 273.15
-        self.fahrenheit = kelvin * 9 / 5 - 459.67
-
-    def __format__(self, format_spec: str) -> str:
-        if format_spec == 'K':
-            return f'{self.kelvin:0.1f} K'
-        if format_spec == 'C':
-            return f'{self.celcius:0.1f} °C'
-        elif format_spec == 'F':
-            return f'{self.fahrenheit:0.1f} °F'
-        else:
-            raise ValueError(f'Unknown format code {format_spec!r}')
-
-
 class Misc(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -149,8 +130,9 @@ class Misc(commands.Cog):
     async def fetch_weather_data(self, city: str) -> dict:
         url = 'https://api.openweathermap.org/data/2.5/weather'
         params = {
+            'APPID': self.bot.config.get('WEATHER_API', 'KEY'),
             'q': city,
-            'APPID': self.bot.config.get('WEATHER_API', 'KEY')
+            'units': 'metric'
         }
 
         async with self.bot.session.get(url, params=params) as resp:
@@ -176,8 +158,8 @@ class Misc(commands.Cog):
         country = data['sys'].get('country')
         condition = data['weather'][0]['id']
         description = data['weather'][0]['description']
-        temp = Temp(data['main']['temp'])  # K
-        feels_like = Temp(data['main']['feels_like'])  # K
+        temp = data['main']['temp']  # °C
+        feels_like = data['main']['feels_like']  # °C
         wind = data['wind']['speed']  # m/s
         humidity = data['main']['humidity']  # %
         cloudiness = data['clouds']['all']  # %
@@ -203,7 +185,7 @@ class Misc(commands.Cog):
 
         msg = f'{flag} |  **Weather for {city}**\n' \
               f'**Weather:** {emoji} ({description})\n' \
-              f'**Temp:** {temp:C} / {temp:F} **Feels like:** {feels_like:C} / {feels_like:F}\n' \
+              f'**Temp:** {temp} °C **Feels like:** {feels_like} °C\n' \
               f'**Wind:** {wind} m/s **Humidity:** {humidity}% **Cloudiness:** {cloudiness}%'
 
         await ctx.send(msg)
