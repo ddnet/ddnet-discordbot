@@ -52,12 +52,13 @@ def wrap_new(canv: ImageDraw.Draw, box: Tuple[Tuple[int, int], Tuple[int, int]],
     for word in text.split():
         w, h = font.getsize(' '.join(line + [word]))
 
-        y += h
-        if y > max_height:
-            return
-
         if w > max_width:
             write(x, y, line)
+
+            y += h
+            if y > max_height:
+                return
+
             line = [word]
         else:
             line.append(word)
