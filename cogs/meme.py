@@ -40,7 +40,7 @@ class Memes(commands.Cog):
     def __init__(self, bot: commands.Bot):
         # register default layout memes
         for name in ('angry', 'drake', 'happy', 'sleep', 'teeward'):
-            command = commands.Command(name=name, func=self.default)
+            command = commands.Command(name=name, func=Memes.default)
             command.cog = self
             bot.add_command(command)
 
