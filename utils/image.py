@@ -40,7 +40,7 @@ def wrap_new(canv: ImageDraw.Draw, box: Tuple[Tuple[int, int], Tuple[int, int]],
     _, h = font.getsize('yA')
 
     max_width = box[1][0] - box[0][0]
-    max_height = box[1][1] - h
+    max_height = box[1][1]
 
     def write(x: int, y: int, line: List[str]):
         text_ = ' '.join(line)
