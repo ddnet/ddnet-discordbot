@@ -38,60 +38,36 @@ def wrap(font: ImageFont, text: str, line_width: int) -> List[str]:
 
 class Memes(commands.Cog):
     def __init__(self, bot: commands.Bot):
-        self.bot = bot
+        # register default layout memes
+        for name in ('angry', 'drake', 'happy', 'sleep', 'teeward'):
+            command = commands.Command(name=name, func=self.default)
+            command.cog = self
+            bot.add_command(command)
 
     @executor
-    def generate(self, type_: str, text1: str, text2: str) -> BytesIO:
-        base = Image.open(f'{DIR}/memes/{type_}.png')
+    def generate(self, name: str, text1: str, text2: str=None) -> BytesIO:
+        base = Image.open(f'{DIR}/memes/{name}.png')
         canv = ImageDraw.Draw(base)
         font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 46)
 
         canv.text((600, 100), wrap(font, text1, 400), fill='black', font=font)
         if text2 is not None:
-            canv.text((600, 500), wrap(font, text2, 400), fill=(0, 0, 0), font=font)
+            canv.text((600, 500), wrap(font, text2, 400), fill='black', font=font)
 
         buf = BytesIO()
         base.save(buf, format='png')
         buf.seek(0)
         return buf
 
-    async def _executor(self, type_: str, text1: str, text2: str=None) -> discord.File:
-        buf = await self.generate(type_, text1, text2)
-        return discord.File(buf, filename=f'{type_}.png')
-
-    @commands.command()
-    async def angry(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self._executor('angry', text1, text2)
-        await ctx.send(file=file)
-
-    @commands.command()
-    async def happy(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self._executor('happy', text1, text2)
-        await ctx.send(file=file)
-
-    @commands.command()
-    async def sleep(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self._executor('sleep', text1, text2)
-        await ctx.send(file=file)
-
-    @commands.command()
-    async def angryjao(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self._executor('angryjao', text1, text2)
-        await ctx.send(file=file)
-
-    @commands.command()
-    async def teeward(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self._executor('teeward', text1, text2)
-        await ctx.send(file=file)
-
-    @commands.command()
-    async def drake(self, ctx: commands.Context, text1: str, text2: str):
-        file = await self._executor('drake', text1, text2)
+    async def default(self, ctx: commands.Context, text1: str, text2: str):
+        buf = await self.generate(ctx.command.name, text1, text2)
+        file = discord.File(buf, filename=f'{ctx.command.name}.png')
         await ctx.send(file=file)
 
     @commands.command()
     async def ohno(self, ctx: commands.Context, *, text: str):
-        file = await self._executor('ohno', text)
+        buf = await self.generate('ohno', text)
+        file = discord.File(buf, filename='ohno.png')
         await ctx.send(file=file)
 
     @executor
