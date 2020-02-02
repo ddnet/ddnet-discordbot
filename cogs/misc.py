@@ -84,7 +84,7 @@ class Misc(commands.Cog):
         commits = await self.get_latest_commits()
         embed.add_field(name='Latest commits', value=commits)
 
-        embed.set_footer(text='Made by jao#3750 with Python')
+        embed.set_footer(text=f'Made by jao#3750 with Python (discord.py {discord.__version__})')
 
         await ctx.send(embed=embed)
 
