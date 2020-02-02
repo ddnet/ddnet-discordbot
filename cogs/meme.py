@@ -77,8 +77,8 @@ class Memes(commands.Cog):
         canv = ImageDraw.Draw(base)
         font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 40)
 
-        xy = ((100, 110), (360, 370))
-        wrap_new(canv, xy, text, font=font)
+        box = ((100, 110), (360, 370))
+        wrap_new(canv, box, text, font=font)
 
         buf = BytesIO()
         base.save(buf, format='png')
