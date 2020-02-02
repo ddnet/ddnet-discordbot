@@ -45,7 +45,7 @@ def wrap_new(canv: ImageDraw.Draw, box: Tuple[Tuple[int, int], Tuple[int, int]],
         font_ = auto_font(font, text_, max_width)
         w, h = font_.getsize(text_)
         xy = (x + center(w, max_width), y)
-        canv.text(xy, text_, fill='back', font=font_)
+        canv.text(xy, text_, fill='black', font=font_)
 
     x, y = box[0]
     line = []
