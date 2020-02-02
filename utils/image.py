@@ -37,8 +37,10 @@ def auto_font(font: Union[ImageFont.FreeTypeFont, Tuple[str, int]], text: str, m
     return font
 
 def wrap_new(canv: ImageDraw.Draw, box: Tuple[Tuple[int, int], Tuple[int, int]], text: str, *, font: ImageFont.FreeTypeFont):
+    _, h = font.getsize('yA')
+
     max_width = box[1][0] - box[0][0]
-    max_height = box[1][1] - font.getsize('yA')[1]
+    max_height = box[1][1] - h
 
     def write(x: int, y: int, line: List[str]):
         text_ = ' '.join(line)
@@ -50,7 +52,7 @@ def wrap_new(canv: ImageDraw.Draw, box: Tuple[Tuple[int, int], Tuple[int, int]],
     x, y = box[0]
     line = []
     for word in text.split():
-        w, h = font.getsize(' '.join(line + [word]))
+        w, _ = font.getsize(' '.join(line + [word]))
 
         if w > max_width:
             write(x, y, line)
