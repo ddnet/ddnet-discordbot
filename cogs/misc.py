@@ -172,16 +172,16 @@ class Misc(commands.Cog):
 
         # https://openweathermap.org/weather-conditions
         conditions = {
-            range(200, 300): '🌩️',  # thunderstorm
-            range(300, 400): '🌧️',  # drizzle
-            range(500, 600): '🌧️',  # rain
-            range(600, 700): '❄️',  # snow
-            range(700, 800): '💨',  # atmosphere
-            range(800, 801): '☀️',  # clear
-            range(801, 810): '☁️',  # clouds
+            (200, 299): '🌩️',  # thunderstorm
+            (300, 399): '🌧️',  # drizzle
+            (500, 599): '🌧️',  # rain
+            (600, 699): '❄️',  # snow
+            (700, 799): '💨',  # atmosphere
+            (800, 800): '☀️',  # clear
+            (801, 809): '☁️',  # clouds
         }
 
-        emoji = next((e for t, e in conditions.items() if condition in t), '')
+        emoji = next((e for c, e in conditions.items() if c[0] <= condition <= c[1]), '')
 
         msg = f'{flag} |  **Weather for {city}**\n' \
               f'**Weather:** {emoji} ({description})\n' \
