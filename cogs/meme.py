@@ -8,6 +8,7 @@ import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
+from utils.image import wrap_new
 from utils.misc import executor
 
 DIR = 'data/assets'
@@ -76,7 +77,8 @@ class Memes(commands.Cog):
         canv = ImageDraw.Draw(base)
         font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 40)
 
-        canv.text((100, 120), wrap(font, text, 250), fill='black', font=font)
+        xy = ((100, 110), (360, 370))
+        wrap_new(canv, xy, text, font=font)
 
         buf = BytesIO()
         base.save(buf, format='png')

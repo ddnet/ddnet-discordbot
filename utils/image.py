@@ -1,4 +1,4 @@
-from typing import Callable, Tuple, Union
+from typing import Callable, List, Tuple, Union
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -35,3 +35,32 @@ def auto_font(font: Union[ImageFont.FreeTypeFont, Tuple[str, int]], text: str, m
         font = ImageFont.truetype(font.path, font.size - 1)
 
     return font
+
+def wrap_new(canv: ImageDraw.Draw, box: Tuple[Tuple[int, int], Tuple[int, int]], text: str, *, font: ImageFont.FreeTypeFont):
+    max_width = box[1][0] - box[0][0]
+    max_height = box[1][1] - box[0][1]
+
+    def write(x: int, y: int, line: List[str]):
+        text_ = ' '.join(line)
+        font_ = auto_font(font, text_, max_width)
+        w, h = font_.getsize(text_)
+        xy = (x + center(w, max_width), center(h, y))
+        canv.text(xy, text_, font=font_)
+
+    x, y = box[0]
+    line = []
+    for word in text.split():
+        w, h = font.getsize(' '.join(line + [word]))
+
+        y += h
+        if y > max_height:
+            return
+
+        if w > max_width:
+            write(x, y, line)
+            line = [word]
+        else:
+            line.append(word)
+
+    if line:
+        write(x, y, line)
