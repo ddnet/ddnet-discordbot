@@ -276,17 +276,21 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         if prev_state is not MapState.TESTING:
             name = name[1:]
 
-        if state is MapState.TESTING:
-            category = self.bot.get_channel(CAT_MAP_TESTING)
-            position = category.channels[-1].position + 1
-        else:
-            category = self.bot.get_channel(CAT_EVALUATED_MAPS)
-            try:
-                position = category.channels[0].position - 1
-            except IndexError:
-                position = 0
+        options = {'name': str(state) + name}
+        if prev_state is MapState.TESTING or state is not MapState.TESTING:
+            if state is MapState.TESTING:
+                category = self.bot.get_channel(CAT_MAP_TESTING)
+                position = category.channels[-1].position + 1
+            else:
+                category = self.bot.get_channel(CAT_EVALUATED_MAPS)
+                try:
+                    position = category.channels[0].position - 1
+                except IndexError:
+                    position = 0
 
-        await channel.edit(name=str(state) + name, position=position, category=category)
+            options.update({'position': position, 'category': category})
+
+        await channel.edit(**options)
 
     @commands.command()
     @testing_check()
