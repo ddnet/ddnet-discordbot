@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.image import wrap_new
+from utils.image import save, wrap_new
 from utils.misc import executor
 
 DIR = 'data/assets'
@@ -55,10 +55,7 @@ class Memes(commands.Cog):
         if text2 is not None:
             canv.text((600, 500), wrap(font, text2, 400), fill='black', font=font)
 
-        buf = BytesIO()
-        base.save(buf, format='png')
-        buf.seek(0)
-        return buf
+        return save(base)
 
     async def default(self, ctx: commands.Context, text1: str, text2: str):
         buf = await self.generate(ctx.command.name, text1, text2)
@@ -80,10 +77,7 @@ class Memes(commands.Cog):
         box = ((100, 110), (360, 370))
         wrap_new(canv, box, text, font=font)
 
-        buf = BytesIO()
-        base.save(buf, format='png')
-        buf.seek(0)
-        return buf
+        return save(base)
 
     @commands.command()
     async def teebob(self, ctx: commands.Context, *, text: str):
@@ -102,10 +96,7 @@ class Memes(commands.Cog):
         canv.text((10, 360), wrap(font, text3, 310), fill='black', font=font)
         canv.text((10, 530), wrap(font, text4, 310), fill='black', font=font)
 
-        buf = BytesIO()
-        base.save(buf, format='png')
-        buf.seek(0)
-        return buf
+        return save(base)
 
     @commands.command()
     async def clown(self, ctx: commands.Context, text1: str, text2: str, text3: str, text4: str):

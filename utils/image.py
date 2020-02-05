@@ -1,7 +1,14 @@
+from io import BytesIO
 from typing import Callable, List, Tuple, Union
 
 from PIL import Image, ImageDraw, ImageFont
 
+
+def save(img: Image.Image) -> BytesIO:
+    buf = BytesIO()
+    img.save(buf, format='png')
+    buf.seek(0)
+    return buf
 
 def center(size: int, area_size: int=0) -> int:
     return int((area_size - size) / 2)

@@ -8,7 +8,7 @@ from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from utils.color import clamp_luminance
-from utils.image import auto_font, center, round_rectangle
+from utils.image import auto_font, center, round_rectangle, save
 from utils.misc import executor
 from utils.text import clean_content, escape_backticks, normalize, plural
 
@@ -158,10 +158,7 @@ class Profile(commands.Cog):
                 else:
                     canv.text((x, y - h), text, fill=color_, font=font)
 
-        buf = BytesIO()
-        base.convert('RGB').save(buf, format='png')
-        buf.seek(0)
-        return buf
+        return save(base.convert('RGB'))
 
     @commands.command()
     async def profile(self, ctx: commands.Context, *, player: clean_content=None):
@@ -348,10 +345,7 @@ class Profile(commands.Cog):
             canv.text(xy, player, fill='white', font=font)
             x += w + space * 2
 
-        buf = BytesIO()
-        base.convert('RGB').save(buf, format='png')
-        buf.seek(0)
-        return buf
+        return save(base.convert('RGB'))
 
     @commands.command()
     async def points(self, ctx: commands.Context, *players: clean_content):
@@ -534,10 +528,7 @@ class Profile(commands.Cog):
             canv.text((x, y - center(h_org - h_new)), player, fill='white', font=font_player)
             y += h
 
-        buf = BytesIO()
-        base.convert('RGB').save(buf, format='png')
-        buf.seek(0)
-        return buf
+        return save(base.convert('RGB'))
 
     @commands.command()
     async def map(self, ctx: commands.Context, *, name: clean_content):
@@ -657,10 +648,7 @@ class Profile(commands.Cog):
             canv.text(xy, player, fill='white', font=font)
             x += w + space * 2
 
-        buf = BytesIO()
-        base.convert('RGB').save(buf, format='png')
-        buf.seek(0)
-        return buf
+        return save(base.convert('RGB'))
 
     @commands.command()
     async def hours(self, ctx: commands.Context, *players: clean_content):
