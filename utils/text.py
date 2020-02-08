@@ -78,3 +78,21 @@ def render_table(header: List[str], rows: List[List[str]]) -> str:
         out.append(' | '.join(columns))
 
     return '\n'.join(out)
+
+def human_timedelta(seconds: float, brief: bool=False) -> str:
+    hours, remainder = divmod(int(seconds), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    days, hours = divmod(hours, 24)
+
+    units = {
+        ' day': days,
+        ' hour': hours,
+        ' month': minutes,
+        ' second': seconds,
+    }
+
+    out = ' '.join(f'{v}{u[1] if brief else plural(v, u)}' for u, v in units.items())
+    if out:
+        return out
+    else:
+        return '0s' if brief else '0 seconds'

@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from utils.color import clamp_luminance
 from utils.image import auto_font, center, round_rectangle, save
 from utils.misc import executor
-from utils.text import clean_content, escape_backticks, normalize, plural
+from utils.text import clean_content, escape_backticks, human_timedelta, normalize, plural
 
 DIR = 'data/assets'
 
@@ -684,6 +684,19 @@ class Profile(commands.Cog):
     async def hours_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.ArgumentParsingError):
             await ctx.send('<players> contain unmatched or unescaped quotation mark')
+
+    @commands.command()
+    async def total_time(self, ctx: commands.Context, *, player: clean_content):
+        """Show the combined time of all finishes by a player"""
+        if self.is_blocked(player):
+            return await ctx.send('That player is blocked from this command')
+
+        query = 'SELECT time FROM stats_times WHERE name = $1;'
+        time = await self.bot.pool.fetchval(query, player)
+        if not time:
+            return await ctx.send('Could not find that player')
+
+        await ctx.send(f'Total time for ``{escape_backticks(player)}``: **{human_timedelta(time)}**')
 
 
 def setup(bot: commands.Bot):

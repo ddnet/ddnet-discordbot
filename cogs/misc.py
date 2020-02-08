@@ -12,33 +12,17 @@ from discord.ext import commands
 
 from data.countryflags import FLAG_UNK
 from utils.misc import run_process
+from utils.text import human_timedelta
 
 log = logging.getLogger(__name__)
 
 GH_URL = 'https://github.com/12pm/ddnet-discordbot'
-
-def human_timedelta(delta: timedelta, accuracy=4) -> str:
-    hours, remainder = divmod(int(delta.total_seconds()), 3600)
-    minutes, seconds = divmod(remainder, 60)
-    days, hours = divmod(hours, 24)
-
-    units = (
-        ('d', days),
-        ('h', hours),
-        ('m', minutes),
-        ('s', seconds),
-    )
-
-    return ' '.join([f'{v}{u}' for u, v in units if v > 0][:accuracy]) or '0s'
 
 
 class Misc(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.process = psutil.Process()
-
-    def get_uptime(self) -> str:
-        return human_timedelta(datetime.utcnow() - self.bot.start_time)
 
     @commands.command()
     async def invite(self, ctx: commands.Context):
@@ -78,8 +62,10 @@ class Misc(commands.Cog):
         threads = self.process.num_threads()
         embed.add_field(name='Process', value=f'{memory:.2f} MiB\n{cpu:.2f}% CPU\n{threads} Threads')
 
+        delta = datetime.utcnow() - self.bot.start_time
+        uptime = human_timedelta(delta.total_seconds(), brief=True)
         latency = self.bot.latency * 1000
-        embed.add_field(name='Bot', value=f'{self.get_uptime()} Uptime\n{latency:.2f}ms Latency')
+        embed.add_field(name='Bot', value=f'{uptime} Uptime\n{latency:.2f}ms Latency')
 
         commits = await self.get_latest_commits()
         embed.add_field(name='Latest commits', value=commits)
