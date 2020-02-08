@@ -91,7 +91,7 @@ def human_timedelta(seconds: float, brief: bool=False) -> str:
         ' second': seconds,
     }
 
-    out = ' '.join(f'{v}{u[1] if brief else plural(v, u)}' for u, v in units.items())
+    out = ' '.join(f'{v}{u[1] if brief else plural(v, u)}' for u, v in units.items() if v > 0)
     if out:
         return out
     else:
