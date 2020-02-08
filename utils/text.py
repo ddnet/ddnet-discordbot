@@ -87,7 +87,7 @@ def human_timedelta(seconds: float, brief: bool=False) -> str:
     units = {
         ' day': days,
         ' hour': hours,
-        ' minutes': minutes,
+        ' minute': minutes,
         ' second': seconds,
     }
 
