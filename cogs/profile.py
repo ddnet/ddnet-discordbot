@@ -686,8 +686,9 @@ class Profile(commands.Cog):
             await ctx.send('<players> contain unmatched or unescaped quotation mark')
 
     @commands.command()
-    async def total_time(self, ctx: commands.Context, *, player: clean_content):
+    async def total_time(self, ctx: commands.Context, *, player: clean_content=None):
         """Show the combined time of all finishes by a player"""
+        player = player or ctx.author.display_name
         if self.is_blocked(player):
             return await ctx.send('That player is blocked from this command')
 
