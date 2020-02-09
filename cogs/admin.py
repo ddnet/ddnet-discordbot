@@ -8,6 +8,7 @@ import traceback
 from contextlib import redirect_stdout
 from io import StringIO
 
+import asyncpg
 from discord.ext import commands
 
 from utils.misc import run_process
@@ -145,8 +146,8 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
             start = time.perf_counter()
             records = await self.bot.pool.fetch(query)
             duration = (time.perf_counter() - start) * 1000.0
-        except Exception:
-            return await ctx.send(f'```py\n{traceback.format_exc()}\n```')
+        except asyncpg.PostgresError as exc:
+            return await ctx.send(f'``{exc}``')
 
         if not records:
             return await ctx.message.add_reaction(CONFIRM)
