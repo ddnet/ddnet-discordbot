@@ -694,7 +694,7 @@ class Profile(commands.Cog):
 
         query = 'SELECT time FROM stats_times WHERE name = $1;'
         time = await self.bot.pool.fetchval(query, player)
-        if not time:
+        if time is None:
             return await ctx.send('Could not find that player')
 
         await ctx.send(f'Total time for ``{escape_backticks(player)}``: **{human_timedelta(time)}**')
