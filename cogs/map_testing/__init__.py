@@ -279,13 +279,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         options = {'name': str(state) + name}
         category = self.bot.get_channel(CAT_MAP_TESTING if state is MapState.TESTING else CAT_EVALUATED_MAPS)
         if category != channel.category:
-            try:
-                if state is MapState.TESTING:
-                    position = category.channels[-1].position + 1
-                else:
-                    position = category.channels[0].position - 1
-            except IndexError:
-                position = 0
+            position = category.channels[-1].position + 1 if state is MapState.TESTING else 0
 
             options.update({'position': position, 'category': category})
 
