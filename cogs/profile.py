@@ -206,8 +206,9 @@ class Profile(commands.Cog):
         plot_height = height - margin * 2
 
         end_date = datetime.utcnow().date()
+        is_leap = end_date.month == 2 and end_date.month == 29
         start_date = min(r['timestamp'] for d in data.values() for r in d)
-        start_date = min(start_date, end_date.replace(year=end_date.year - 1))
+        start_date = min(start_date, end_date.replace(year=end_date.year - 1, day=end_date.day - is_leap))
 
         total_points = max(sum(r['points'] for r in d) for d in data.values())
         total_points = max(total_points, 1000)
