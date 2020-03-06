@@ -191,10 +191,10 @@ class Misc(commands.Cog):
         sunset = data['sys']['sunset']
 
         emoji = '🌞' if sunrise <= now.timestamp() < sunset else '🌝'
-        timestamp = (now + timedelta(seconds=offset)).strftime('%d/%m/%Y %H:%M:%S')
+        timestamp = now + timedelta(seconds=offset)
         hours, minutes = divmod(offset / 60, 60)
 
-        await ctx.send(f'{emoji} **{timestamp}** (UTC {hours:+03.0f}:{minutes:02.0f})')
+        await ctx.send(f'{emoji} **{timestamp:%d/%m/%Y %H:%M:%S}** (UTC {hours:+03.0f}:{minutes:02.0f})')
 
     @commands.command()
     @commands.guild_only()
