@@ -15,4 +15,4 @@ sed -i "s/\`record_race\`/record_race/g" record_race.psql
 
 psql < record_race.psql
 
-psql -c 'BEGIN; TRUNCATE stats_hours RESTART IDENTITY; INSERT INTO stats_hours (name, hour, finishes) SELECT name, EXTRACT(HOUR FROM timestamp) AS hour, COUNT(*) FROM record_race GROUP BY name, hour; INSERT INTO stats_times (name, time) SELECT name, SUM(time) FROM record_race GROUP BY name; COMMIT;'
+psql -c 'BEGIN; TRUNCATE stats_hours, stats_times RESTART IDENTITY; INSERT INTO stats_hours (name, hour, finishes) SELECT name, EXTRACT(HOUR FROM timestamp) AS hour, COUNT(*) FROM record_race GROUP BY name, hour; INSERT INTO stats_times (name, time) SELECT name, SUM(time) FROM record_race GROUP BY name; COMMIT;'
