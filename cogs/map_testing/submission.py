@@ -43,7 +43,8 @@ class Submission:
         return self.preview_url in self.channel.topic.splitlines()
 
     def is_by_mapper(self) -> bool:
-        return self.author.mention in self.channel.topic
+        # user mentions can be <@!id> instead of <@id>, so just match the id
+        return str(self.author.id) in self.channel.topic
 
     @property
     def preview_url(self) -> str:
