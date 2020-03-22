@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 
 class SubmissionState(enum.Enum):
     VALIDATED   = '☑️'
+    RATELIMITED = '🔄'
     UPLOADED    = '🆙'
     PROCESSED   = '✅'
     ERROR       = '❌'
