@@ -1,4 +1,3 @@
-import asyncio
 import enum
 import logging
 import re
@@ -22,8 +21,6 @@ CHAN_INFO           = 455392314173554688
 CHAN_SUBMIT_MAPS    = 455392372663123989
 ROLE_TESTING        = 455814387169755176
 WH_MAP_RELEASES     = 345299155381649408
-
-RATELIMIT = 300
 
 
 class MapState(enum.Enum):
@@ -63,7 +60,6 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         self.bot = TestLog.bot = bot
 
         self._active_submissions = set()
-        self._rl_submissions = {}
 
         self.auto_archive.start()
 
@@ -98,13 +94,6 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             log.info('Successfully uploaded %s %r to ddnet.tw', asset_type, filename)
 
     async def upload_submission(self, subm: Submission):
-        last_uploaded = self._rl_submissions.get(subm.channel.id)
-        if last_uploaded is not None:
-            sleep = (last_uploaded + timedelta(seconds=RATELIMIT) - datetime.utcnow()).total_seconds()
-            if sleep > 0:
-                await subm.set_status(SubmissionState.RATELIMITED)
-                await asyncio.sleep(sleep)
-
         try:
             await self.ddnet_upload('map', await subm.buffer(), str(subm))
         except RuntimeError:
@@ -112,7 +101,6 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             await subm.set_status(SubmissionState.UPLOADED)
             await subm.pin()
-            self._rl_submissions[subm.channel.id] = datetime.utcnow()
 
     async def validate_submission(self, isubm: InitialSubmission):
         try:
