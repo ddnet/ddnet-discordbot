@@ -16,6 +16,7 @@ GUILD_DDNET     = 252358080522747904
 CHAN_WELCOME    = 311192969493348362
 CHAN_JOIN_LEAVE = 255191476315750401
 CHAN_LOGS       = 364164149359411201
+ROLE_MODERATOR  = 252523225810993153
 
 VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
 
@@ -130,6 +131,16 @@ class GuildLog(commands.Cog):
 
         chan = self.bot.get_channel(CHAN_LOGS)
         await chan.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.Member):
+        message = reaction.message
+        if message.guild is None or message.guild != GUILD_DDNET:
+            return
+
+        mod_role = message.guild.get_role(ROLE_MODERATOR)
+        if mod_role.mention in message.content and user.top_role < mod_role:
+            await reaction.remove(user)
 
 
 def setup(bot: commands.Bot):
