@@ -135,7 +135,7 @@ class GuildLog(commands.Cog):
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user: discord.Member):
         message = reaction.message
-        if message.guild is None or message.guild != GUILD_DDNET:
+        if message.guild is None or message.guild.id != GUILD_DDNET:
             return
 
         mod_role = message.guild.get_role(ROLE_MODERATOR)
