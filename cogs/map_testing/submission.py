@@ -92,6 +92,7 @@ class InitialSubmission(Submission):
         'Oldschool':    '👴',
         'Solo':         '⚡',
         'Race':         '🏁',
+        'Fun':          '🎉',
     }
 
     def __init__(self, message: discord.Message, *, raw_bytes: Optional[bytes]=None):
