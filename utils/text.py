@@ -13,6 +13,9 @@ class clean_content(commands.clean_content):
         super().__init__(fix_channel_mentions=True)
 
     async def convert(self, ctx: commands.Context, argument: str) -> str:
+        if argument[0] == '"' and argument[-1] == '"':
+            argument = argument[1:-1]  # strip quotes
+
         argument = argument.replace('\ufe0f', '')  # remove VS16
         argument = re.sub(r'<a?(:[a-zA-Z0-9_]+:)[0-9]{17,21}>', r'\1', argument)
         return await super().convert(ctx, argument)
