@@ -22,6 +22,7 @@ initial_extensions = (
     'cogs.records',
     'cogs.status',
     'cogs.votes',
+    'cogs.github',
 )
 
 
