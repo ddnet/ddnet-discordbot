@@ -9,7 +9,6 @@ from discord.ext import commands
 
 CHAN_DEVELOPER = 293493549758939136
 
-
 _ISSUE_RE = r'(?:(?P<owner>\w+)/)?(?P<repo>[\w-]*)#(?P<id>[1-9]\d*)\b'
 _REF_RE = r'[-\w]+'
 
@@ -112,7 +111,7 @@ class Github(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.channel.id != CHAN_DEVELOPER or message.content[0] == self.bot.command_prefix or message.author.bot:
+        if message.channel.id != CHAN_DEVELOPER or (message.content and message.content[0] == self.bot.command_prefix) or message.author.bot:
             return
 
         matches = re.finditer(_ISSUE_RE, message.content)
@@ -128,7 +127,7 @@ class Github(commands.Cog):
         if links:
             await message.channel.send('\n'.join(links))
 
-    @commands.command()
+    @commands.command(usage='[commit]')
     async def build_status(self, ctx: commands.Context, commit: Commit=Commit()):
         """Show the build status of a PR/commit"""
         status = await commit.get_status()
