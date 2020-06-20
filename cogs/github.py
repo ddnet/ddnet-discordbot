@@ -36,7 +36,6 @@ class GithubException(Exception):
 
 class GithubRatelimit(GithubException):
     def __init__(self, reset: int):
-        self.reset = reset
         self.timestamp = datetime.utcfromtimestamp(reset)
 
         message = f'Currently rate limited until {self.timestamp} UTC'
@@ -132,7 +131,7 @@ class Github(commands.Cog):
         self.ratelimit = GithubRatelimit(0)
 
     def ratelimited(self) -> bool:
-        return self.ratelimit.reset >= datetime.utcnow()
+        return self.ratelimit.timestamp >= datetime.utcnow()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
