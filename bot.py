@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 
 initial_extensions = (
     'cogs.admin',
+    'cogs.github',
     'cogs.guild_log',
     'cogs.map_testing',
     'cogs.meme',
@@ -22,7 +23,6 @@ initial_extensions = (
     'cogs.records',
     'cogs.status',
     'cogs.votes',
-    'cogs.github',
 )
 
 
