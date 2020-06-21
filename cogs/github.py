@@ -30,7 +30,7 @@ class BuildStatus(enum.Enum):
         return self.value
 
 
-class GithubException(Exception):
+class GithubException(commands.CommandError):
     pass
 
 
@@ -57,10 +57,10 @@ class GithubBase():
                 log.warning('We are being rate limited until %s', datetime.fromtimestamp(reset))
                 raise GithubRatelimit(reset)
             elif resp.status == 404:
-                raise RuntimeError
+                raise GithubException('Couldn\'t find that')
             else:
-                log.error('Failed fetching %r from Github API: %s (status code: %d %s)', url, js['message'], resp.status, resp.reason)
-                raise GithubException('Failed fetching Github API')
+                log.error('Failed fetching %r from Github: %s (status code: %d %s)', url, js['message'], resp.status, resp.reason)
+                raise GithubException('Failed fetching Github')
 
 
 class Commit(GithubBase):
@@ -81,11 +81,7 @@ class Commit(GithubBase):
         raise GithubException('Invalid reference')
 
     async def get_status(self) -> BuildStatus:
-        try:
-            data = await self._fetch(self.url)
-        except RuntimeError:
-            raise GithubException('Commit/ref not found')
-
+        data = await self._fetch(self.url)
         if data['total_count'] == 0:
             return BuildStatus.UNKNOWN
         elif any(c['conclusion'] not in ('success', 'neutral', None) for c in data['check_suites']):
@@ -105,12 +101,7 @@ class Issue(GithubBase):
     @classmethod
     async def retrieve(cls, *, owner: str='ddnet', repo: str='ddnet', id: str):
         self = cls(owner, repo , id)
-
-        try:
-            self.data = await self._fetch(f'repos/{owner}/{repo}/issues/{id}')
-        except RuntimeError:
-            raise GithubException('Issue not found')
-
+        self.data = await self._fetch(f'repos/{owner}/{repo}/issues/{id}')
         return self
 
     @property
@@ -123,6 +114,12 @@ class Issue(GithubBase):
 
         data = await self._fetch(f'repos/{self.owner}/{self.repo}/pulls/{self.id}')
         return Commit(self.owner, self.repo, data['head']['sha'])
+
+
+def is_ratelimited(ctx: commands.Context) -> bool:
+    if ctx.cog.ratelimited():
+        raise ctx.cog.ratelimit
+    return True
 
 
 class Github(commands.Cog):
@@ -143,6 +140,9 @@ class Github(commands.Cog):
         for match in matches:
             try:
                 issue = await Issue.retrieve(**filter_empty(match.groupdict()))
+            except GithubRatelimit as exc:
+                self.ratelimit = exc
+                break
             except GithubException:
                 continue
             else:
@@ -151,23 +151,20 @@ class Github(commands.Cog):
         if links:
             await message.channel.send('\n'.join(links))
 
-    @commands.command(usage='[commit]')
+    @commands.command(usage='[pr|commit]')
+    @commands.check(is_ratelimited)
     async def build_status(self, ctx: commands.Context, commit: Commit=Commit()):
         """Show the build status of a PR/commit"""
-        if self.ratelimited():
-            return await ctx.send(self.ratelimit)
-
         status = await commit.get_status()
         await ctx.send(status)
 
     @build_status.error
     async def build_status_error(self, ctx: commands.Context, error: commands.CommandError):
-        original = error.original
-        if isinstance(original, GithubException):
-            await ctx.send(original)
+        if isinstance(error, GithubException):
+            await ctx.send(error)
 
-        if isinstance(original, GithubRatelimit):
-            self.ratelimit = original
+        if isinstance(error, GithubRatelimit):
+            self.ratelimit = error
 
 
 def setup(bot: commands.bot):
