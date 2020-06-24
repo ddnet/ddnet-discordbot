@@ -86,7 +86,7 @@ class Commit(GithubBase):
             return BuildStatus.UNKNOWN
         elif any(c['conclusion'] not in ('success', 'neutral', None) for c in data['check_suites']):
             return BuildStatus.FAILED
-        elif any(c['status'] == 'pending' for c in data['check_suites']):
+        elif any(c['status'] in ('pending', 'queued') for c in data['check_suites']):
             return BuildStatus.PENDING
         else:
             return BuildStatus.SUCCESS
