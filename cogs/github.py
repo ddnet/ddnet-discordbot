@@ -66,6 +66,7 @@ class GithubBase():
 class Commit(GithubBase):
     def __init__(self, owner: str='ddnet', repo: str='ddnet', ref: str='master'):
         self.url = f'repos/{owner}/{repo}/commits/{ref}/check-suites'
+        self.master = ref == 'master'
 
     @classmethod
     async def convert(cls, ctx: commands.Context, argument: str):
@@ -84,12 +85,19 @@ class Commit(GithubBase):
         data = await self._fetch(self.url)
         if data['total_count'] == 0:
             return BuildStatus.UNKNOWN
-        elif any(c['conclusion'] not in ('success', 'neutral', None) for c in data['check_suites']):
-            return BuildStatus.FAILED
-        elif any(c['status'] in ('pending', 'queued') for c in data['check_suites']):
-            return BuildStatus.PENDING
-        else:
-            return BuildStatus.SUCCESS
+
+        pending = False
+        for suite in data['check_suites']:
+            if self.master and suite['head_branch'] != 'master':
+                continue
+
+            if suite['conclusion'] not in ('success', 'neutral', None):
+                return BuildStatus.FAILED
+
+            if suite['status'] in ('pending', 'queued'):
+                pending = True
+
+        return BuildStatus.PENDING if pending else BuildStatus.SUCCESS
 
 
 class Issue(GithubBase):
