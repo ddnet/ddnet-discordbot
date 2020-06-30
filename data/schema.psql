@@ -99,3 +99,8 @@ CREATE TABLE records_webhooks(
     id BIGINT PRIMARY KEY,
     token TEXT NOT NULL
 );
+
+CREATE TABLE ddnet_bans(
+    ip VARCHAR(15) PRIMARY KEY,
+    expires TIMESTAMP NOT NULL
+);
