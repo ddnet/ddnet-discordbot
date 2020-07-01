@@ -35,14 +35,14 @@ class Moderator(commands.Cog):
         url = self.bot.config.get('DDNET', 'BAN')
         headers = {'X-DDNet-Token': self.bot.config.get('DDNET', 'BAN-TOKEN')}
 
-        params = {
-            'ip': ip,
-            'name': name,
-            'reason': reason
-        }
+        params = {'ip': ip}
+        if name is not None:
+            params['name'] = name
+        if reason is not None:
+            params['reason'] = reason
 
         async with self.bot.session.request(method, url, params=params, headers=headers) as resp:
-            if resp.status != 200:
+            if resp.status not in (200, 201):
                 text = await resp.text()
                 fmt = 'Failed %s request for %r on ddnet.tw: %s (status code: %d %s)'
                 log.error(fmt, method, ip, text, resp.status, resp.reason)
