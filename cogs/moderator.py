@@ -7,16 +7,16 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import Optional
 
-import discord
 from discord.ext import commands
 
 log = logging.getLogger(__name__)
 
-CHAN_MODERATOR = 345588928482508801
+CHAN_MODERATOR  = 345588928482508801
+ROLE_ADMIN      = 293495272892399616
 ROLE_MODERATOR  = 252523225810993153
 
 def is_moderator(ctx: commands.Context) -> bool:
-    return ctx.channel.id == CHAN_MODERATOR and ctx.author._has(ROLE_MODERATOR)
+    return ctx.channel.id == CHAN_MODERATOR and any(r.id in (ROLE_ADMIN, ROLE_MODERATOR) for r in ctx.author.roles)
 
 Ban = namedtuple('Ban', 'ip expires')
 
@@ -53,7 +53,8 @@ class Moderator(commands.Cog):
 
         await self.ddnet_request('POST', ip, name, reason)
 
-        query = 'INSERT INTO ddnet_bans (ip, expires) VALUES ($1, $2)'
+        query = """INSERT INTO ddnet_bans (ip, expires) VALUES ($1, $2)
+                   ON CONFLICT (ip) DO UPDATE SET expires = $2;"""
         await self.bot.pool.execute(query, ip, expires)
 
         self._active_ban.set()
@@ -68,7 +69,7 @@ class Moderator(commands.Cog):
         await self.bot.pool.execute(query, ip)
 
     async def get_active_ban(self) -> Ban:
-        query = 'SELECT * FROM ddnet_bans WHERE ORDER BY expires LIMIT 1;'
+        query = 'SELECT * FROM ddnet_bans ORDER BY expires LIMIT 1;'
         record = await self.bot.pool.fetchrow(query)
         if record is None:
             self._active_ban.clear()
@@ -101,7 +102,17 @@ class Moderator(commands.Cog):
         except RuntimeError as exc:
             await ctx.send(exc)
         else:
-            await ctx.send(f'Successfully banned {ip!r}')
+            await ctx.send(f'Successfully banned `{ip}`')
+
+    @commands.command()
+    @commands.check(is_moderator)
+    async def global_unban(self, ctx: commands.Context, ip: str):
+        try:
+            await self.ddnet_unban(ip)
+        except RuntimeError as exc:
+            await ctx.send(exc)
+        else:
+            await ctx.send(f'Successfully unbanned `{ip}`')
 
 
 def setup(bot: commands.bot):

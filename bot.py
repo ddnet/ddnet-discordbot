@@ -19,6 +19,7 @@ initial_extensions = (
     'cogs.map_testing',
     'cogs.meme',
     'cogs.misc',
+    'cogs.moderator',
     'cogs.profile',
     'cogs.records',
     'cogs.status',
