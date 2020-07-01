@@ -33,7 +33,7 @@ class Moderator(commands.Cog):
 
     def restart_dispatch(self):
         self._task.cancel()
-        self._task = self.bot.loop.create_task(self.dispatch_timers())
+        self._task = self.bot.loop.create_task(self.dispatch_unbans())
 
     async def ddnet_request(self, method: str, ip: str, name: Optional[str]=None, reason: Optional[str]=None):
         url = self.bot.config.get('DDNET', 'BAN')
