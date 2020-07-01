@@ -35,13 +35,13 @@ class Moderator(commands.Cog):
         url = self.bot.config.get('DDNET', 'BAN')
         headers = {'X-DDNet-Token': self.bot.config.get('DDNET', 'BAN-TOKEN')}
 
-        data = {
+        params = {
             'ip': ip,
             'name': name,
             'reason': reason
         }
 
-        async with self.bot.session.request(method, url, data=data, headers=headers) as resp:
+        async with self.bot.session.request(method, url, params=params, headers=headers) as resp:
             if resp.status != 200:
                 text = await resp.text()
                 fmt = 'Failed %s request for %r on ddnet.tw: %s (status code: %d %s)'
