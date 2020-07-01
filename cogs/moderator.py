@@ -31,6 +31,10 @@ class Moderator(commands.Cog):
     def cog_unload(self):
         self._task.cancel()
 
+    def restart_dispatch(self):
+        self._task.cancel()
+        self._task = self.bot.loop.create_task(self.dispatch_timers())
+
     async def ddnet_request(self, method: str, ip: str, name: Optional[str]=None, reason: Optional[str]=None):
         url = self.bot.config.get('DDNET', 'BAN')
         headers = {'X-DDNet-Token': self.bot.config.get('DDNET', 'BAN-TOKEN')}
@@ -58,15 +62,17 @@ class Moderator(commands.Cog):
         await self.bot.pool.execute(query, ip, expires)
 
         self._active_ban.set()
-        if self._current_ban and expires < self._current_ban.expires:
-            self._task.cancel()
-            self._task = self.bot.loop.create_task(self.dispatch_timers())
+        if self._current_ban is not None and expires < self._current_ban.expires:
+            self.restart_dispatch()
 
     async def ddnet_unban(self, ip: str):
         await self.ddnet_request('DELETE', ip)
 
         query = 'DELETE FROM ddnet_bans WHERE ip = $1;'
         await self.bot.pool.execute(query, ip)
+
+        if self._current_ban is not None and self._current_ban.ip == ip:
+            self.restart_dispatch()
 
     async def get_active_ban(self) -> Ban:
         query = 'SELECT * FROM ddnet_bans ORDER BY expires LIMIT 1;'
@@ -77,7 +83,6 @@ class Moderator(commands.Cog):
             await self._active_ban.wait()
             return await self.get_active_ban()
         else:
-            self._active_ban.set()
             return Ban(**record)
 
     async def dispatch_unbans(self):
@@ -97,6 +102,8 @@ class Moderator(commands.Cog):
         if minutes < 1:
             return await ctx.send('Minutes need to be greater than 0')
 
+        await ctx.trigger_typing()
+
         try:
             await self.ddnet_ban(ip, name, minutes, reason)
         except RuntimeError as exc:
@@ -107,6 +114,8 @@ class Moderator(commands.Cog):
     @commands.command()
     @commands.check(is_moderator)
     async def global_unban(self, ctx: commands.Context, ip: str):
+        await ctx.trigger_typing()
+
         try:
             await self.ddnet_unban(ip)
         except RuntimeError as exc:
