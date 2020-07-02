@@ -104,6 +104,15 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
     async def validate_submission(self, isubm: InitialSubmission):
         try:
+            exists = self.get_map_channel(isubm.name)
+            if exists:
+                raise ValueError('A channel for this map already exists')
+
+            query = 'SELECT TRUE FROM stats_maps_static WHERE name = $1;'
+            released = await self.bot.pool.fetchrow(query, isubm.name)
+            if released:
+                raise ValueError('A map with that name is already released')
+
             isubm.validate()
         except ValueError as exc:
             await isubm.respond(exc)
