@@ -102,8 +102,6 @@ class Moderator(commands.Cog):
         if minutes < 1:
             return await ctx.send('Minutes need to be greater than 0')
 
-        await ctx.trigger_typing()
-
         try:
             await self.ddnet_ban(ip, name, minutes, reason)
         except RuntimeError as exc:
@@ -114,8 +112,6 @@ class Moderator(commands.Cog):
     @commands.command()
     @commands.check(is_moderator)
     async def global_unban(self, ctx: commands.Context, ip: str):
-        await ctx.trigger_typing()
-
         try:
             await self.ddnet_unban(ip)
         except RuntimeError as exc:
