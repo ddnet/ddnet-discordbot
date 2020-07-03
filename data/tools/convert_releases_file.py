@@ -21,7 +21,7 @@ TIMESTAMP = datetime.utcnow().strftime('%Y-%m-%d %H:%M')
 BG_PATH = 'data/assets/map_backgrounds/{0}.png'
 
 RELEASES_FILE_URL = 'https://ddnet.tw/releases/releases'
-MSGPACK_URL = 'https://ddnet.tw/maps/{0}.msgpack'
+MSGPACK_URL = 'https://ddnet.tw/mappreview/{0}.msgpack'
 THUMBNAIL_URL = 'https://ddnet.tw/ranks/maps/{0}.png'
 
 VALID_TILES = (
