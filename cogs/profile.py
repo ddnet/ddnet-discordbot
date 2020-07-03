@@ -499,35 +499,36 @@ class Profile(commands.Cog):
                 x += size
 
         # draw ranks
-        font = font_24
         ranks = data['ranks']
+        if ranks:
+            font = font_24
 
-        def humanize_time(time):
-            return '%02d:%05.2f' % divmod(abs(time), 60)
+            def humanize_time(time):
+                return '%02d:%05.2f' % divmod(abs(time), 60)
 
-        time_w, _ = font.getsize(humanize_time(max(r['time'] for r in ranks)))
-        rank_w, _ = font.getsize(f'#{max(r["rank"] for r in ranks)}')
-        _, h = font.getsize('yA')
+            time_w, _ = font.getsize(humanize_time(max(r['time'] for r in ranks)))
+            rank_w, _ = font.getsize(f'#{max(r["rank"] for r in ranks)}')
+            _, h = font.getsize('yA')
 
-        y = margin + name_height + inner
-        space = (height - margin - y - h * 10) / 11
-        for player, rank, time in ranks:
-            y += space
-            x = margin + info_width + inner * 2
-            canv.text((x, y), f'#{rank}', fill='white', font=font)
-            x += rank_w + inner
+            y = margin + name_height + inner
+            space = (height - margin - y - h * 10) / 11
+            for player, rank, time in ranks:
+                y += space
+                x = margin + info_width + inner * 2
+                canv.text((x, y), f'#{rank}', fill='white', font=font)
+                x += rank_w + inner
 
-            x += time_w
-            text = humanize_time(time)
-            w, _ = font.getsize(text)
-            canv.text((x - w, y), text, fill=color, font=font)
-            x += inner
+                x += time_w
+                text = humanize_time(time)
+                w, _ = font.getsize(text)
+                canv.text((x - w, y), text, fill=color, font=font)
+                x += inner
 
-            _, h_org = font.getsize(player)
-            font_player = auto_font(font, player, width - margin - x)
-            _, h_new = font_player.getsize(player)
-            canv.text((x, y - center(h_org - h_new)), player, fill='white', font=font_player)
-            y += h
+                _, h_org = font.getsize(player)
+                font_player = auto_font(font, player, width - margin - x)
+                _, h_new = font_player.getsize(player)
+                canv.text((x, y - center(h_org - h_new)), player, fill='white', font=font_player)
+                y += h
 
         return save(base.convert('RGB'))
 
