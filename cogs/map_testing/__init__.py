@@ -313,7 +313,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         await self.move_map_channel(ctx.channel, state=MapState.DECLINED)
 
     def get_map_channel_from_ann(self, content: str) -> Optional[discord.TextChannel]:
-        map_url_re = r'\[(?P<name>.+)\]\(<?https:\/\/ddnet\.tw\/maps\/\?map=.+?>?\)'
+        map_url_re = r'\[(?P<name>.+)\]\(<?https://ddnet\.tw/(?:maps|mappreview)/\?map=.+?>?\)'
         match = re.search(map_url_re, content)
         return match and self.get_map_channel(match.group('name'))
 
