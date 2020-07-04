@@ -106,7 +106,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         try:
             isubm.validate()
 
-            exists = self.get_map_channel(isubm.name)
+            exists = self.get_map_channel(str(isubm))
             if exists:
                 raise ValueError('A channel for this map already exists')
 
