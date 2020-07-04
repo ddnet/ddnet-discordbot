@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from io import BytesIO
 from typing import List, Tuple
+from urllib.parse import quote
 
 import asyncpg
 import msgpack
@@ -41,7 +42,7 @@ VALID_TILES = (
 BG_SIZE = (800, 500)
 
 def get_tiles(name: str) -> List[str]:
-    resp = requests.get(MSGPACK_URL.format(name))
+    resp = requests.get(MSGPACK_URL.format(quote(name)))
     buf = BytesIO(resp.content)
 
     unpacker = msgpack.Unpacker(buf, use_list=False, raw=False)
