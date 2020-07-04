@@ -52,9 +52,7 @@ def get_tiles(name: str) -> List[str]:
     return [t for t in tiles if t in VALID_TILES]
 
 def get_background(name: str) -> int:
-    name = normalize(name)
-
-    resp = requests.get(THUMBNAIL_URL.format(name))
+    resp = requests.get(THUMBNAIL_URL.format(normalize(name)))
     buf = BytesIO(resp.content)
 
     img = Image.open(buf).convert('RGBA').resize(BG_SIZE)
@@ -76,7 +74,7 @@ def get_data() -> List[Tuple[str, datetime, str, List[str], str]]:
             _, name = details.split('|')
             mappers = None
 
-        if os.path.isfile(BG_PATH.format(normalize(name))):
+        if os.path.isfile(BG_PATH.format(name)):
             continue
 
         out.append((

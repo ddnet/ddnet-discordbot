@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from utils.color import clamp_luminance
 from utils.image import auto_font, center, round_rectangle, save
 from utils.misc import executor
-from utils.text import clean_content, escape_backticks, human_timedelta, normalize, plural
+from utils.text import clean_content, escape_backticks, human_timedelta, plural
 
 DIR = 'data/assets'
 
@@ -396,7 +396,7 @@ class Profile(commands.Cog):
         color = data['color']
         color = clamp_luminance(color, 0.7)
 
-        base = Image.open(f'{DIR}/map_backgrounds/{normalize(name)}.png')
+        base = Image.open(f'{DIR}/map_backgrounds/{name}.png')
         base = base.filter(ImageFilter.GaussianBlur(radius=3))
         canv = ImageDraw.Draw(base)
 
