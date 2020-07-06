@@ -9,6 +9,8 @@ from typing import Optional
 
 from discord.ext import commands
 
+from utils.text import clean_content
+
 log = logging.getLogger(__name__)
 
 CHAN_MODERATOR  = 345588928482508801
@@ -98,7 +100,7 @@ class Moderator(commands.Cog):
 
     @commands.command()
     @commands.check(is_moderator)
-    async def global_ban(self, ctx: commands.Context, ip: str, name: str, minutes: int, *, reason: str):
+    async def global_ban(self, ctx: commands.Context, ip: str, name: str, minutes: int, *, reason: clean_content):
         if minutes < 1:
             return await ctx.send('Minutes need to be greater than 0')
 
