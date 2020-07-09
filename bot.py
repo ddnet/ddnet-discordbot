@@ -102,6 +102,8 @@ class DDNet(commands.Bot):
         elif isinstance(error, commands.CommandInvokeError):
             if isinstance(error.original, discord.Forbidden):
                 msg = 'I do not have proper permission'
+            elif isinstance(error.original, discord.HTTPException) and error.original.code == 40005:
+                msg = 'File is too large to upload'
             else:
                 trace = get_traceback(error.original)
                 log.error('Command %r caused an exception\n%s', command.qualified_name, trace)
