@@ -375,12 +375,6 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
                     failed = True
                     continue
 
-        if testlog.map is not None:
-            try:
-                await self.ddnet_delete(testlog.map)
-            except RuntimeError:
-                pass
-
         return not failed
 
     @tasks.loop(hours=1.0)
@@ -431,6 +425,21 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             await ctx.send(f'Sucessfully archived channel {channel.mention}: {testlog.url}')
         else:
             await ctx.send(f'Failed archiving channel {channel.mention}: {testlog.url}')
+
+    @commands.Cog.listener()
+    async def on_guild_channel_delete(self, channel: discord.Channel):
+        if not is_testing(channel):
+            return
+
+        preview_url_re = r'https://ddnet\.tw/testmaps/\?map=(?P<name>\S+)'
+        match = re.search(preview_url_re, channel.topic)
+        if match is None:
+            return
+
+        try:
+            await self.ddnet_delete(match.group('name'))
+        except RuntimeError:
+            return
 
 
 def setup(bot: commands.Bot):
