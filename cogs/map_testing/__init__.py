@@ -427,7 +427,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             await ctx.send(f'Failed archiving channel {channel.mention}: {testlog.url}')
 
     @commands.Cog.listener()
-    async def on_guild_channel_delete(self, channel: discord.Channel):
+    async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         if not is_testing(channel):
             return
 
