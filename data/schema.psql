@@ -51,7 +51,7 @@ CREATE TABLE record_race(
     cp4 FLOAT,
     cp5 FLOAT,
     cp6 FLOAT,
-    cp7 FLOAT.
+    cp7 FLOAT,
     cp8 FLOAT,
     cp9 FLOAT,
     cp10 FLOAT,
