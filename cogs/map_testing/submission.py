@@ -176,7 +176,9 @@ class InitialSubmission(Submission):
         channel = await self.channel.category.create_text_channel(name, overwrites=overwrites, topic=topic)
 
         file = await self.get_file()
-        message = await channel.send(self.author.mention, file=file)
+        msg = f'{self.author.mention} this is your map\'s testing channel! '\
+               'Post map updates here and remember to follow our mapper rules: https://ddnet.tw/rules'
+        message = await channel.send(msg, file=file)
 
         thumbnail = await self.generate_thumbnail()
         await channel.send(self.preview_url, file=thumbnail)
