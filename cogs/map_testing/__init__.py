@@ -190,19 +190,19 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             return
 
         if initial:
-            isubm = InitialSubmission(message)
-            if isubm in self._active_submissions:
+            if message.id in self._active_submissions:
                 return
 
+            isubm = InitialSubmission(message)
             try:
                 isubm.validate()
             except ValueError:
                 return
 
-            self._active_submissions.add(isubm)
+            self._active_submissions.add(message.id)
             subm = await isubm.process()
             await isubm.set_status(SubmissionState.PROCESSED)
-            self._active_submissions.discard(isubm)
+            self._active_submissions.discard(message.id)
 
         else:
             subm = Submission(message)
