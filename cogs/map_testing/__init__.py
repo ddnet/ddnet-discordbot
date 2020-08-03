@@ -152,7 +152,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         if payload.channel_id != CHAN_SUBMIT_MAPS:
             return
 
-        if not ('attachments' in data and data['attachments'][0]['filename'].endswith('.map')):
+        if not ('attachments' in data and data['attachments'] and data['attachments'][0]['filename'].endswith('.map')):
             return
 
         # don't handle already processed submissions
