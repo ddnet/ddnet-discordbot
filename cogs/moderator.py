@@ -111,6 +111,11 @@ class Moderator(commands.Cog):
         else:
             await ctx.send(f'Successfully banned `{ip}`')
 
+    @global_ban.error
+    async def global_ban_error(self, ctx: commands.Context, error: commands.CommandError):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Minutes need to be a number')
+
     @commands.command()
     @commands.check(is_moderator)
     async def global_unban(self, ctx: commands.Context, ip: str):
