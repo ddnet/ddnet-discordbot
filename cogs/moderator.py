@@ -54,14 +54,14 @@ class Moderator(commands.Cog):
                 log.error(fmt, method, ip, text, resp.status, resp.reason)
                 raise RuntimeError(text)
 
-    async def ddnet_ban(self, ip: str, name: str, minutes: int, reason: str):
+    async def ddnet_ban(self, ip: str, name: str, minutes: int, reason: str, mod: str):
         expires = datetime.utcnow() + timedelta(minutes=minutes)
 
         await self.ddnet_request('POST', ip, name, reason)
 
-        query = """INSERT INTO ddnet_bans (ip, expires) VALUES ($1, $2)
-                   ON CONFLICT (ip) DO UPDATE SET expires = $2;"""
-        await self.bot.pool.execute(query, ip, expires)
+        query = """INSERT INTO ddnet_bans (ip, expires, name, reason, mod) VALUES ($1, $2, $3, $4, $5)
+                   ON CONFLICT (ip) DO UPDATE SET expires = $2, name = $3, reason = $4, mod = $5;"""
+        await self.bot.pool.execute(query, ip, expires, name, reason, mod)
 
         self._active_ban.set()
         if self._current_ban is not None and expires < self._current_ban.expires:
@@ -105,7 +105,7 @@ class Moderator(commands.Cog):
             return await ctx.send('Minutes need to be greater than 0')
 
         try:
-            await self.ddnet_ban(ip, name, minutes, reason)
+            await self.ddnet_ban(ip, name, minutes, reason, str(ctx.author))
         except RuntimeError as exc:
             await ctx.send(exc)
         else:
@@ -120,6 +120,13 @@ class Moderator(commands.Cog):
             await ctx.send(exc)
         else:
             await ctx.send(f'Successfully unbanned `{ip}`')
+
+    @commands.command()
+    @commands.check(is_moderator)
+    async def global_bans(self, ctx: commands.Context):
+        admin_cog = self.bot.get_cog('Admin')
+        query = 'SELECT * FROM ddnet_bans;'
+        await admin_cog.sql(ctx, query=query)
 
 
 def setup(bot: commands.bot):

@@ -102,5 +102,8 @@ CREATE TABLE records_webhooks(
 
 CREATE TABLE ddnet_bans(
     ip VARCHAR(31) PRIMARY KEY,
-    expires TIMESTAMP NOT NULL
+    expires TIMESTAMP NOT NULL,
+    name VARCHAR NOT NULL,
+    reason VARCHAR NOT NULL,
+    mod VARCHAR NOT NULL
 );
