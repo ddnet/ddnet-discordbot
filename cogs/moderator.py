@@ -3,13 +3,14 @@
 
 import asyncio
 import logging
+import re
 from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import Optional
 
 from discord.ext import commands
 
-from utils.text import clean_content
+from utils.text import clean_content, escape_backticks
 
 log = logging.getLogger(__name__)
 
@@ -116,15 +117,24 @@ class Moderator(commands.Cog):
         if isinstance(error, commands.BadArgument):
             await ctx.send('Minutes need to be a number')
 
-    @commands.command()
+    @commands.command(usage='<ip|name>')
     @commands.check(is_moderator)
-    async def global_unban(self, ctx: commands.Context, ip: str):
-        try:
-            await self.ddnet_unban(ip)
-        except RuntimeError as exc:
-            await ctx.send(exc)
+    async def global_unban(self, ctx: commands.Context, *, name: str):
+        if re.match(r'^[\d\.-]*$', name) is None:
+            query = 'SELECT ip FROM ddnet_bans WHERE name = $1;'
+            ips = await self.bot.pool.fetch(query, name)
+            if not ips:
+                return await ctx.send(f'`{escape_backticks(name)}` isn\'t banned')
         else:
-            await ctx.send(f'Successfully unbanned `{ip}`')
+            ips = [name]
+
+        for ip in ips:
+            try:
+                await self.ddnet_unban(ip)
+            except RuntimeError as exc:
+                await ctx.send(exc)
+            else:
+                await ctx.send(f'Successfully unbanned `{ip}`')
 
     @commands.command()
     @commands.check(is_moderator)
