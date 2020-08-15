@@ -21,7 +21,7 @@ ROLE_MODERATOR  = 252523225810993153
 def is_moderator(ctx: commands.Context) -> bool:
     return ctx.channel.id == CHAN_MODERATOR and any(r.id in (ROLE_ADMIN, ROLE_MODERATOR) for r in ctx.author.roles)
 
-Ban = namedtuple('Ban', 'ip expires')
+Ban = namedtuple('Ban', 'ip expires name reason mod')
 
 
 class Moderator(commands.Cog):
