@@ -114,6 +114,24 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             released = await self.bot.pool.fetchrow(query, isubm.name)
             if released:
                 raise ValueError('A map with that name is already released')
+
+            mt_category = self.bot.get_channel(CAT_MAP_TESTING)
+            em_category = self.bot.get_channel(CAT_EVALUATED_MAPS)
+            for channel in (*mt_category.channels[2:], *em_category.channels):
+                if channel.name[0] == str(MapState.RELEASED):
+                    continue
+
+                topic = channel.topic.splitlines()
+
+                match = re.match(r'^".+" by (?P<mappers>.+) \[.+\]$', topic[0].replace('**', ''))
+                if match is not None:
+                    mappers = re.split(r', | & ', match.group('mappers'))
+                    for mapper in isubm.mappers:
+                        if mapper in mappers:
+                            raise ValueError(f'A map by {mapper} is already in testing')
+
+                if isubm.author in topic[2]:
+                    raise ValueError('You already submitted a map to testing')
         except ValueError as exc:
             await isubm.respond(exc)
             await isubm.set_status(SubmissionState.ERROR)
