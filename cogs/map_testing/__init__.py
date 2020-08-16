@@ -130,7 +130,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
                         if mapper in mappers:
                             raise ValueError(f'A map by {mapper} is already in testing')
 
-                if isubm.author in topic[2]:
+                if str(isubm.author.id) in topic[2]:
                     raise ValueError('You already submitted a map to testing')
         except ValueError as exc:
             await isubm.respond(exc)
