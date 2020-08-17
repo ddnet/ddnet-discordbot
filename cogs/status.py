@@ -164,7 +164,7 @@ class ServerInfo:
 
     Packets = namedtuple('Packets', 'rx tx')
 
-    PPS_THRESHOLD = 3000  # we usually get max 2 kpps legit traffic so this should be a safe threshold
+    PPS_THRESHOLD = 4000  # we usually get max 2 kpps legit traffic so this should be a safe threshold
     PPS_RATIO_MIN = 500  # ratio is not reliable for low traffic
     PPS_RATIO_THRESHOLD = 2.0  # responding to less than half the traffic indicates junk traffic
 
