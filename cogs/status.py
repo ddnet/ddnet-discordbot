@@ -177,6 +177,7 @@ class ServerInfo:
         'USA':  '🇺🇸',
         'ZAF':  '🇿🇦',
         'CHN':  '🇨🇳',
+        'KOR':  '🇰🇷',
     }
 
     def __init__(self, **kwargs):
