@@ -169,15 +169,14 @@ class ServerInfo:
     PPS_RATIO_THRESHOLD = 2.0  # responding to less than half the traffic indicates junk traffic
 
     COUNTRYFLAGS = {
-        'MAIN': '🇪🇺',
-        'GER':  '🇩🇪',
-        'GER2': '🇩🇪',
-        'RUS':  '🇷🇺',
-        'CHL':  '🇨🇱',
-        'USA':  '🇺🇸',
-        'ZAF':  '🇿🇦',
-        'CHN':  '🇨🇳',
-        'KOR':  '🇰🇷',
+        'GER': '🇩🇪',
+        'RUS': '🇷🇺',
+        'CHL': '🇨🇱',
+        'USA': '🇺🇸',
+        'ZAF': '🇿🇦',
+        'CHN': '🇨🇳',
+        'KOR': '🇰🇷',
+        'CAN': '🇨🇦',
     }
 
     def __init__(self, **kwargs):
@@ -207,7 +206,7 @@ class ServerInfo:
 
     @property
     def flag(self) -> str:
-        return self.COUNTRYFLAGS.get(str(self), FLAG_UNK)
+        return '🇪🇺' if self.is_main() else self.COUNTRYFLAGS.get(str(self)[:3], FLAG_UNK)
 
 
 class ServerStatus:
