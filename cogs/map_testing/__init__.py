@@ -19,6 +19,7 @@ CAT_EVALUATED_MAPS  = 462954029643989003
 CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_INFO           = 455392314173554688
 CHAN_SUBMIT_MAPS    = 455392372663123989
+ROLE_TESTER         = 293543421426008064
 ROLE_TESTING        = 455814387169755176
 WH_MAP_RELEASES     = 345299155381649408
 
@@ -36,8 +37,8 @@ class MapState(enum.Enum):
 def is_testing(channel: discord.TextChannel) -> bool:
     return isinstance(channel, discord.TextChannel) and channel.category_id in (CAT_MAP_TESTING, CAT_EVALUATED_MAPS)
 
-def is_staff(member: discord.Member, channel: discord.TextChannel) -> bool:
-    return channel.permissions_for(member).manage_channels
+def is_staff(member: discord.Member) -> bool:
+    return any(r.id == ROLE_TESTER for r in member.roles)
 
 def by_releases_webhook(message: discord.Message) -> bool:
     return message.webhook_id == WH_MAP_RELEASES
@@ -50,8 +51,7 @@ def is_pin(message: discord.Message) -> bool:
 
 def testing_check():
     def predicate(ctx):
-        channel = ctx.channel
-        return channel.id not in (CHAN_INFO, CHAN_SUBMIT_MAPS) and is_testing(channel) and is_staff(ctx.author, channel)
+        return ctx.channel.id not in (CHAN_INFO, CHAN_SUBMIT_MAPS) and is_testing(ctx.channel) and is_staff(ctx.authorl)
     return commands.check(predicate)
 
 
@@ -156,7 +156,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         elif is_testing(channel):
             subm = Submission(message)
             if subm.is_original():
-                if subm.is_by_mapper() or is_staff(author, channel):
+                if subm.is_by_mapper() or is_staff(author):
                     await self.upload_submission(subm)
                 else:
                     await subm.set_status(SubmissionState.VALIDATED)
@@ -201,7 +201,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             return
 
         user = channel.guild.get_member(payload.user_id)
-        if not is_staff(user, channel):
+        if not is_staff(user):
             return
 
         message = self.bot.get_message(payload.message_id) or await channel.fetch_message(payload.message_id)
@@ -238,7 +238,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         bot_pin = is_testing(channel) and is_pin(message) and author == self.bot.user
 
         # delete messages without a map file by non staff in submit maps channel
-        non_submission = channel.id == CHAN_SUBMIT_MAPS and not has_map(message) and not is_staff(author, channel)
+        non_submission = channel.id == CHAN_SUBMIT_MAPS and not has_map(message) and not channel.permissions_for(author).manage_channels
 
         if bot_pin or non_submission:
             await message.delete()
