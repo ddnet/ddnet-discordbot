@@ -8,17 +8,22 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import Optional
 
+import discord
 from discord.ext import commands
 
 from utils.text import clean_content, escape_backticks
 
 log = logging.getLogger(__name__)
 
+GUILD_DDNET     = 252358080522747904
 CHAN_MODERATOR  = 345588928482508801
 ROLE_ADMIN      = 293495272892399616
 ROLE_MODERATOR  = 252523225810993153
 
 Ban = namedtuple('Ban', 'ip expires name reason mod region')
+
+def is_staff(member: discord.Member) -> bool:
+    return any(r.id in (ROLE_ADMIN, ROLE_MODERATOR) for r in member.roles)
 
 
 class Moderator(commands.Cog):
@@ -113,7 +118,7 @@ class Moderator(commands.Cog):
             await ctx.send(f'Successfully banned `{ip}`')
 
     def cog_check(self, ctx: commands.Context) -> bool:
-        return ctx.channel.id == CHAN_MODERATOR and any(r.id in (ROLE_ADMIN, ROLE_MODERATOR) for r in ctx.author.roles)
+        return ctx.channel.id == CHAN_MODERATOR and is_staff(ctx.author)
 
     @commands.command()
     async def global_ban(self, ctx: commands.Context, ip: str, name: str, minutes: int, *, reason: clean_content):
@@ -162,6 +167,15 @@ class Moderator(commands.Cog):
                    FROM ddnet_bans ORDER BY expires;
                 """
         await admin_cog.sql(ctx, query=query)
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.Member):
+        message = reaction.message
+        if message.guild is None or message.guild.id != GUILD_DDNET:
+            return
+
+        if f'<@&{ROLE_MODERATOR}>' in message.content and not is_staff(user):
+            await reaction.remove(user)
 
 
 def setup(bot: commands.bot):
