@@ -45,7 +45,7 @@ class GuildLog(commands.Cog):
         await chan.send(msg)
 
     async def log_message(self, message: discord.Message):
-        if not message.guild or message.guild.id != GUILD_DDNET or message.is_system():
+        if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() or message.channel.id == CHAN_LOGS:
             return
 
         embed = discord.Embed(title='Message deleted', description=message.content, color=0xDD2E44, timestamp=datetime.utcnow())
@@ -111,7 +111,7 @@ class GuildLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        if not before.guild or before.guild.id != GUILD_DDNET or before.is_system():
+        if not before.guild or before.guild.id != GUILD_DDNET or before.is_system() or before.channel.id == CHAN_LOGS:
             return
 
         if before.content == after.content:
