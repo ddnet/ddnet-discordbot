@@ -105,5 +105,6 @@ CREATE TABLE ddnet_bans(
     expires TIMESTAMP NOT NULL,
     name VARCHAR NOT NULL,
     reason VARCHAR NOT NULL,
-    mod VARCHAR NOT NULL
+    mod VARCHAR NOT NULL,
+    region CHAR(3)
 );

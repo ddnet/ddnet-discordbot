@@ -18,10 +18,7 @@ CHAN_MODERATOR  = 345588928482508801
 ROLE_ADMIN      = 293495272892399616
 ROLE_MODERATOR  = 252523225810993153
 
-def is_moderator(ctx: commands.Context) -> bool:
-    return ctx.channel.id == CHAN_MODERATOR and any(r.id in (ROLE_ADMIN, ROLE_MODERATOR) for r in ctx.author.roles)
-
-Ban = namedtuple('Ban', 'ip expires name reason mod')
+Ban = namedtuple('Ban', 'ip expires name reason mod region')
 
 
 class Moderator(commands.Cog):
@@ -38,7 +35,7 @@ class Moderator(commands.Cog):
         self._task.cancel()
         self._task = self.bot.loop.create_task(self.dispatch_unbans())
 
-    async def ddnet_request(self, method: str, ip: str, name: Optional[str]=None, reason: Optional[str]=None):
+    async def ddnet_request(self, method: str, ip: str, name: Optional[str]=None, reason: Optional[str]=None, region: Optional[str]=None):
         url = self.bot.config.get('DDNET', 'BAN')
         headers = {'X-DDNet-Token': self.bot.config.get('DDNET', 'BAN-TOKEN')}
 
@@ -47,6 +44,8 @@ class Moderator(commands.Cog):
             params['name'] = name
         if reason is not None:
             params['reason'] = reason
+        if region is not None:
+            params['region'] = region
 
         async with self.bot.session.request(method, url, params=params, headers=headers) as resp:
             if resp.status not in (200, 201):
@@ -55,14 +54,14 @@ class Moderator(commands.Cog):
                 log.error(fmt, method, ip, text, resp.status, resp.reason)
                 raise RuntimeError(text)
 
-    async def ddnet_ban(self, ip: str, name: str, minutes: int, reason: str, mod: str):
+    async def ddnet_ban(self, ip: str, name: str, minutes: int, reason: str, mod: str, region: Optional[str]=None):
         expires = datetime.utcnow() + timedelta(minutes=minutes)
 
         await self.ddnet_request('POST', ip, name, reason)
 
-        query = """INSERT INTO ddnet_bans (ip, expires, name, reason, mod) VALUES ($1, $2, $3, $4, $5)
-                   ON CONFLICT (ip) DO UPDATE SET expires = $2, name = $3, reason = $4, mod = $5;"""
-        await self.bot.pool.execute(query, ip, expires, name, reason, mod)
+        query = """INSERT INTO ddnet_bans (ip, expires, name, reason, mod) VALUES ($1, $2, $3, $4, $5, $6)
+                   ON CONFLICT (ip) DO UPDATE SET expires = $2, name = $3, reason = $4, mod = $5, region = $6;"""
+        await self.bot.pool.execute(query, ip, expires, name, reason, mod, region)
 
         self._active_ban.set()
         if self._current_ban is not None and expires < self._current_ban.expires:
@@ -99,27 +98,46 @@ class Moderator(commands.Cog):
 
             await self.ddnet_unban(ban.ip)
 
-    @commands.command()
-    @commands.check(is_moderator)
-    async def global_ban(self, ctx: commands.Context, ip: str, name: str, minutes: int, *, reason: clean_content):
+    async def _global_ban(self, ctx: commands.Context, ip: str, name: str, minutes: int, reason: str, region: Optional[str]=None):
         if minutes < 1:
             return await ctx.send('Minutes need to be greater than 0')
 
+        if region is not None and len(region) != 3:
+            return await ctx.send('Invalid region')
+
         try:
-            await self.ddnet_ban(ip, name, minutes, reason, str(ctx.author))
+            await self.ddnet_ban(ip, name, minutes, reason, str(ctx.author), region)
         except RuntimeError as exc:
             await ctx.send(exc)
         else:
             await ctx.send(f'Successfully banned `{ip}`')
 
+    def cog_check(self, ctx: commands.Context) -> bool:
+        return ctx.channel.id == CHAN_MODERATOR and any(r.id in (ROLE_ADMIN, ROLE_MODERATOR) for r in ctx.author.roles)
+
+    @commands.command()
+    async def global_ban(self, ctx: commands.Context, ip: str, name: str, minutes: int, *, reason: clean_content):
+        """Ban an ip from all DDNet servers.
+           Minutes need to be greater than 0.
+        """
+        await self._global_ban(ctx, ip, name, minutes, reason)
+
+    @commands.command()
+    async def global_ban_region(self, ctx: commands.Context, region: str, ip: str, name: str, minutes: int, *, reason: clean_content):
+        """Ban an ip from all DDNet servers in given region.
+           Minutes need to be greater than 0. Region needs to be the 3 char server code.
+        """
+        await self._global_ban(ctx, ip, name, minutes, reason, region)
+
     @global_ban.error
+    @global_ban_region.error
     async def global_ban_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Minutes need to be a number')
+            await ctx.send('Minutes need to be a number greater than')
 
     @commands.command(usage='<ip|name>')
-    @commands.check(is_moderator)
     async def global_unban(self, ctx: commands.Context, *, name: str):
+        """Unban an ip from all DDNet servers. If you pass a name, all currently globally banned ips associated with that name will be unbanned."""
         if re.match(r'^[\d\.-]*$', name) is None:
             query = 'SELECT ip FROM ddnet_bans WHERE name = $1;'
             ips = await self.bot.pool.fetch(query, name)
@@ -137,10 +155,12 @@ class Moderator(commands.Cog):
                 await ctx.send(f'Successfully unbanned `{ip}`')
 
     @commands.command()
-    @commands.check(is_moderator)
     async def global_bans(self, ctx: commands.Context):
+        """Show all currently globally banned ips"""
         admin_cog = self.bot.get_cog('Admin')
-        query = 'SELECT * FROM ddnet_bans;'
+        query = """SELECT ip, name, to_char(expires, \'YYYY-MM-DD HH24:MI\') AS expires, reason, mod, region
+                   FROM ddnet_bans ORDER BY expires;
+                """
         await admin_cog.sql(ctx, query=query)
 
 
