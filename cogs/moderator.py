@@ -140,7 +140,7 @@ class Moderator(commands.Cog):
         """Unban an ip from all DDNet servers. If you pass a name, all currently globally banned ips associated with that name will be unbanned."""
         if re.match(r'^[\d\.-]*$', name) is None:
             query = 'SELECT ip FROM ddnet_bans WHERE name = $1;'
-            ips = await self.bot.pool.fetch(query, name)
+            ips = [r['ip'] for r in await self.bot.pool.fetch(query, name)]
             if not ips:
                 return await ctx.send(f'`{escape_backticks(name)}` isn\'t banned')
         else:
