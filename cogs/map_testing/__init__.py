@@ -51,7 +51,7 @@ def is_pin(message: discord.Message) -> bool:
 
 def testing_check():
     def predicate(ctx):
-        return ctx.channel.id not in (CHAN_INFO, CHAN_SUBMIT_MAPS) and is_testing(ctx.channel) and is_staff(ctx.authorl)
+        return ctx.channel.id not in (CHAN_INFO, CHAN_SUBMIT_MAPS) and is_testing(ctx.channel) and is_staff(ctx.author)
     return commands.check(predicate)
 
 
