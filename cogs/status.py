@@ -177,6 +177,7 @@ class ServerInfo:
         'CHN': '🇨🇳',
         'KOR': '🇰🇷',
         'CAN': '🇨🇦',
+        'BR':  '🇧🇷',
     }
 
     def __init__(self, **kwargs):
@@ -227,7 +228,7 @@ class ServerStatus:
 
         rows = []
         for server in self.servers:
-            rows.append(f'{server.flag} `{str(server):^4}|{server.status:^4}|'
+            rows.append(f'{server.flag} `{str(server):<4}|{server.status:^4}|'
                         f'{humanize_pps(server.packets.rx):>7}|{humanize_pps(server.packets.tx):>7}`')
 
         desc = '\n'.join([header] + rows)
