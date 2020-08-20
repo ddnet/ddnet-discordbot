@@ -64,7 +64,7 @@ class Moderator(commands.Cog):
 
         await self.ddnet_request('POST', ip, name, reason)
 
-        query = """INSERT INTO ddnet_bans (ip, expires, name, reason, mod) VALUES ($1, $2, $3, $4, $5, $6)
+        query = """INSERT INTO ddnet_bans (ip, expires, name, reason, mod, region) VALUES ($1, $2, $3, $4, $5, $6)
                    ON CONFLICT (ip) DO UPDATE SET expires = $2, name = $3, reason = $4, mod = $5, region = $6;"""
         await self.bot.pool.execute(query, ip, expires, name, reason, mod, region)
 
