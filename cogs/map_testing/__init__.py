@@ -15,6 +15,7 @@ from utils.text import sanitize
 log = logging.getLogger(__name__)
 
 CAT_MAP_TESTING     = 449352010072850443
+CAT_WAITING_MAPPER  = 746076708196843530
 CAT_EVALUATED_MAPS  = 462954029643989003
 CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_INFO           = 455392314173554688
@@ -26,6 +27,7 @@ WH_MAP_RELEASES     = 345299155381649408
 
 class MapState(enum.Enum):
     TESTING     = ''
+    WAITING     = '💤'
     READY       = '✅'
     DECLINED    = '❌'
     RELEASED    = '🆙'
@@ -305,7 +307,14 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             name = name[1:]
 
         options = {'name': str(state) + name}
-        category = self.bot.get_channel(CAT_MAP_TESTING if state is MapState.TESTING else CAT_EVALUATED_MAPS)
+
+        if state is MapState.TESTING:
+            category = self.bot.get_channel(CAT_MAP_TESTING)
+        elif state is MapState.WAITING:
+            category = self.bot.get_channel(CAT_WAITING_MAPPER)
+        else:
+            category = self.bot.get_channel(CAT_EVALUATED_MAPS)
+
         if category != channel.category:
             position = category.channels[-1].position + 1 if state is MapState.TESTING else 0
 
@@ -318,6 +327,12 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
     async def reset(self, ctx: commands.Context):
         """Reset a map"""
         await self.move_map_channel(ctx.channel, state=MapState.TESTING)
+
+    @commands.command()
+    @testing_check()
+    async def waiting(self, ctx: commands.Context):
+        """Set a map to waiting"""
+        await self.move_map_channel(ctx.channel, state=MapState.WAITING)
 
     @commands.command()
     @testing_check()
