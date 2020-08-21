@@ -158,6 +158,9 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         elif is_testing(channel):
             subm = Submission(message)
             if subm.is_original():
+                if subm.is_by_mapper() and channel.category.id == CAT_WAITING_MAPPER:
+                    await self.move_map_channel(channel, state=MapState.TESTING)
+
                 if subm.is_by_mapper() or is_staff(author):
                     await self.upload_submission(subm)
                 else:
