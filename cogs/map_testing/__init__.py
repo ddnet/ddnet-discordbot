@@ -37,7 +37,7 @@ class MapState(enum.Enum):
 
 
 def is_testing(channel: discord.TextChannel) -> bool:
-    return isinstance(channel, discord.TextChannel) and channel.category_id in (CAT_MAP_TESTING, CAT_EVALUATED_MAPS)
+    return isinstance(channel, discord.TextChannel) and channel.category_id in (CAT_MAP_TESTING, CAT_WAITING_MAPPER, CAT_EVALUATED_MAPS)
 
 def is_staff(member: discord.Member) -> bool:
     return any(r.id == ROLE_TESTER for r in member.roles)
@@ -119,8 +119,9 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
             if isubm.server != 'Novice':
                 mt_category = self.bot.get_channel(CAT_MAP_TESTING)
+                wt_category = self.bot.get_channel(CAT_WAITING_MAPPER)
                 em_category = self.bot.get_channel(CAT_EVALUATED_MAPS)
-                for channel in (*mt_category.channels[2:], *em_category.channels):
+                for channel in (*mt_category.text_channels[2:], *wt_category.text_channels, *em_category.text_channels):
                     if channel.name[0] == str(MapState.RELEASED):
                         continue
 
@@ -251,9 +252,10 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
     def get_map_channel(self, name: str) -> Optional[discord.TextChannel]:
         name = sanitize(name.lower())
         mt_category = self.bot.get_channel(CAT_MAP_TESTING)
+        wt_category = self.bot.get_channel(CAT_WAITING_MAPPER)
         em_category = self.bot.get_channel(CAT_EVALUATED_MAPS)
         return discord.utils.find(lambda c: c.name[1:] == name, mt_category.text_channels) \
-            or discord.utils.find(lambda c: c.name[2:] == name, em_category.text_channels)
+            or discord.utils.find(lambda c: c.name[2:] == name, (*em_category.text_channels, *wt_category.text_channels))
 
     @commands.Cog.listener('on_raw_reaction_add')
     @commands.Cog.listener('on_raw_reaction_remove')
