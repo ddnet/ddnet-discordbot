@@ -20,6 +20,7 @@ CAT_EVALUATED_MAPS  = 462954029643989003
 CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_INFO           = 455392314173554688
 CHAN_SUBMIT_MAPS    = 455392372663123989
+ROLE_TESTING_LEAD   = 746414504488861747
 ROLE_TESTER         = 293543421426008064
 ROLE_TESTING        = 455814387169755176
 WH_MAP_RELEASES     = 345299155381649408
@@ -52,8 +53,13 @@ def is_pin(message: discord.Message) -> bool:
     return message.type is discord.MessageType.pins_add
 
 def testing_check():
-    def predicate(ctx):
+    def predicate(ctx: commands.Context) -> bool:
         return ctx.channel.id not in (CHAN_INFO, CHAN_SUBMIT_MAPS) and is_testing(ctx.channel) and is_staff(ctx.author)
+    return commands.check(predicate)
+
+def testing_lead_check():
+    def predicate(ctx: commands.Context) -> bool:
+        return ctx.guild is not None and any(r.id == ROLE_TESTING_LEAD for r in ctx.author.roles)
     return commands.check(predicate)
 
 
@@ -479,6 +485,32 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             await self.ddnet_delete(match.group('name'))
         except RuntimeError:
             return
+
+    @commands.command()
+    @testing_lead_check()
+    async def add_tester(self, ctx: commands.Context, user: discord.Member):
+        """Add Tester role to a user"""
+        tester_role = ctx.guild.get_role(ROLE_TESTER)
+        if tester_role in user.roles:
+            return await ctx.send(f'{user.mention} is already a Tester')
+
+        await user.add_roles(tester_role)
+
+    @commands.command()
+    @testing_lead_check()
+    async def remove_tester(self, ctx: commands.Context, user: discord.Member):
+        """Remove Tester role from a user"""
+        tester_role = ctx.guild.get_role(ROLE_TESTER)
+        if tester_role not in user.roles:
+            return await ctx.send(f'{user.mention} isn\'t a Tester')
+
+        await user.remove_roles(tester_role)
+
+    @add_tester.error
+    @remove_tester.error
+    async def manage_tester_error(self, ctx: commands.Context, error: commands.CommandError):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Could not find that user')
 
 
 def setup(bot: commands.Bot):
