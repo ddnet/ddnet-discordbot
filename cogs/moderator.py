@@ -138,7 +138,7 @@ class Moderator(commands.Cog):
     @global_ban_region.error
     async def global_ban_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Minutes need to be a number greater than')
+            await ctx.send('Minutes need to be greater than 0')
 
     @commands.command(usage='<ip|name>')
     async def global_unban(self, ctx: commands.Context, *, name: str):
