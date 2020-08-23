@@ -398,11 +398,6 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
             log.info('Successfully delete map %r on ddnet.tw', filename)
 
-    @suggest_waiting.before_loop
-    @auto_archive.before_loop
-    async def _before_loop(self):
-        await self.bot.wait_until_ready()
-
     @tasks.loop(hours=24.0)
     async def suggest_waiting(self):
         now = datetime.utcnow()
@@ -499,6 +494,11 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
                 log.info('Sucessfully auto-archived channel #%s', channel)
             else:
                 log.error('Failed auto-archiving channel #%s', channel)
+
+    @suggest_waiting.before_loop
+    @auto_archive.before_loop
+    async def _before_loop(self):
+        await self.bot.wait_until_ready()
 
     @commands.command()
     @commands.is_owner()
