@@ -409,7 +409,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
         suggestion_msg = f'<@&{ROLE_TESTER}> the mapper hasn\'t responded in a while. Consider $waiting?'
 
-        def should_suggest(channel: discord.TextChannel) -> bool:
+        async def should_suggest(channel: discord.TextChannel) -> bool:
             try:
                 authors = channel.topic.splitlines()[2]
             except IndexError:
@@ -426,7 +426,8 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
         mt_category = self.bot.get_channel(CAT_MAP_TESTING)
         for channel in mt_category.text_channels[2:]:
-            if should_suggest(channel):
+            suggest = await should_suggest(channel)
+            if suggest:
                 await channel.send(suggestion_msg)
 
     async def archive_testlog(self, testlog: TestLog) -> bool:
