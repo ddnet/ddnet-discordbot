@@ -108,3 +108,8 @@ CREATE TABLE ddnet_bans(
     mod VARCHAR NOT NULL,
     region CHAR(3)
 );
+
+CREATE TABLE waiting_maps(
+    channel_id BIGINT PRIMARY KEY,
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

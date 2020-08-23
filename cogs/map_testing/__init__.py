@@ -69,9 +69,11 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
         self._active_submissions = set()
 
+        self.suggest_waiting.start()
         self.auto_archive.start()
 
     def cog_unload(self):
+        self.suggest_waiting.cancel()
         self.auto_archive.cancel()
 
     async def ddnet_upload(self, asset_type: str, buf: BytesIO, filename: str):
@@ -317,12 +319,19 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         if prev_state is not MapState.TESTING:
             name = name[1:]
 
+        if prev_state is MapState.WAITING:
+            query = 'DELETE FROM waiting_maps WHERE channel_id = $1;'
+            await self.bot.pool.execute(query, channel.id)
+
         options = {'name': str(state) + name}
 
         if state is MapState.TESTING:
             category = self.bot.get_channel(CAT_MAP_TESTING)
         elif state is MapState.WAITING:
             category = self.bot.get_channel(CAT_WAITING_MAPPER)
+
+            query = 'INSERT INTO waiting_maps (channel_id) VALUES ($1);'
+            await self.bot.pool.execute(query, channel.id)
         else:
             category = self.bot.get_channel(CAT_EVALUATED_MAPS)
 
@@ -389,6 +398,37 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
             log.info('Successfully delete map %r on ddnet.tw', filename)
 
+    @suggest_waiting.before_loop
+    @auto_archive.before_loop
+    async def _before_loop(self):
+        await self.bot.wait_until_ready()
+
+    @tasks.loop(hours=24.0)
+    async def suggest_waiting(self):
+        now = datetime.utcnow()
+
+        suggestion_msg = f'<@&{ROLE_TESTER}> the mapper hasn\'t responded in a while. Consider $waiting?'
+
+        def should_suggest(channel: discord.TextChannel) -> bool:
+            try:
+                authors = channel.topic.splitlines()[2]
+            except IndexError:
+                return False
+
+            async for message in channel.history(limit=None):
+                if str(message.author.id) in authors:
+                    return (now - message.created_at).days > 14
+
+                if message.author == self.bot.user and message.content == suggestion_msg:
+                    return False
+
+            return (now - channel.created_at).days > 14
+
+        mt_category = self.bot.get_channel(CAT_MAP_TESTING)
+        for channel in mt_category.text_channels[2:]:
+            if should_suggest(channel):
+                await channel.send(suggestion_msg)
+
     async def archive_testlog(self, testlog: TestLog) -> bool:
         failed = False
 
@@ -424,8 +464,9 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
     @tasks.loop(hours=1.0)
     async def auto_archive(self):
-        await self.bot.wait_until_ready()
         now = datetime.utcnow()
+
+        to_delete = []
 
         ann_channel = self.bot.get_channel(CHAN_ANNOUNCEMENTS)
         ann_history = await ann_channel.history(after=now - timedelta(days=3)).filter(by_releases_webhook).flatten()
@@ -442,6 +483,13 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             if recent_message:
                 continue
 
+            to_delete.append(channel)
+
+        query = 'DELETE FROM waiting_maps WHERE timestamp < NOW() - INTERVAL \'30 days\' RETURNING channel_id;'
+        records = await self.bot.pool.fetch(query)
+        to_delete += [self.bot.get_channel(r['channel_id']) for r in records]
+
+        for channel in to_delete:
             testlog = await TestLog.from_channel(channel)
             archived = await self.archive_testlog(testlog)
 
