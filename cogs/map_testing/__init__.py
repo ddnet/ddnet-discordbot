@@ -410,12 +410,15 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             except IndexError:
                 return False
 
+            last = True
             async for message in channel.history(limit=None):
                 if str(message.author.id) in authors:
-                    return (now - message.created_at).days > 14
+                    return (now - message.created_at).days > 14 and not last
 
                 if message.author == self.bot.user and message.content == suggestion_msg:
                     return False
+
+                last = False
 
             return (now - channel.created_at).days > 14
 
