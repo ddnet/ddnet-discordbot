@@ -222,7 +222,14 @@ class ServerStatus:
         header = f'{FLAG_UNK} `srv | +- | ▲ pps | ▼ pps `'
 
         def humanize_pps(pps: int) -> str:
-            return '' if pps < 0 else str(pps) if pps < 1000 else f'{round(pps / 1000, 2)}k'
+            if pps < 0:
+                return ''
+
+            for unit in ('', 'k', 'm', 'g'):
+                if pps < 1000:
+                    return str(pps) + unit
+
+                pps = round(pps / 1000, 2)
 
         rows = []
         for server in self.servers:
