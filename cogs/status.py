@@ -178,6 +178,7 @@ class ServerInfo:
         'KOR': '🇰🇷',
         'CAN': '🇨🇦',
         'BRA': '🇧🇷',
+        'AUS': '🇦🇺',
     }
 
     def __init__(self, **kwargs):
@@ -187,10 +188,7 @@ class ServerInfo:
         self.packets = self.Packets(kwargs.pop('packets_rx', -1), kwargs.pop('packets_tx', -1))
 
     def __str__(self) -> str:
-        return 'MAIN' if self.is_main() else self.host.split('.')[0].upper()
-
-    def is_main(self) -> bool:
-        return self.host == 'ddnet.tw'
+        return 'MAIN' if self.host == 'ddnet.tw' else self.host.split('.')[0].upper()
 
     def is_under_attack(self) -> bool:
         return self.packets.rx > self.PPS_THRESHOLD \
@@ -207,7 +205,7 @@ class ServerInfo:
 
     @property
     def flag(self) -> str:
-        return '🇪🇺' if self.is_main() else self.COUNTRYFLAGS.get(str(self)[:3], FLAG_UNK)
+        return '🇪🇺' if str(self) in ('MAIN', 'MASTER') else self.COUNTRYFLAGS.get(str(self)[:3], FLAG_UNK)
 
 
 class ServerStatus:
@@ -228,7 +226,7 @@ class ServerStatus:
 
         rows = []
         for server in self.servers:
-            rows.append(f'{server.flag} `{str(server):<4}|{server.status:^4}|'
+            rows.append(f'{server.flag} `{str(server):<6}|{server.status:^4}|'
                         f'{humanize_pps(server.packets.rx):>7}|{humanize_pps(server.packets.tx):>7}`')
 
         desc = '\n'.join([header] + rows)
