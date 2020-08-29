@@ -219,7 +219,7 @@ class ServerStatus:
 
     @property
     def embed(self) -> discord.Embed:
-        header = f'{FLAG_UNK} `srv   | +- | ▲ pps | ▼ pps `'
+        header = f'{FLAG_UNK} `server| +- | ▲ pps | ▼ pps `'
 
         def humanize_pps(pps: int) -> str:
             if pps < 0:
