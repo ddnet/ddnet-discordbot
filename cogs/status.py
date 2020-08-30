@@ -219,8 +219,6 @@ class ServerStatus:
 
     @property
     def embed(self) -> discord.Embed:
-        header = f'{FLAG_UNK} `server| +- | ▲ pps | ▼ pps `'
-
         def humanize_pps(pps: int) -> str:
             if pps < 0:
                 return ''
@@ -231,13 +229,12 @@ class ServerStatus:
 
                 pps = round(pps / 1000, 2)
 
-        rows = []
+        rows = [f'{FLAG_UNK} `server| +- | ▲ pps | ▼ pps `']
         for server in self.servers:
             rows.append(f'{server.flag} `{str(server):<6}|{server.status:^4}|'
                         f'{humanize_pps(server.packets.rx):>7}|{humanize_pps(server.packets.tx):>7}`')
 
-        desc = '\n'.join([header] + rows)
-        return discord.Embed(title='Server Status', description=desc, url=self.URL, timestamp=self.timestamp)
+        return discord.Embed(title='Server Status', description='\n'.join(rows), url=self.URL, timestamp=self.timestamp)
 
 
 class Status(commands.Cog, name='DDNet Status'):
