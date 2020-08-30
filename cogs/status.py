@@ -180,6 +180,7 @@ class ServerInfo:
         'BRA': '🇧🇷',
         'AUS': '🇦🇺',
         'JAP': '🇯🇵',
+        'SGP': '🇸🇬',
     }
 
     def __init__(self, **kwargs):
