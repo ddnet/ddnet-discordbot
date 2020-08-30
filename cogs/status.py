@@ -179,6 +179,7 @@ class ServerInfo:
         'CAN': '🇨🇦',
         'BRA': '🇧🇷',
         'AUS': '🇦🇺',
+        'JAP': '🇯🇵',
     }
 
     def __init__(self, **kwargs):
