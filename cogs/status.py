@@ -181,6 +181,7 @@ class ServerInfo:
         'AUS': '🇦🇺',
         'JAP': '🇯🇵',
         'SGP': '🇸🇬',
+        'POL': '🇵🇱',
     }
 
     def __init__(self, **kwargs):
@@ -207,7 +208,7 @@ class ServerInfo:
 
     @property
     def flag(self) -> str:
-        return '🇪🇺' if str(self) in ('MAIN', 'MASTER') else self.COUNTRYFLAGS.get(str(self)[:3], FLAG_UNK)
+        return '🇪🇺' if str(self) in ('MAIN', 'MASTER', 'DB') else self.COUNTRYFLAGS.get(str(self)[:3], FLAG_UNK)
 
 
 class ServerStatus:
