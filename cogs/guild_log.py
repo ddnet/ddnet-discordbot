@@ -121,8 +121,8 @@ class GuildLog(commands.Cog):
         embed = discord.Embed(title='Message edited', description=desc, color=0xF5B942, timestamp=datetime.utcnow())
 
         before_content, after_content = self.format_content_diff(before.content, after.content)
-        embed.add_field(name='Before', value=before_content, inline=False)
-        embed.add_field(name='After', value=after_content, inline=False)
+        embed.add_field(name='Before', value=before_content or '\u200b', inline=False)
+        embed.add_field(name='After', value=after_content or '\u200b', inline=False)
 
         author = before.author
         embed.set_author(name=f'{author} → #{before.channel}', icon_url=author.avatar_url_as(format='png'))
