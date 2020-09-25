@@ -183,6 +183,8 @@ class ServerInfo:
         'SGP': '🇸🇬',
         'POL': '🇵🇱',
         'IRN': '🇮🇷',
+        'TUR': '🇹🇷',
+        'ARG': '🇦🇷',
     }
 
     def __init__(self, **kwargs):
