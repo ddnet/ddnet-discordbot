@@ -270,7 +270,7 @@ class Status(commands.Cog, name='DDNet Status'):
 
         url = 'https://info.ddnet.tw/info'
         async with self.bot.session.get(url) as resp:
-            if resp.stats == 200:
+            if resp.status == 200:
                 js = await resp.json()
                 info = js['servers']
             else:
