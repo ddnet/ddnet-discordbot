@@ -57,12 +57,12 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     async def hastebin_upload(self, content: str) -> str:
         data = content.encode('utf-8')
         async with self.bot.session.post('https://hastebin.com/documents', data=data) as resp:
-            js = await resp.json()
             if resp.status != 200:
                 fmt = 'Failed uploading to hastebin.com: %s (status code: %d %s)'
-                log.error(fmt, js['message'], resp.status, resp.reason)
+                log.error(fmt, await resp.text(), resp.status, resp.reason)
                 raise RuntimeError('Could not upload to hastebin')
 
+            js = await resp.json()
             return f'<https://hastebin.com/{js["key"]}.py>'
 
     @commands.command(name='eval')
