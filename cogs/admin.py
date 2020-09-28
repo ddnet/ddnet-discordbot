@@ -54,16 +54,11 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             await ctx.message.add_reaction(CONFIRM)
 
-    async def hastebin_upload(self, content: str) -> str:
+    async def paste_upload(self, content: str) -> str:
+        url = 'https://paste.pr0.tips/'
         data = content.encode('utf-8')
-        async with self.bot.session.post('https://hastebin.com/documents', data=data) as resp:
-            if resp.status != 200:
-                fmt = 'Failed uploading to hastebin.com: %s (status code: %d %s)'
-                log.error(fmt, await resp.text(), resp.status, resp.reason)
-                raise RuntimeError('Could not upload to hastebin')
-
-            js = await resp.json()
-            return f'<https://hastebin.com/{js["key"]}.py>'
+        async with self.bot.session.post(url, data=data) as resp:
+            return await resp.text()
 
     @commands.command(name='eval')
     async def _eval(self, ctx: commands.Context, *, body: str):
@@ -105,10 +100,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
         msg = f'```py\n{content}\n```'
         if len(msg) > 2000:
-            try:
-                msg = await self.hastebin_upload(content)
-            except RuntimeError as exc:
-                msg = exc
+            msg = await self.paste_upload(content)
 
         await ctx.send(msg)
 
@@ -133,10 +125,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         content = '\n'.join([f'$ {cmd}'] + content)
         msg = f'```sh\n{content}\n```'
         if len(msg) > 2000:
-            try:
-                msg = await self.hastebin_upload(content)
-            except RuntimeError as exc:
-                msg = exc
+            msg = await self.paste_upload(content)
 
         await ctx.send(msg)
 
@@ -160,10 +149,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
         msg = f'```\n{table}\n```\n*{footer}*'
         if len(msg) > 2000:
-            try:
-                msg = await self.hastebin_upload(f'{table}\n{footer}')
-            except RuntimeError as exc:
-                msg = exc
+            msg = await self.paste_upload(f'{table}\n{footer}')
 
         await ctx.send(msg)
 
