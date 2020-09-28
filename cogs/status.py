@@ -168,6 +168,25 @@ class ServerInfo:
     PPS_RATIO_MIN = 500  # ratio is not reliable for low traffic
     PPS_RATIO_THRESHOLD = 2.5  # responding to less than half the traffic indicates junk traffic
 
+    COUNTRYFLAGS = {
+        'GER': '🇩🇪',
+        'RUS': '🇷🇺',
+        'CHL': '🇨🇱',
+        'USA': '🇺🇸',
+        'ZAF': '🇿🇦',
+        'CHN': '🇨🇳',
+        'KOR': '🇰🇷',
+        'CAN': '🇨🇦',
+        'BRA': '🇧🇷',
+        'AUS': '🇦🇺',
+        'JAP': '🇯🇵',
+        'SGP': '🇸🇬',
+        'POL': '🇵🇱',
+        'IRN': '🇮🇷',
+        'TUR': '🇹🇷',
+        'ARG': '🇦🇷',
+    }
+
     def __init__(self, **kwargs):
         self.host = kwargs.pop('type')
         self.online = kwargs.pop('online4')
@@ -190,19 +209,19 @@ class ServerInfo:
         else:
             return 'up'
 
+    @property
+    def flag(self) -> str:
+        return '🇪🇺' if str(self) in ('MAIN', 'MASTER', 'DB') else self.COUNTRYFLAGS.get(str(self)[:3], FLAG_UNK)
+
 
 class ServerStatus:
-    __slots__ = ('_flags', 'servers', 'timestamp')
+    __slots__ = ('servers', 'timestamp')
 
     URL = f'{BASE_URL}/status/'
 
-    def __init__(self, info: List[Dict], servers: List[Dict], updated: str):
-        self._flags = {s['name']: COUNTRYFLAGS[s['flagId']] for s in info if s['flagId'] in COUNTRYFLAGS}
+    def __init__(self, servers: List[Dict], updated: str):
         self.servers = [ServerInfo(**s) for s in servers]
         self.timestamp = datetime.utcfromtimestamp(float(updated))
-
-    def get_flag(self, name: str) -> str:
-        return '🇪🇺' if name in ('MAIN', 'MASTER', 'DB') else self._flags.get(name[:3], FLAG_UNK)
 
     @property
     def embed(self) -> discord.Embed:
@@ -219,7 +238,7 @@ class ServerStatus:
         rows = [f'{FLAG_UNK} `server| +- | ▲ pps | ▼ pps `']
         for server in self.servers:
             if server.host:
-                rows.append(f'{self.get_flag(str(server))} `{str(server):<6}|{server.status:^4}|'
+                rows.append(f'{server.flag} `{str(server):<6}|{server.status:^4}|'
                             f'{humanize_pps(server.packets.rx):>7}|{humanize_pps(server.packets.tx):>7}`')
 
         return discord.Embed(title='Server Status', description='\n'.join(rows), url=self.URL, timestamp=self.timestamp)
@@ -266,18 +285,9 @@ class Status(commands.Cog, name='DDNet Status'):
                 log.error('Failed to fetch DDNet status data (status code: %d %s)', resp.status, resp.reason)
                 raise RuntimeError('Could not fetch DDNet status')
 
-            status = await resp.json()
+            js = await resp.json()
 
-        url = 'https://info.ddnet.tw/info'
-        async with self.bot.session.get(url) as resp:
-            if resp.status == 200:
-                js = await resp.json()
-                info = js['servers']
-            else:
-                info = []
-                log.error('Failed to fetch DDNet info (status code: %d %s)', resp.status, resp.reason)
-
-        return ServerStatus(info, **status)
+            return ServerStatus(**js)
 
     @commands.command()
     async def ddos(self, ctx: commands.Context):
