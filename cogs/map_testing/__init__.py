@@ -1,16 +1,15 @@
-import enum
 import logging
 import re
 from datetime import datetime, timedelta
 from io import BytesIO
-from typing import Optional
+from typing import List, Optional
 
 import discord
 from discord.ext import commands, tasks
 
 from cogs.map_testing.log import TestLog
+from cogs.map_testing.map_channel import MapChannel, MapState
 from cogs.map_testing.submission import InitialSubmission, Submission, SubmissionState
-from utils.text import sanitize
 
 log = logging.getLogger(__name__)
 
@@ -20,28 +19,18 @@ CAT_EVALUATED_MAPS  = 462954029643989003
 CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_INFO           = 455392314173554688
 CHAN_SUBMIT_MAPS    = 455392372663123989
+ROLE_ADMIN          = 293495272892399616
 ROLE_TESTING_LEAD   = 746414504488861747
 ROLE_TESTER         = 293543421426008064
 ROLE_TESTING        = 455814387169755176
 WH_MAP_RELEASES     = 345299155381649408
 
 
-class MapState(enum.Enum):
-    TESTING     = ''
-    WAITING     = '💤'
-    READY       = '✅'
-    DECLINED    = '❌'
-    RELEASED    = '🆙'
-
-    def __str__(self) -> str:
-        return self.value
-
-
 def is_testing(channel: discord.TextChannel) -> bool:
     return isinstance(channel, discord.TextChannel) and channel.category_id in (CAT_MAP_TESTING, CAT_WAITING_MAPPER, CAT_EVALUATED_MAPS)
 
 def is_staff(member: discord.Member) -> bool:
-    return any(r.id == ROLE_TESTER for r in member.roles)
+    return any(r.id in (ROLE_ADMIN, ROLE_TESTER) for r in member.roles)
 
 def by_releases_webhook(message: discord.Message) -> bool:
     return message.webhook_id == WH_MAP_RELEASES
@@ -49,12 +38,9 @@ def by_releases_webhook(message: discord.Message) -> bool:
 def has_map(message: discord.Message) -> bool:
     return message.attachments and message.attachments[0].filename.endswith('.map')
 
-def is_pin(message: discord.Message) -> bool:
-    return message.type is discord.MessageType.pins_add
-
-def testing_check():
+def tester_check():
     def predicate(ctx: commands.Context) -> bool:
-        return ctx.channel.id not in (CHAN_INFO, CHAN_SUBMIT_MAPS) and is_testing(ctx.channel) and is_staff(ctx.author)
+        return ctx.channel.id in ctx.cog._map_channels and is_staff(ctx.author)
     return commands.check(predicate)
 
 def testing_lead_check():
@@ -67,14 +53,36 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
     def __init__(self, bot: commands.Bot):
         self.bot = TestLog.bot = bot
 
+        self._map_channels = {}
         self._active_submissions = set()
 
-        self.suggest_waiting.start()
         self.auto_archive.start()
 
     def cog_unload(self):
-        self.suggest_waiting.cancel()
         self.auto_archive.cancel()
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        for category_id in (CAT_MAP_TESTING, CAT_WAITING_MAPPER, CAT_EVALUATED_MAPS):
+            category = self.bot.get_channel(category_id)
+            for channel in category.text_channels:
+                if channel.id in (CHAN_INFO, CHAN_SUBMIT_MAPS):
+                    continue
+
+                try:
+                    self._map_channels[channel.id] = MapChannel(channel)
+                except ValueError as exc:
+                    log.error('Failed loading map channel #%s: %s', channel, exc)
+
+    @property
+    def map_channels(self) -> List[MapChannel]:
+        return self._map_channels.values()
+
+    def get_map_channel(self, channel_id: Optional[int]=None, **kwargs) -> Optional[MapChannel]:
+        if channel_id is not None:
+            return self._map_channels.get(channel_id)
+        else:
+            return discord.utils.get(self.map_channels, **kwargs)
 
     async def ddnet_upload(self, asset_type: str, buf: BytesIO, filename: str):
         url = self.bot.config.get('DDNET', 'UPLOAD')
@@ -103,6 +111,19 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
 
             log.info('Successfully uploaded %s %r to ddnet.tw', asset_type, filename)
 
+    async def ddnet_delete(self, filename: str):
+        url = self.bot.config.get('DDNET', 'DELETE')
+        headers = {'X-DDNet-Token': self.bot.config.get('DDNET', 'TOKEN')}
+        data = {'map_name': filename}
+
+        async with self.bot.session.post(url, data=data, headers=headers) as resp:
+            if resp.status != 200:
+                fmt = 'Failed deleting map %r on ddnet.tw: %s (status code: %d %s)'
+                log.error(fmt, filename, await resp.text(), resp.status, resp.reason)
+                raise RuntimeError('Could not delete map on ddnet.tw')
+
+            log.info('Successfully deleted map %r on ddnet.tw', filename)
+
     async def upload_submission(self, subm: Submission):
         try:
             await self.ddnet_upload('map', await subm.buffer(), str(subm))
@@ -116,7 +137,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         try:
             isubm.validate()
 
-            exists = self.get_map_channel(str(isubm))
+            exists = self.get_map_channel(name=isubm.name)
             if exists:
                 raise ValueError('A channel for this map already exists')
 
@@ -144,13 +165,18 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             isubm = InitialSubmission(message)
             await self.validate_submission(isubm)
 
-        elif is_testing(channel):
-            subm = Submission(message)
-            if subm.is_original():
-                if subm.is_by_mapper() and channel.category.id == CAT_WAITING_MAPPER:
-                    await self.move_map_channel(channel, state=MapState.TESTING)
+        else:
+            map_channel = self.get_map_channel(channel.id)
+            if map_channel is None:
+                return
 
-                if subm.is_by_mapper() or is_staff(author):
+            subm = Submission(message)
+            if map_channel.filename == str(subm):
+                by_mapper = author.mention in map_channel.mapper_mentions
+                if by_mapper and channel.category.id == CAT_WAITING_MAPPER:
+                    await map_channel.change_state(state=MapState.TESTING)
+
+                if by_mapper or is_staff(author):
                     await self.upload_submission(subm)
                 else:
                     await subm.set_status(SubmissionState.VALIDATED)
@@ -215,6 +241,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             self._active_submissions.add(message.id)
             subm = await isubm.process()
             await isubm.set_status(SubmissionState.PROCESSED)
+            self._map_channels[isubm.channel.id] = isubm.map_channel
             self._active_submissions.discard(message.id)
 
         else:
@@ -228,22 +255,11 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         author = message.author
         channel = message.channel
 
-        # delete system pin messages by ourself
-        bot_pin = is_testing(channel) and is_pin(message) and author == self.bot.user
-
-        # delete messages without a map file by non staff in submit maps channel
-        non_submission = channel.id == CHAN_SUBMIT_MAPS and not has_map(message) and not channel.permissions_for(author).manage_channels
-
-        if bot_pin or non_submission:
+        # system pin messages by ourself
+        # messages without a map file by non staff in submit maps channel
+        if (is_testing(channel) and message.type is discord.MessageType.pins_add and message.author.bot) \
+            or (channel.id == CHAN_SUBMIT_MAPS and not has_map(message) and not is_staff(author)):
             await message.delete()
-
-    def get_map_channel(self, name: str) -> Optional[discord.TextChannel]:
-        name = sanitize(name.lower())
-        mt_category = self.bot.get_channel(CAT_MAP_TESTING)
-        wt_category = self.bot.get_channel(CAT_WAITING_MAPPER)
-        em_category = self.bot.get_channel(CAT_EVALUATED_MAPS)
-        return discord.utils.find(lambda c: c.name[1:] == name, mt_category.text_channels) \
-            or discord.utils.find(lambda c: c.name[2:] == name, (*em_category.text_channels, *wt_category.text_channels))
 
     @commands.Cog.listener('on_raw_reaction_add')
     @commands.Cog.listener('on_raw_reaction_remove')
@@ -277,7 +293,7 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             if not has_map(message):
                 return
 
-            map_channel = self.get_map_channel(message.attachments[0].filename[:-4])
+            map_channel = self.get_map_channel(filename=message.attachments[0].filename[:-4])
             if map_channel is None:
                 if action == 'REACTION_ADD':
                     await message.remove_reaction(payload.emoji, member)
@@ -289,124 +305,10 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
             elif action == 'REACTION_ADD':
                 await map_channel.set_permissions(member, read_messages=True)
 
-    async def move_map_channel(self, channel: discord.TextChannel, *, state: MapState):
-        name = channel.name
-
-        prev_state = next((s for s in MapState if str(s) == name[0]), MapState.TESTING)
-        if prev_state is state:
-            return
-
-        if prev_state is not MapState.TESTING:
-            name = name[1:]
-
-        if prev_state is MapState.WAITING:
-            query = 'DELETE FROM waiting_maps WHERE channel_id = $1;'
-            await self.bot.pool.execute(query, channel.id)
-
-        options = {'name': str(state) + name}
-
-        if state is MapState.TESTING:
-            category = self.bot.get_channel(CAT_MAP_TESTING)
-        elif state is MapState.WAITING:
-            category = self.bot.get_channel(CAT_WAITING_MAPPER)
-
-            query = 'INSERT INTO waiting_maps (channel_id) VALUES ($1);'
-            await self.bot.pool.execute(query, channel.id)
-        else:
-            category = self.bot.get_channel(CAT_EVALUATED_MAPS)
-
-        if category != channel.category:
-            position = category.channels[-1].position + 1 if state is MapState.TESTING else 0
-
-            options.update({'position': position, 'category': category})
-
-        await channel.edit(**options)
-
-    @commands.command()
-    @testing_check()
-    async def reset(self, ctx: commands.Context):
-        """Reset a map"""
-        await self.move_map_channel(ctx.channel, state=MapState.TESTING)
-
-    @commands.command()
-    @testing_check()
-    async def waiting(self, ctx: commands.Context):
-        """Set a map to waiting"""
-        await self.move_map_channel(ctx.channel, state=MapState.WAITING)
-
-    @commands.command()
-    @testing_check()
-    async def ready(self, ctx: commands.Context):
-        """Ready a map"""
-        await self.move_map_channel(ctx.channel, state=MapState.READY)
-
-    @commands.command()
-    @testing_check()
-    async def decline(self, ctx: commands.Context):
-        """Decline a map"""
-        await self.move_map_channel(ctx.channel, state=MapState.DECLINED)
-
-    def get_map_channel_from_ann(self, content: str) -> Optional[discord.TextChannel]:
+    def get_map_channel_from_ann(self, content: str) -> Optional[MapChannel]:
         map_url_re = r'\[(?P<name>.+)\]\(<?https://ddnet\.tw/(?:maps|mappreview)/\?map=.+?>?\)'
         match = re.search(map_url_re, content)
-        return match and self.get_map_channel(match.group('name'))
-
-    @commands.Cog.listener('on_message')
-    async def handle_map_release(self, message: discord.Message):
-        if not by_releases_webhook(message):
-            return
-
-        map_channel = self.get_map_channel_from_ann(message.content)
-        if map_channel is None:
-            return
-
-        try:
-            await self.move_map_channel(map_channel, state=MapState.RELEASED)
-        except discord.Forbidden as exc:
-            log.error('Failed moving map channel #%s on release: %s', map_channel, exc.text)
-
-    async def ddnet_delete(self, filename: str):
-        url = self.bot.config.get('DDNET', 'DELETE')
-        headers = {'X-DDNet-Token': self.bot.config.get('DDNET', 'TOKEN')}
-        data = {'map_name': filename}
-
-        async with self.bot.session.post(url, data=data, headers=headers) as resp:
-            if resp.status != 200:
-                fmt = 'Failed deleting map %r on ddnet.tw: %s (status code: %d %s)'
-                log.error(fmt, filename, await resp.text(), resp.status, resp.reason)
-                raise RuntimeError('Could not delete map on ddnet.tw')
-
-            log.info('Successfully delete map %r on ddnet.tw', filename)
-
-    @tasks.loop(hours=24.0)
-    async def suggest_waiting(self):
-        now = datetime.utcnow()
-
-        suggestion_msg = f'<@&{ROLE_TESTER}> the mapper hasn\'t responded in a while. Consider $waiting?'
-
-        async def should_suggest(channel: discord.TextChannel) -> bool:
-            try:
-                authors = channel.topic.splitlines()[2]
-            except IndexError:
-                return False
-
-            last = True
-            async for message in channel.history(limit=None):
-                if str(message.author.id) in authors:
-                    return (now - message.created_at).days > 14 and not last
-
-                if message.author == self.bot.user and message.content == suggestion_msg:
-                    return False
-
-                last = False
-
-            return (now - channel.created_at).days > 14
-
-        mt_category = self.bot.get_channel(CAT_MAP_TESTING)
-        for channel in mt_category.text_channels[2:]:
-            suggest = await should_suggest(channel)
-            if suggest:
-                await channel.send(suggestion_msg)
+        return match and self.get_map_channel(name=match.group('name'))
 
     async def archive_testlog(self, testlog: TestLog) -> bool:
         failed = False
@@ -451,72 +353,120 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         ann_history = await ann_channel.history(after=now - timedelta(days=3)).filter(by_releases_webhook).flatten()
         recent_releases = {self.get_map_channel_from_ann(m.content) for m in ann_history}
 
-        em_category = self.bot.get_channel(CAT_EVALUATED_MAPS)
-        for channel in em_category.text_channels:
+        for map_channel in self.map_channels:
             # keep the channel until its map is released, including a short grace period
-            if channel.name[0] == str(MapState.READY) or channel in recent_releases:
+            if map_channel.state in (MapState.TESTING, MapState.READY) or map_channel in recent_releases:
                 continue
 
             # make sure there is no active discussion going on
-            recent_message = await channel.history(limit=1, after=now - timedelta(days=5)).flatten()
+            recent_message = await map_channel.history(limit=1, after=now - timedelta(days=5)).flatten()
             if recent_message:
                 continue
 
-            to_delete.append(channel)
+            to_delete.append(map_channel)
 
         query = 'DELETE FROM waiting_maps WHERE timestamp < NOW() - INTERVAL \'30 days\' RETURNING channel_id;'
         records = await self.bot.pool.fetch(query)
-        to_delete += [self.bot.get_channel(r['channel_id']) for r in records]
+        for record in records:
+            map_channel = self.get_map_channel(record['channel_id'])
+            if map_channel and map_channel.state is MapState.WAITING:
+                to_delete.append(map_channel)
 
-        for channel in to_delete:
-            testlog = await TestLog.from_channel(channel)
+        for map_channel in to_delete:
+            testlog = await TestLog.from_channel(map_channel)
             archived = await self.archive_testlog(testlog)
 
             if archived:
-                await channel.delete()
-                log.info('Sucessfully auto-archived channel #%s', channel)
+                await map_channel.delete()
+                log.info('Sucessfully auto-archived channel #%s', map_channel)
             else:
-                log.error('Failed auto-archiving channel #%s', channel)
+                log.error('Failed auto-archiving channel #%s', map_channel)
 
-    @suggest_waiting.before_loop
     @auto_archive.before_loop
     async def _before_loop(self):
         await self.bot.wait_until_ready()
 
-    @commands.command()
-    @commands.is_owner()
-    async def archive(self, ctx: commands.Context, channel_id: int):
-        """Archive a map channel"""
-        channel = self.bot.get_channel(channel_id)
-        if channel is None:
-            return await ctx.send('Couldn\'t find that channel')
-
-        if not isinstance(channel, discord.TextChannel) or channel.category_id != CAT_EVALUATED_MAPS:
-            return await ctx.send('Can\'t archive that channel')
-
-        testlog = await TestLog.from_channel(channel)
-        archived = await self.archive_testlog(testlog)
-
-        if archived:
-            await channel.delete()
-            await ctx.send(f'Sucessfully archived channel {channel.mention}: {testlog.url}')
-        else:
-            await ctx.send(f'Failed archiving channel {channel.mention}: {testlog.url}')
-
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
-        if not is_testing(channel):
-            return
-
-        preview_url_re = r'https://ddnet\.tw/testmaps/\?map=(?P<name>\S+)'
-        match = re.search(preview_url_re, channel.topic)
-        if match is None:
+        map_channel = self.get_map_channel(channel.id)
+        if map_channel is None:
             return
 
         try:
-            await self.ddnet_delete(match.group('name'))
+            await self.ddnet_delete(map_channel.filename)
         except RuntimeError:
             return
+
+    @commands.Cog.listener('on_message')
+    async def handle_map_release(self, message: discord.Message):
+        if not by_releases_webhook(message):
+            return
+
+        map_channel = self.get_map_channel_from_ann(message.content)
+        if map_channel is None:
+            return
+
+        await map_channel.set_state(state=MapState.RELEASED)
+
+    @commands.command()
+    @tester_check()
+    async def reset(self, ctx: commands.Context):
+        """Reset a map"""
+        map_channel = self.get_map_channel(ctx.channel.id)
+        await map_channel.set_state(state=MapState.TESTING)
+
+    @commands.command()
+    @tester_check()
+    async def waiting(self, ctx: commands.Context):
+        """Set a map to waiting"""
+        map_channel = self.get_map_channel(ctx.channel.id)
+        await map_channel.set_state(state=MapState.WAITING)
+
+        query = 'INSERT INTO waiting_maps (channel_id) VALUES ($1);'
+        await self.bot.pool.execute(query, map_channel.id)
+
+    @commands.command()
+    @tester_check()
+    async def ready(self, ctx: commands.Context):
+        """Ready a map"""
+        map_channel = self.get_map_channel(ctx.channel.id)
+        await map_channel.set_state(state=MapState.READY)
+
+    @commands.command()
+    @tester_check()
+    async def decline(self, ctx: commands.Context):
+        """Decline a map"""
+        map_channel = self.get_map_channel(ctx.channel.id)
+        await map_channel.set_state(state=MapState.DECLINED)
+
+    @commands.group()
+    @tester_check()
+    async def change(self, ctx: commands.Context):
+        """Change details of a map"""
+        pass
+
+    @change.command(name='name')
+    async def change_name(self, ctx: commands.Context, name: str):
+        """Change the name of a map"""
+        map_channel = self.get_map_channel(ctx.channel.id)
+        old_filename = map_channel.filename
+        await map_channel.update(name=name)
+        await self.ddnet_delete(old_filename)
+
+    @change.command(name='mappers')
+    async def change_mappers(self, ctx: commands.Context, *mappers: str):
+        """Change the mappers of a map"""
+        map_channel = self.get_map_channel(ctx.channel.id)
+        await map_channel.update(mappers=mappers)
+
+    @change.command(name='server')
+    async def change_server(self, ctx: commands.Context, server: str):
+        """Change the server type of a map"""
+        map_channel = self.get_map_channel(ctx.channel.id)
+        try:
+            await map_channel.update(server=server)
+        except ValueError as exc:
+            await ctx.send(exc)
 
     @commands.command()
     @testing_lead_check()

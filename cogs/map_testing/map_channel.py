@@ -29,11 +29,11 @@ class MapChannel:
         try:
             details, _, self.mapper_mentions = channel.topic.splitlines()
         except IndexError:
-            raise ValueError
+            raise ValueError('Malformed channel topic') from None
 
         match = re.match(r'^"(?P<name>.+)" by (?P<mappers>.+) \[(?P<server>.+)\]$', details.replace('**', ''))
         if match is None:
-            raise ValueError
+            raise ValueError('Malformed map details')
 
         self.name = match.group('name')
         self.mappers = re.split(r', | & ', match.group('mappers'))
@@ -67,6 +67,8 @@ class MapChannel:
         return '\n'.join((self.details, self.preview_url, self.mapper_mentions))
 
     async def update(self, name: str=None, mappers: List[str]=None, server: str=None):
+        prev_details = self.details
+
         if name is not None:
             self.name = name
         if mappers is not None:
@@ -77,9 +79,13 @@ class MapChannel:
                 raise ValueError('Invalid server type')
             self.server = server
 
-        await self.edit(name=str(self), topic=self.topic)
+        if prev_details != self.details:
+            await self.edit(name=str(self), topic=self.topic)
 
-    async def change_state(self, *, state: MapState=None):
+    async def set_state(self, *, state: MapState=None):
+        if state == self.state:
+            return
+
         self.state = state
         if state is MapState.TESTING:
             category_id = CAT_MAP_TESTING
@@ -88,11 +94,12 @@ class MapChannel:
         else:
             category_id = CAT_EVALUATED_MAPS
 
+        options = {'name': str(self)}
         if category_id != self.category_id:
             options['category'] = category = self.guild.get_channel(category_id)
             options['position'] = category.channels[-1].position + 1 if state is MapState.TESTING else 0
 
-        await self.edit(name=str(self), **options)
+        await self.edit(**options)
 
     @classmethod
     async def from_submission(cls, isubm: InitialSubmission, **options):

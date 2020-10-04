@@ -7,6 +7,7 @@ from typing import Optional
 
 import discord
 
+from cogs.map_testing.map_channel import MapChannel
 from utils.misc import run_process
 from utils.text import human_join, sanitize
 
@@ -38,18 +39,6 @@ class Submission:
     def __str__(self) -> str:
         return self.filename[:-4]
 
-    def is_original(self) -> bool:
-        # don't match a specific line to ensure compatibility
-        return self.preview_url in self.channel.topic.splitlines()
-
-    def is_by_mapper(self) -> bool:
-        # user mentions can be <@!id> instead of <@id>, so just match the id
-        return str(self.author.id) in self.channel.topic
-
-    @property
-    def preview_url(self) -> str:
-        return f'https://ddnet.tw/testmaps/?map={self}'
-
     async def buffer(self) -> BytesIO:
         if self._bytes is None:
             self._bytes = await self.message.attachments[0].read()
@@ -77,7 +66,7 @@ class Submission:
 
 
 class InitialSubmission(Submission):
-    __slots__ = Submission.__slots__ + ('name', 'mappers', 'server')
+    __slots__ = Submission.__slots__ + ('name', 'mappers', 'server', 'map_channel')
 
     DIR = 'data/map-testing'
 
@@ -155,8 +144,6 @@ class InitialSubmission(Submission):
         return discord.File(buf, filename=f'{self}.png')
 
     async def process(self) -> Submission:
-        name = self.emoji + str(self)
-
         perms = discord.PermissionOverwrite(read_messages=True)
         users = [self.message.author]
         for reaction in self.message.reactions:
@@ -168,19 +155,14 @@ class InitialSubmission(Submission):
         # - testing:    read_messages=True
         # - bot.user:   read_messages=True, manage_messages=True
         overwrites.update(self.channel.category.overwrites)
-
-        mappers = human_join([f'**{m}**' for m in self.mappers])
-        details = f'**"{self.name}"** by {mappers} [{self.server}]'
-        topic = '\n'.join([details, self.preview_url, self.author.mention])
-
-        channel = await self.channel.category.create_text_channel(name, overwrites=overwrites, topic=topic)
+        self.map_channel = await MapChannel.from_submission(self, overwrites=overwrites)
 
         file = await self.get_file()
         msg = f'{self.author.mention} this is your map\'s testing channel! '\
                'Post map updates here and remember to follow our mapper rules: https://ddnet.tw/rules'
-        message = await channel.send(msg, file=file)
+        message = await self.map_channel.send(msg, file=file)
 
         thumbnail = await self.generate_thumbnail()
-        await channel.send(self.preview_url, file=thumbnail)
+        await self.map_channel.send(self.map_channel.preview_url, file=thumbnail)
 
         return Submission(message, raw_bytes=self._bytes)
