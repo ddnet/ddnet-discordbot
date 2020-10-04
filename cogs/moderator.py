@@ -62,7 +62,7 @@ class Moderator(commands.Cog):
     async def ddnet_ban(self, ip: str, name: str, minutes: int, reason: str, mod: str, region: Optional[str]=None):
         expires = datetime.utcnow() + timedelta(minutes=minutes)
 
-        await self.ddnet_request('POST', ip, name, reason)
+        await self.ddnet_request('POST', ip, name, reason, region)
 
         query = """INSERT INTO ddnet_bans (ip, expires, name, reason, mod, region) VALUES ($1, $2, $3, $4, $5, $6)
                    ON CONFLICT (ip) DO UPDATE SET expires = $2, name = $3, reason = $4, mod = $5, region = $6;"""
@@ -111,7 +111,7 @@ class Moderator(commands.Cog):
             return await ctx.send('Invalid region')
 
         try:
-            await self.ddnet_ban(ip, name, minutes, reason, str(ctx.author), region)
+            await self.ddnet_ban(ip, name, min(minutes, 60 * 24 * 30), reason, str(ctx.author), region)
         except RuntimeError as exc:
             await ctx.send(exc)
         else:
