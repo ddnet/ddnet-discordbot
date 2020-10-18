@@ -49,7 +49,7 @@ def testing_lead_check():
     return commands.check(predicate)
 
 
-class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
+class MapTesting(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = TestLog.bot = bot
 
