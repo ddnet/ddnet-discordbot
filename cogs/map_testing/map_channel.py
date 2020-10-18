@@ -31,7 +31,7 @@ class MapChannel:
 
         try:
             details, _, self.mapper_mentions = channel.topic.splitlines()
-        except IndexError:
+        except (AttributeError, IndexError):
             raise ValueError('Malformed channel topic') from None
 
         match = re.match(r'^"(?P<name>.+)" by (?P<mappers>.+) \[(?P<server>.+)\]$', details.replace('**', ''))
