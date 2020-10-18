@@ -375,7 +375,7 @@ class MapTesting(commands.Cog):
                 to_delete.append(map_channel)
 
         for map_channel in to_delete:
-            testlog = await TestLog.from_channel(map_channel)
+            testlog = await TestLog.from_map_channel(map_channel)
             archived = await self.archive_testlog(testlog)
 
             if archived:
