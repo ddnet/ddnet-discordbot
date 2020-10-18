@@ -56,13 +56,15 @@ class MapTesting(commands.Cog, command_attrs=dict(hidden=True)):
         self._map_channels = {}
         self._active_submissions = set()
 
+        bot.loop.create_task(self.load_map_channels())
         self.auto_archive.start()
 
     def cog_unload(self):
         self.auto_archive.cancel()
 
-    @commands.Cog.listener()
-    async def on_ready(self):
+    async def load_map_channels(self):
+        await self.bot.wait_until_ready()
+
         for category_id in (CAT_MAP_TESTING, CAT_WAITING_MAPPER, CAT_EVALUATED_MAPS):
             category = self.bot.get_channel(category_id)
             for channel in category.text_channels:
