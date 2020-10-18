@@ -4,6 +4,7 @@ from typing import Dict, List, Union
 
 import discord
 
+from cogs.map_testing.map_channel import MapChannel
 from utils.misc import maybe_coroutine
 
 def format_size(size):
@@ -18,7 +19,7 @@ class TestLogError(Exception):
 
 
 class TestLog:
-    __slots__ = ('channel', 'guild', '_messages', '_avatars', '_attachments', '_emojis')
+    __slots__ = ('map_channel', 'guild', '_messages', '_avatars', '_attachments', '_emojis')
 
     VERSION = 1.0
 
@@ -26,9 +27,9 @@ class TestLog:
 
     bot = None
 
-    def __init__(self, channel: discord.TextChannel):
-        self.channel = channel
-        self.guild = channel.guild
+    def __init__(self, map_channel: MapChannel):
+        self.map_channel = map_channel
+        self.guild = map_channel.guild
 
         self._messages = []
         self._avatars = {}
@@ -37,18 +38,11 @@ class TestLog:
 
     @property
     def name(self) -> str:
-        return self.channel.name[2:]  # strip leading emojis
+        return self.map_channel.filename
 
     @property
     def topic(self) -> str:
-        if self.channel.topic is None:
-            return ''
-
-        return self.channel.topic.split('\n')[0].replace('**', '')  # strip markdown bolding
-
-    @property
-    def url(self) -> str:
-        return f'https://ddnet.tw/testlogs/show/{self.name}'
+        return self.map_channel.details.replace('**', '')  # strip markdown bolding
 
     @property
     def content(self) -> Dict:
@@ -239,7 +233,7 @@ class TestLog:
         return {'reactions': out}
 
     async def _process(self):
-        async for message in self.channel.history(limit=None, oldest_first=True):
+        async for message in self.map_channel.history(limit=None, oldest_first=True):
             content_handlers = (
                 (self._handle_text, message.content),
                 (self._handle_attachments, message.attachments),
@@ -253,8 +247,8 @@ class TestLog:
             })
 
     @classmethod
-    async def from_channel(cls, channel: discord.TextChannel):
-        self = cls(channel)
+    async def from_map_channel(cls, map_channel: MapChannel):
+        self = cls(map_channel)
         await self._process()
 
         return self
