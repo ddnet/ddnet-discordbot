@@ -4,9 +4,12 @@ from typing import List
 
 import discord
 
-from cogs.map_testing import CAT_EVALUATED_MAPS, CAT_MAP_TESTING, CAT_WAITING_MAPPER
 from cogs.map_testing.submission import InitialSubmission
 from utils.text import human_join, sanitize
+
+CAT_MAP_TESTING     = 449352010072850443
+CAT_WAITING_MAPPER  = 746076708196843530
+CAT_EVALUATED_MAPS  = 462954029643989003
 
 
 class MapState(enum.Enum):

@@ -7,7 +7,6 @@ from typing import Optional
 
 import discord
 
-from cogs.map_testing.map_channel import MapChannel
 from utils.misc import run_process
 from utils.text import human_join, sanitize
 
@@ -155,6 +154,8 @@ class InitialSubmission(Submission):
         # - testing:    read_messages=True
         # - bot.user:   read_messages=True, manage_messages=True
         overwrites.update(self.channel.category.overwrites)
+
+        from cogs.map_testing.map_channel import MapChannel  # circular import
         self.map_channel = await MapChannel.from_submission(self, overwrites=overwrites)
 
         file = await self.get_file()
