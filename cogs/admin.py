@@ -27,12 +27,26 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     async def cog_check(self, ctx: commands.Context) -> bool:
         return await self.bot.is_owner(ctx.author)
 
+    async def paste_upload(self, content: str) -> str:
+        url = 'https://paste.pr0.tips/'
+        data = content.encode('utf-8')
+        async with self.bot.session.post(url, data=data) as resp:
+            return await resp.text()
+
+    async def send_or_paste(self, ctx: commands.Context, msg: str, paste_msg: str=None):
+        # TODO implement this in a subclass of Context
+        if len(msg) > 2000:
+            msg = await self.paste_upload(paste_msg or msg)
+
+        await ctx.send(msg)
+
     @commands.command()
     async def load(self, ctx: commands.Context, *, extension: str):
         try:
             self.bot.load_extension(extension)
         except Exception:
-            await ctx.send(f'```py\n{traceback.format_exc()}\n```')
+            trace = traceback.format_exc()
+            await self.send_or_paste(ctx, f'```py\n{trace}\n```', trace)
         else:
             await ctx.message.add_reaction(CONFIRM)
 
@@ -41,7 +55,8 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         try:
             self.bot.unload_extension(extension)
         except Exception:
-            await ctx.send(f'```py\n{traceback.format_exc()}\n```')
+            trace = traceback.format_exc()
+            await self.send_or_paste(ctx, f'```py\n{trace}\n```', trace)
         else:
             await ctx.message.add_reaction(CONFIRM)
 
@@ -50,15 +65,10 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         try:
             self.bot.reload_extension(extension)
         except Exception:
-            await ctx.send(f'```py\n{traceback.format_exc()}\n```')
+            trace = traceback.format_exc()
+            await self.send_or_paste(ctx, f'```py\n{trace}\n```', trace)
         else:
             await ctx.message.add_reaction(CONFIRM)
-
-    async def paste_upload(self, content: str) -> str:
-        url = 'https://paste.pr0.tips/'
-        data = content.encode('utf-8')
-        async with self.bot.session.post(url, data=data) as resp:
-            return await resp.text()
 
     @commands.command(name='eval')
     async def _eval(self, ctx: commands.Context, *, body: str):
@@ -98,11 +108,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         if not content:
             return await ctx.message.add_reaction(CONFIRM)
 
-        msg = f'```py\n{content}\n```'
-        if len(msg) > 2000:
-            msg = await self.paste_upload(content)
-
-        await ctx.send(msg)
+        await self.send_or_paste(ctx, f'```py\n{content}\n```', content)
 
     @commands.command()
     async def sh(self, ctx: commands.Context, *, cmd: str):
@@ -123,11 +129,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
             return await ctx.message.add_reaction(CONFIRM)
 
         content = '\n'.join([f'$ {cmd}'] + content)
-        msg = f'```sh\n{content}\n```'
-        if len(msg) > 2000:
-            msg = await self.paste_upload(content)
-
-        await ctx.send(msg)
+        await self.send_or_paste(ctx, f'```sh\n{content}\n```', content)
 
     @commands.command()
     async def sql(self, ctx: commands.Context, *, query: str):
@@ -147,11 +149,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         num = len(records)
         footer = f'{num} {plural(num, "row")} in {duration:.2f}ms'
 
-        msg = f'```\n{table}\n```\n*{footer}*'
-        if len(msg) > 2000:
-            msg = await self.paste_upload(f'{table}\n{footer}')
-
-        await ctx.send(msg)
+        await self.send_or_paste(ctx, f'```\n{table}\n```\n*{footer}*', f'{table}\n{footer}')
 
     @commands.command()
     async def shutdown(self, ctx: commands.Context):
