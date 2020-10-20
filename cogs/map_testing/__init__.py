@@ -243,7 +243,7 @@ class MapTesting(commands.Cog):
             self._active_submissions.add(message.id)
             subm = await isubm.process()
             await isubm.set_status(SubmissionState.PROCESSED)
-            self._map_channels[isubm.channel.id] = isubm.map_channel
+            self._map_channels[isubm.map_channel.id] = isubm.map_channel
             self._active_submissions.discard(message.id)
 
         else:
