@@ -130,9 +130,9 @@ class MapTesting(commands.Cog):
         try:
             await self.ddnet_upload('map', await subm.buffer(), str(subm))
         except RuntimeError:
-            await subm.set_status(SubmissionState.ERROR)
+            await subm.set_state(SubmissionState.ERROR)
         else:
-            await subm.set_status(SubmissionState.UPLOADED)
+            await subm.set_state(SubmissionState.UPLOADED)
             await subm.pin()
 
     async def validate_submission(self, isubm: InitialSubmission):
@@ -149,9 +149,9 @@ class MapTesting(commands.Cog):
                 raise ValueError('A map with that name is already released')
         except ValueError as exc:
             await isubm.respond(exc)
-            await isubm.set_status(SubmissionState.ERROR)
+            await isubm.set_state(SubmissionState.ERROR)
         else:
-            await isubm.set_status(SubmissionState.VALIDATED)
+            await isubm.set_state(SubmissionState.VALIDATED)
 
     @commands.Cog.listener('on_message')
     async def handle_submission(self, message: discord.Message):
@@ -181,7 +181,7 @@ class MapTesting(commands.Cog):
                 if by_mapper or is_staff(author):
                     await self.upload_submission(subm)
                 else:
-                    await subm.set_status(SubmissionState.VALIDATED)
+                    await subm.set_state(SubmissionState.VALIDATED)
 
     @commands.Cog.listener('on_raw_message_edit')
     async def handle_submission_edit(self, payload: discord.RawMessageUpdateEvent):
@@ -242,7 +242,7 @@ class MapTesting(commands.Cog):
 
             self._active_submissions.add(message.id)
             subm = await isubm.process()
-            await isubm.set_status(SubmissionState.PROCESSED)
+            await isubm.set_state(SubmissionState.PROCESSED)
             self._map_channels[isubm.map_channel.id] = isubm.map_channel
             self._active_submissions.discard(message.id)
 
