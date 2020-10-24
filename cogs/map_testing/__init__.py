@@ -174,7 +174,7 @@ class MapTesting(commands.Cog):
 
             subm = Submission(message)
             if map_channel.filename == str(subm):
-                by_mapper = author.mention in map_channel.mapper_mentions
+                by_mapper = str(author.id) in map_channel.mapper_mentions
                 if by_mapper and channel.category.id == CAT_WAITING_MAPPER:
                     await map_channel.change_state(state=MapState.TESTING)
 
