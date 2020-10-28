@@ -176,7 +176,7 @@ class MapTesting(commands.Cog):
             if map_channel.filename == str(subm):
                 by_mapper = str(author.id) in map_channel.mapper_mentions
                 if by_mapper and channel.category.id == CAT_WAITING_MAPPER:
-                    await map_channel.change_state(state=MapState.TESTING)
+                    await map_channel.set_state(state=MapState.TESTING)
 
                 if by_mapper or is_staff(author):
                     await self.upload_submission(subm)
