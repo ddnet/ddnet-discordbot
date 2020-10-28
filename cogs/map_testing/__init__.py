@@ -390,8 +390,9 @@ class MapTesting(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
-        map_channel = self.get_map_channel(channel.id)
-        if map_channel is None:
+        try:
+            map_channel = self._map_channels.pop(channel.id)
+        except KeyError:
             return
 
         try:
