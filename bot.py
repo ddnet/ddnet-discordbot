@@ -33,7 +33,8 @@ def get_traceback(error: Exception) -> str:
 
 class DDNet(commands.Bot):
     def __init__(self, **kwargs):
-        super().__init__(command_prefix='$', fetch_offline_members=True, help_command=commands.MinimalHelpCommand())
+        intents = discord.Intents(guilds=True, members=True, emojis=True, messages=True, reactions=True)
+        super().__init__(command_prefix='$', fetch_offline_members=True, help_command=commands.MinimalHelpCommand(), intents=intents)
 
         self.config = kwargs.pop('config')
         self.pool = kwargs.pop('pool')
