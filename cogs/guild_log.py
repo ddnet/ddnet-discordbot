@@ -12,10 +12,11 @@ from discord.ext import commands
 
 from utils.text import escape
 
-GUILD_DDNET     = 252358080522747904
-CHAN_WELCOME    = 311192969493348362
-CHAN_JOIN_LEAVE = 255191476315750401
-CHAN_LOGS       = 364164149359411201
+GUILD_DDNET         = 252358080522747904
+CHAN_WELCOME        = 311192969493348362
+CHAN_JOIN_LEAVE     = 255191476315750401
+CHAN_ANNOUNCEMENTS  = 420565311863914496
+CHAN_LOGS           = 364164149359411201
 
 VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
 
@@ -130,6 +131,11 @@ class GuildLog(commands.Cog):
 
         chan = self.bot.get_channel(CHAN_LOGS)
         await chan.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.channel.id == CHAN_ANNOUNCEMENTS:
+            await message.publish()
 
 
 def setup(bot: commands.Bot):
