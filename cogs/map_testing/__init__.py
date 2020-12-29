@@ -367,7 +367,7 @@ class MapTesting(commands.Cog):
 
             to_delete.append(map_channel)
 
-        query = 'DELETE FROM waiting_maps WHERE timestamp < NOW() - INTERVAL \'30 days\' RETURNING channel_id;'
+        query = 'DELETE FROM waiting_maps WHERE timestamp < CURRENT_TIMESTAMP - INTERVAL \'60 days\' RETURNING channel_id;'
         records = await self.bot.pool.fetch(query)
         for record in records:
             map_channel = self.get_map_channel(record['channel_id'])
@@ -425,7 +425,9 @@ class MapTesting(commands.Cog):
         map_channel = self.get_map_channel(ctx.channel.id)
         await map_channel.set_state(state=MapState.WAITING)
 
-        query = 'INSERT INTO waiting_maps (channel_id) VALUES ($1);'
+        query = """INSERT INTO waiting_maps (channel_id) VALUES ($1)
+                   ON CONFLICT (channel_id) DO UPDATE SET timestamp = CURRENT_TIMESTAMP;
+                """
         await self.bot.pool.execute(query, map_channel.id)
 
     @commands.command()
