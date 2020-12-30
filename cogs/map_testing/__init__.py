@@ -355,9 +355,17 @@ class MapTesting(commands.Cog):
         ann_history = await ann_channel.history(after=now - timedelta(days=3)).filter(by_releases_webhook).flatten()
         recent_releases = {self.get_map_channel_from_ann(m.content) for m in ann_history}
 
+        query = 'DELETE FROM waiting_maps WHERE timestamp < CURRENT_TIMESTAMP - INTERVAL \'60 days\' RETURNING channel_id;'
+        records = await self.bot.pool.fetch(query)
+        deleted_waiting_maps_ids = [r['channel_id'] for r in records] 
+
         for map_channel in self.map_channels:
             # keep the channel until its map is released, including a short grace period
             if map_channel.state in (MapState.TESTING, MapState.READY) or map_channel in recent_releases:
+                continue
+
+            # don't tele waiting maps before 60 days have passed
+            if map_channel.state is MapState.WAITING and map_channel.id not in deleted_waiting_maps_ids:
                 continue
 
             # make sure there is no active discussion going on
@@ -365,16 +373,6 @@ class MapTesting(commands.Cog):
             if recent_message:
                 continue
 
-            to_delete.append(map_channel)
-
-        query = 'DELETE FROM waiting_maps WHERE timestamp < CURRENT_TIMESTAMP - INTERVAL \'60 days\' RETURNING channel_id;'
-        records = await self.bot.pool.fetch(query)
-        for record in records:
-            map_channel = self.get_map_channel(record['channel_id'])
-            if map_channel and map_channel.state is MapState.WAITING:
-                to_delete.append(map_channel)
-
-        for map_channel in to_delete:
             testlog = await TestLog.from_map_channel(map_channel)
             archived = await self.archive_testlog(testlog)
 
