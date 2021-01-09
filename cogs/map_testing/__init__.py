@@ -349,8 +349,6 @@ class MapTesting(commands.Cog):
     async def auto_archive(self):
         now = datetime.utcnow()
 
-        to_delete = []
-
         ann_channel = self.bot.get_channel(CHAN_ANNOUNCEMENTS)
         ann_history = await ann_channel.history(after=now - timedelta(days=3)).filter(by_releases_webhook).flatten()
         recent_releases = {self.get_map_channel_from_ann(m.content) for m in ann_history}
