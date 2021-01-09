@@ -107,7 +107,7 @@ class MapChannel:
     @classmethod
     async def from_submission(cls, isubm: InitialSubmission, **options):
         self = cls.__new__(cls)
-        self.name = str(isubm)
+        self.name = isubm.name
         self.mappers = isubm.mappers
         self.server = isubm.server
         self.state = MapState.TESTING
