@@ -85,7 +85,7 @@ class MapChannel:
         if prev_details != self.details:
             await self.edit(name=str(self), topic=self.topic)
 
-    async def set_state(self, *, state: MapState=None):
+    async def set_state(self, *, state: MapState):
         if state == self.state:
             return
 
