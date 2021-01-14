@@ -36,26 +36,32 @@ class Profile(commands.Cog):
         font_bold = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 34)
         font_big = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 48)
 
-        thresholds = {
-            18000: ('justice_2', (184, 81, 50)),
-            16000: ('back_in_the_days_3', (156, 162, 142)),
-            14000: ('heartcore', (86, 79, 81)),
-            12000: ('aurora', (55, 103, 156)),
-            10000: ('narcissistic', (122, 32, 43)),
-            9000:  ('aim_10', (93, 128, 144)),
-            8000:  ('barren', (196, 172, 140)),
-            7000:  ('back_in_time', (148, 156, 161)),
-            6000:  ('nostalgia', (161, 140, 148)),
-            5000:  ('sweet_shot', (229, 148, 166)),
-            4000:  ('chained', (183, 188, 198)),
-            3000:  ('intothenight', (60, 76, 89)),
-            2000:  ('darkvine', (145, 148, 177)),
-            1000:  ('crimson_woods', (108, 12, 12)),
-            1:     ('kobra_4', (148, 167, 75)),
-            0:     ('stronghold', (156, 188, 220)),
-        }
+        now = datetime.utcnow()
+        if data['day'] == now.day and data['month'] == now.month:
+            img = 'birthday'
+            color = (54, 70, 137)
+        else:
+            thresholds = {
+                18000: ('justice_2', (184, 81, 50)),
+                16000: ('back_in_the_days_3', (156, 162, 142)),
+                14000: ('heartcore', (86, 79, 81)),
+                12000: ('aurora', (55, 103, 156)),
+                10000: ('narcissistic', (122, 32, 43)),
+                9000:  ('aim_10', (93, 128, 144)),
+                8000:  ('barren', (196, 172, 140)),
+                7000:  ('back_in_time', (148, 156, 161)),
+                6000:  ('nostalgia', (161, 140, 148)),
+                5000:  ('sweet_shot', (229, 148, 166)),
+                4000:  ('chained', (183, 188, 198)),
+                3000:  ('intothenight', (60, 76, 89)),
+                2000:  ('darkvine', (145, 148, 177)),
+                1000:  ('crimson_woods', (108, 12, 12)),
+                1:     ('kobra_4', (148, 167, 75)),
+                0:     ('stronghold', (156, 188, 220)),
+            }
 
-        img, color = next(e for t, e in thresholds.items() if data['total_points'] >= t)
+            img, color = next(e for t, e in thresholds.items() if data['total_points'] >= t)
+
         base = Image.open(f'{DIR}/profile_backgrounds/{img}.png')
 
         canv = ImageDraw.Draw(base)
@@ -162,7 +168,11 @@ class Profile(commands.Cog):
 
         player = player or ctx.author.display_name
 
-        query = 'SELECT * FROM stats_players WHERE name = $1;'
+        query = """SELECT * FROM stats_players 
+                   INNER JOIN stats_birthdays ON stats_players.name = stats_birthdays.name
+                   WHERE stats_players.name = $1;
+                """   
+
         record = await self.bot.pool.fetchrow(query, player)
         if not record:
             return await ctx.send('Could not find that player')

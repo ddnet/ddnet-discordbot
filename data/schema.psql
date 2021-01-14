@@ -87,6 +87,12 @@ CREATE TABLE stats_times(
     time FLOAT NOT NULL
 );
 
+CREATE TABLE stats_birthdays(
+    name VARCHAR(15) PRIMARY KEY,
+    day SMALLINT NOT NULL,
+    month SMALLINT NOT NULL
+);
+
 CREATE TABLE stats_commands(
     guild_id BIGINT,
     channel_id BIGINT NOT NULL,
