@@ -16,9 +16,11 @@ from utils.text import clean_content, escape_backticks
 log = logging.getLogger(__name__)
 
 GUILD_DDNET     = 252358080522747904
+CHAN_REPORTS    = 779761780129005568
 CHAN_MODERATOR  = 345588928482508801
 ROLE_ADMIN      = 293495272892399616
 ROLE_MODERATOR  = 252523225810993153
+ROLE_MUTED      = 768872500263911495
 
 Ban = namedtuple('Ban', 'ip expires name reason mod region')
 
@@ -32,6 +34,7 @@ class Moderator(commands.Cog):
         self._current_ban = None
         self._active_ban = asyncio.Event()
         self._task = bot.loop.create_task(self.dispatch_unbans())
+        self._warned_users = set()
 
     def cog_unload(self):
         self._task.cancel()
@@ -176,6 +179,28 @@ class Moderator(commands.Cog):
 
         if f'<@&{ROLE_MODERATOR}>' in message.content and not is_staff(user):
             await reaction.remove(user)
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        author = message.author
+        if message.channel == CHAN_REPORTS or is_staff(author) or f'<@&{ROLE_MODERATOR}>' not in message.content:
+            return
+
+        await message.delete()
+
+        if author not in self._warned_users:
+            msg = f'Don\'t ping Moderators outside of <#{CHAN_REPORTS}>. If you do it again, you will be muted.'
+            try:
+                await author.send(msg)
+            except discord.Forbidden:
+                pass
+
+            self._warned_users.add(author)
+        else:
+            muted_role = message.guild.get_role(ROLE_MUTED)
+            await author.add_roles(muted_role)
+            await asyncio.sleep(60 * 60)
+            await author.remove_roles(muted_role)
 
 
 def setup(bot: commands.bot):
