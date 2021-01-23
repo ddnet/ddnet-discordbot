@@ -59,9 +59,7 @@ class Moderator(commands.Cog):
                 log.error(fmt, method, ip, text, resp.status, resp.reason)
                 raise RuntimeError(text)
 
-    async def ddnet_ban(self, ip: str, name: str, minutes: int, reason: str, mod: str, region: Optional[str]=None):
-        expires = datetime.utcnow() + timedelta(minutes=minutes)
-
+    async def ddnet_ban(self, ip: str, name: str, expires: datetime, reason: str, mod: str, region: Optional[str]=None):
         await self.ddnet_request('POST', ip, name, reason, region)
 
         query = """INSERT INTO ddnet_bans (ip, expires, name, reason, mod, region) VALUES ($1, $2, $3, $4, $5, $6)
@@ -110,12 +108,14 @@ class Moderator(commands.Cog):
         if region is not None and len(region) != 3:
             return await ctx.send('Invalid region')
 
+        expires = datetime.utcnow() + timedelta(minutes=min(minutes, 60 * 24 * 30))
+
         try:
-            await self.ddnet_ban(ip, name, min(minutes, 60 * 24 * 30), reason, str(ctx.author), region)
+            await self.ddnet_ban(ip, name, expires, reason, str(ctx.author), region)
         except RuntimeError as exc:
             await ctx.send(exc)
         else:
-            await ctx.send(f'Successfully banned `{ip}`')
+            await ctx.send(f'Successfully banned `{ip}` until {expires}')
 
     def cog_check(self, ctx: commands.Context) -> bool:
         return ctx.channel.id == CHAN_MODERATOR and is_staff(ctx.author)
