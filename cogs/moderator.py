@@ -183,7 +183,7 @@ class Moderator(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         author = message.author
-        if message.channel.id == CHAN_REPORTS or is_staff(author) or f'<@&{ROLE_MODERATOR}>' not in message.content:
+        if message.guild is None or message.channel.id == CHAN_REPORTS or is_staff(author) or f'<@&{ROLE_MODERATOR}>' not in message.content:
             return
 
         await message.delete()
