@@ -118,7 +118,7 @@ class Moderator(commands.Cog):
         except RuntimeError as exc:
             await ctx.send(exc)
         else:
-            await ctx.send(f'Successfully banned `{ip}` until {expires:%Y-%m/%d %H:%M} UTC')
+            await ctx.send(f'Successfully banned `{ip}` until {expires:%Y-%m-%d %H:%M} UTC')
 
     def cog_check(self, ctx: commands.Context) -> bool:
         return ctx.channel.id == CHAN_MODERATOR and is_staff(ctx.author)
