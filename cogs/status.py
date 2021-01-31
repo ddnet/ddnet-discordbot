@@ -164,8 +164,8 @@ class ServerInfo:
 
     Packets = namedtuple('Packets', 'rx tx')
 
-    PPS_THRESHOLD = 6000  # we usually get max 5 kpps legit traffic on the big servers so this should be a safe threshold
-    PPS_RATIO_MIN = 500  # ratio is not reliable for low traffic
+    PPS_THRESHOLD = 10000  # china got a lot players
+    PPS_RATIO_MIN = 1000  # ratio is not reliable for low traffic
     PPS_RATIO_THRESHOLD = 2.5  # responding to less than half the traffic indicates junk traffic
 
     COUNTRYFLAGS = {
