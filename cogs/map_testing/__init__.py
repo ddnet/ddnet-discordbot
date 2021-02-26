@@ -444,6 +444,13 @@ class MapTesting(commands.Cog):
         map_channel = self.get_map_channel(ctx.channel.id)
         await map_channel.set_state(state=MapState.DECLINED)
 
+    @commands.command()
+    @tester_check()
+    async def released(self, ctx: commands.Context):
+        """Mark a map as released"""
+        map_channel = self.get_map_channel(ctx.channel.id)
+        await map_channel.set_state(state=MapState.RELEASED)
+
     @commands.group()
     @tester_check()
     async def change(self, ctx: commands.Context):
