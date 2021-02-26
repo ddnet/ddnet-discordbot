@@ -357,6 +357,7 @@ class MapTesting(commands.Cog):
         records = await self.bot.pool.fetch(query)
         deleted_waiting_maps_ids = [r['channel_id'] for r in records] 
 
+        to_archive = []
         for map_channel in self.map_channels:
             # keep the channel until its map is released, including a short grace period
             if map_channel.state in (MapState.TESTING, MapState.READY) or map_channel in recent_releases:
@@ -370,7 +371,10 @@ class MapTesting(commands.Cog):
             recent_message = await map_channel.history(limit=1, after=now - timedelta(days=5)).flatten()
             if recent_message:
                 continue
-
+            
+            to_archive.append(map_channel)
+        
+        for map_channel in to_archive:
             testlog = await TestLog.from_map_channel(map_channel)
             archived = await self.archive_testlog(testlog)
 
