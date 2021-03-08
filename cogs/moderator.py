@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 GUILD_DDNET     = 252358080522747904
 CHAN_REPORTS    = 779761780129005568
 CHAN_MODERATOR  = 345588928482508801
+CHAN_BOTTERS    = 562648944908435476
 ROLE_ADMIN      = 293495272892399616
 ROLE_MODERATOR  = 252523225810993153
 ROLE_MUTED      = 768872500263911495
@@ -121,7 +122,7 @@ class Moderator(commands.Cog):
             await ctx.send(f'Successfully banned `{ip}` until {expires:%Y-%m-%d %H:%M} UTC')
 
     def cog_check(self, ctx: commands.Context) -> bool:
-        return ctx.channel.id == CHAN_MODERATOR and is_staff(ctx.author)
+        return ctx.channel.id in (CHAN_MODERATOR, CHAN_BOTTERS) and is_staff(ctx.author)
 
     @commands.command()
     async def global_ban(self, ctx: commands.Context, ip: str, name: str, minutes: int, *, reason: clean_content):
