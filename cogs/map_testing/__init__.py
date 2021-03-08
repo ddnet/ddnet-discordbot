@@ -353,7 +353,7 @@ class MapTesting(commands.Cog):
         ann_history = await ann_channel.history(after=now - timedelta(days=3)).filter(by_releases_webhook).flatten()
         recent_releases = {self.get_map_channel_from_ann(m.content) for m in ann_history}
 
-        query = 'DELETE FROM waiting_maps WHERE timestamp < CURRENT_TIMESTAMP - INTERVAL \'60 days\' RETURNING channel_id;'
+        query = 'SELECT channel_id FROM waiting_maps WHERE timestamp < CURRENT_TIMESTAMP - INTERVAL \'60 days\';'
         records = await self.bot.pool.fetch(query)
         deleted_waiting_maps_ids = [r['channel_id'] for r in records] 
 
@@ -371,7 +371,7 @@ class MapTesting(commands.Cog):
             recent_message = await map_channel.history(limit=1, after=now - timedelta(days=5)).flatten()
             if recent_message:
                 continue
-            
+
             to_archive.append(map_channel)
         
         for map_channel in to_archive:
@@ -394,6 +394,9 @@ class MapTesting(commands.Cog):
             map_channel = self._map_channels.pop(channel.id)
         except KeyError:
             return
+
+        query = 'DELETE FROM waiting_maps where channel_id = $1'
+        await self.bot.pool.execute(query, map_channel.id)
 
         try:
             await self.ddnet_delete(map_channel.filename)
