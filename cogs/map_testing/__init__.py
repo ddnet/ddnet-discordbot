@@ -466,7 +466,11 @@ class MapTesting(commands.Cog):
         map_channel = self.get_map_channel(ctx.channel.id)
         old_filename = map_channel.filename
         await map_channel.update(name=name)
-        await self.ddnet_delete(old_filename)
+
+        try:
+            await self.ddnet_delete(old_filename)
+        except RuntimeError:
+            pass
 
     @change.command(name='mappers')
     async def change_mappers(self, ctx: commands.Context, *mappers: str):
