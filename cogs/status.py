@@ -169,6 +169,7 @@ class ServerInfo:
     PPS_RATIO_THRESHOLD = 2.5  # responding to less than half the traffic indicates junk traffic
 
     COUNTRYFLAGS = {
+        'NLD': '🇳🇱',
         'GER': '🇩🇪',
         'RUS': '🇷🇺',
         'CHL': '🇨🇱',
