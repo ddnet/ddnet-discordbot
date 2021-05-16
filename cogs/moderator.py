@@ -44,7 +44,7 @@ class Moderator(commands.Cog):
         self._task.cancel()
         self._task = self.bot.loop.create_task(self.dispatch_unbans())
 
-    async def ddnet_request(self, method: str, ip: str, modname: Optional[str]=None, name: Optional[str]=None, reason: Optional[str]=None, region: Optional[str]=None, note: Optional[str]=None):
+    async def ddnet_request(self, method: str, ip: str, modname: Optional[str]=None, name: Optional[str]=None, reason: Optional[str]=None, region: Optional[str]=None, expires: Optional[datetime]=None, note: Optional[str]=None):
         url = self.bot.config.get('DDNET', 'BAN')
         headers = {'X-DDNet-Token': self.bot.config.get('DDNET', 'BAN-TOKEN')}
 
@@ -55,6 +55,8 @@ class Moderator(commands.Cog):
             params['note'] += ": {}".format(name)
         if reason is not None:
             params['reason'] = reason
+        if expires is not None:
+            params['reason'] += f'. Until {expires:%b %d %H:%M} UTC'
         if region is not None:
             params['region'] = region
         if note is not None:
@@ -68,7 +70,7 @@ class Moderator(commands.Cog):
                 raise RuntimeError(text)
 
     async def ddnet_ban(self, ip: str, name: str, expires: datetime, reason: str, mod: str, region: Optional[str]=None):
-        await self.ddnet_request('POST', ip, mod, name, reason, region)
+        await self.ddnet_request('POST', ip, mod, name, reason, region, expires)
 
         query = """INSERT INTO ddnet_bans (ip, expires, name, reason, mod, region) VALUES ($1, $2, $3, $4, $5, $6)
                    ON CONFLICT (ip) DO UPDATE SET expires = $2, name = $3, reason = $4, mod = $5, region = $6;"""
