@@ -52,7 +52,7 @@ class Moderator(commands.Cog):
         if modname is not None:
             params['note'] += modname
         if name is not None:
-            params['note'] += ": {}".format(name)
+            params['note'] += f': {name}'
         if reason is not None:
             params['reason'] = reason
         if expires is not None:
@@ -60,7 +60,7 @@ class Moderator(commands.Cog):
         if region is not None:
             params['region'] = region
         if note is not None:
-            params['note'] += "({})".format(note)
+            params['note'] += f'({note})'
 
         async with self.bot.session.request(method, url, params=params, headers=headers) as resp:
             if resp.status not in (200, 201):
@@ -117,6 +117,9 @@ class Moderator(commands.Cog):
 
         if region is not None and len(region) != 3:
             return await ctx.send('Invalid region')
+
+        if len(reason) > 39:
+            return await ctx.send('Reason too long')
 
         expires = datetime.utcnow() + timedelta(minutes=min(minutes, 60 * 24 * 30))
 
