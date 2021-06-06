@@ -81,6 +81,7 @@ class Moderator(commands.Cog):
             self.restart_dispatch()
 
     async def ddnet_unban(self, ip: str):
+        log.info('Unbanning ip %r', ip)
         await self.ddnet_request('DELETE', ip)
 
         query = 'DELETE FROM ddnet_bans WHERE ip = $1;'
