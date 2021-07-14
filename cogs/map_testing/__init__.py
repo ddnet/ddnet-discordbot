@@ -182,6 +182,9 @@ class MapTesting(commands.Cog):
                     await self.upload_submission(subm)
                 else:
                     await subm.set_state(SubmissionState.VALIDATED)
+                debug_output = await subm.debug_map()
+                if debug_output:
+                    await message.channel.send("```" + debug_output + "```")
 
     @commands.Cog.listener('on_raw_message_edit')
     async def handle_submission_edit(self, payload: discord.RawMessageUpdateEvent):
@@ -248,6 +251,9 @@ class MapTesting(commands.Cog):
 
         else:
             subm = Submission(message)
+            debug_output = await subm.debug_map()
+            if debug_output:
+                await message.reply("```" + debug_output + "```", mention_author=False)
 
         await self.upload_submission(subm)
         log.info('%s approved submission %r in channel #%s', user, subm.filename, channel)

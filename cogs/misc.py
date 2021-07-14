@@ -11,7 +11,7 @@ import psutil
 from discord.ext import commands
 
 from data.countryflags import FLAG_UNK
-from utils.misc import run_process
+from utils.misc import run_process_shell
 from utils.text import human_timedelta
 
 log = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class Misc(commands.Cog):
     async def get_latest_commits(self, num: int=3) -> str:
         fmt = fr'[\`%h\`]({GH_URL}/commit/%H) %s (%ar)'
         cmd = f'git log master -{num} --no-merges --format="{fmt}"'
-        stdout, _ = await run_process(cmd)
+        stdout, _ = await run_process_shell(cmd)
         return stdout
 
     @commands.command()
