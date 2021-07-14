@@ -11,7 +11,7 @@ from io import StringIO
 import asyncpg
 from discord.ext import commands
 
-from utils.misc import run_process
+from utils.misc import run_process_shell
 from utils.text import plural, render_table
 
 log = logging.getLogger(__name__)
@@ -116,7 +116,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
 
         content = []
         try:
-            stdout, stderr = await run_process(cmd)
+            stdout, stderr = await run_process_shell(cmd)
         except RuntimeError as exc:
             content.append(str(exc))
         else:

@@ -9,10 +9,20 @@ from typing import Awaitable, Callable, Tuple, Union
 
 SHELL = os.getenv('SHELL')
 
-async def run_process(cmd: str, timeout: float=90.0) -> Tuple[str, str]:
+async def run_process_shell(cmd: str, timeout: float=90.0) -> Tuple[str, str]:
     sequence = f'{SHELL} -c \'{cmd}\''
     proc = await asyncio.create_subprocess_shell(sequence, stdout=PIPE, stderr=PIPE)
 
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        proc.kill()
+        raise RuntimeError('Process timed out')
+    else:
+        return stdout.decode(), stderr.decode()
+
+async def run_process_exec(program: str, *args: str, timeout: float=90.0) -> Tuple[str, str]:
+    proc = await asyncio.create_subprocess_exec(program, *args, stdout=PIPE, stderr=PIPE)
     try:
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
