@@ -97,6 +97,35 @@ class Submission:
 
         return output
 
+    async def edit_map(self, *args: str) -> (str, Optional[discord.File]):
+        tmp = f'{self.DIR}/tmp/{self.message.id}.map'
+        edited_tmp = f'{tmp}_edit'
+
+        buf = await self.buffer()
+        with open(tmp, 'wb') as f:
+            f.write(buf.getvalue())
+
+        try:
+            stdout, stderr = await run_process_exec(f'{self.DIR}/edit_map', *args, tmp, edited_tmp)
+        except RuntimeError as exc:
+            error = str(exc)
+        else:
+            error = stderr
+
+        if error:
+            return log.error('Editing failed of map %r (%d): %s', self.filename, self.message.id, error)
+        if os.path.exists(edited_tmp):
+            with open(edited_tmp, 'rb') as f:
+                file = discord.File(BytesIO(f.read()), filename=str(self) + ".map")
+                os.remove(edited_tmp)
+        else:
+            file = None
+
+        # cleanup
+        os.remove(tmp)
+
+        return (stdout, file)
+
 
 class InitialSubmission(Submission):
     __slots__ = Submission.__slots__ + ('name', 'mappers', 'server', 'map_channel')
