@@ -74,7 +74,7 @@ def get_data(relfile: Path, packdir: Path, thumbdir: Path) -> List[Tuple[str, da
                 mappers = None
 
             # This is an attempt at making updates incremental
-            if (BG_PATH / name).is_file():
+            if (BG_PATH / f"{name}.png").is_file():
                 continue
 
             out.append((
