@@ -21,7 +21,7 @@ from utils.text import normalize
 
 TIMESTAMP = datetime.utcnow().strftime('%Y-%m-%d %H:%M')
 
-BG_PATH = 'data/assets/map_backgrounds/{0}.png'
+BG_PATH = Path('data/assets/map_backgrounds/')
 
 VALID_TILES = (
     'NPH_START',
@@ -54,7 +54,7 @@ def get_background(thumbdir: Path, name: str) -> int:
     thumb = thumbdir / f"{normalize(name)}.png"
     with thumb.open("rb") as t:
         img = Image.open(t).convert('RGBA').resize(BG_SIZE)
-        img.save(BG_PATH.format(name))
+        img.save(BG_PATH / name)
 
         color = ColorThief(t).get_color(quality=1)
     return pack_rgb(color)
@@ -73,7 +73,8 @@ def get_data(relfile: Path, packdir: Path, thumbdir: Path) -> List[Tuple[str, da
                 _, name = details.split('|')
                 mappers = None
 
-            if os.path.isfile(BG_PATH.format(name)):
+            # This is an attempt at making updates incremental
+            if (BG_PATH / name).is_file():
                 continue
 
             out.append((
