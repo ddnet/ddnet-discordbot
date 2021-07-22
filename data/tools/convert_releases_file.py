@@ -118,4 +118,7 @@ if __name__ == '__main__':
         print("Invalid arguments")
         exit(1)
 
+    if not BG_PATH.is_dir():
+        print(f"{BG_PATH} is not a directory")
+
     main(relfile, packdir, thumbdir)
