@@ -15,8 +15,6 @@ async def main():
     with open('players-file.json', 'r') as f:
         data = json.loads(f.read())
 
-    os.remove('players-file.json')
-
     tables = defaultdict(list)
 
     for player, details in data['players'].items():
@@ -53,6 +51,7 @@ async def main():
 
     await con.close()
 
+    os.remove('players-file.json')
     print(f'[{TIMESTAMP}] Successfully updated:', ', '.join(status))
 
 
