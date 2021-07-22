@@ -54,7 +54,7 @@ def get_background(thumbdir: Path, name: str) -> int:
     thumb = thumbdir / f"{normalize(name)}.png"
     with thumb.open("rb") as t:
         img = Image.open(t).convert('RGBA').resize(BG_SIZE)
-        img.save(BG_PATH / name)
+        img.save(BG_PATH / f"{name}.png")
 
         color = ColorThief(t).get_color(quality=1)
     return pack_rgb(color)
