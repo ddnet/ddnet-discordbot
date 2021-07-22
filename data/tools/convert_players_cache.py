@@ -32,8 +32,10 @@ def convert(ppack, cache):
         print("Empty or invalid msgpack")
         sys.exit(2)
 
+    print("Extracting cache")
     with zipfile.ZipFile(cache, 'r') as zf:
         zf.extractall()
+    print("Done")
 
     out = {
         'players': defaultdict(dict),
