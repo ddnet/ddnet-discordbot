@@ -64,6 +64,7 @@ def get_data(relfile: Path, packdir: Path, thumbdir: Path) -> List[Tuple[str, da
 
     with relfile.open("r") as f:
         for line in f:
+            line = line.rstrip()
             timestamp, _, details = line.split('\t')
 
             try:
