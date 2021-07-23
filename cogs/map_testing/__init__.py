@@ -464,17 +464,26 @@ class MapTesting(commands.Cog):
     @tester_check()
     async def edit(self, ctx: commands.Context, *args: str):
         """Edits a map according to the passed arguments"""
+        subm = None
         if has_map(ctx.message):
             subm = Submission(ctx.message)
         elif ctx.message.reference is not None:
             replied_msg = await ctx.fetch_message(ctx.message.reference.message_id)
             if has_map(replied_msg):
                 subm = Submission(replied_msg)
-            else:
-                await ctx.send("Replied message has no map")
+        if subm is None:
+            map_channel = self.get_map_channel(ctx.channel.id)
+            if map_channel is None:
                 return
-        else:
-            await ctx.send("Your message includes no map and you are also not replying to another message with a map")
+            async for msg in ctx.history():
+                if not has_map(msg):
+                    continue
+                by_mapper = str(msg.author.id) in map_channel.mapper_mentions
+                if by_mapper or is_staff(msg.author) or msg.author.id == self.bot.user.id:
+                    subm = Submission(msg)
+                    break
+
+        if subm is None:
             return
         stdout, file = await subm.edit_map(*args)
         if stdout:
