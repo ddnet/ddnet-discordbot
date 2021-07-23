@@ -3,6 +3,8 @@
 
 import asyncio
 import os
+import sys
+from pathlib import Path
 from datetime import datetime
 from io import BytesIO
 from typing import List, Tuple
@@ -19,11 +21,7 @@ from utils.text import normalize
 
 TIMESTAMP = datetime.utcnow().strftime('%Y-%m-%d %H:%M')
 
-BG_PATH = 'data/assets/map_backgrounds/{0}.png'
-
-RELEASES_FILE_URL = 'https://ddnet.tw/releases/releases'
-MSGPACK_URL = 'https://ddnet.tw/mappreview/{0}.msgpack'
-THUMBNAIL_URL = 'https://ddnet.tw/ranks/maps/{0}.png'
+BG_PATH = Path('data/assets/map_backgrounds/')
 
 VALID_TILES = (
     'NPH_START',
@@ -41,49 +39,51 @@ VALID_TILES = (
 
 BG_SIZE = (800, 500)
 
-def get_tiles(name: str) -> List[str]:
-    resp = requests.get(MSGPACK_URL.format(quote(name)))
-    buf = BytesIO(resp.content)
+def get_tiles(packdir: Path, name: str) -> List[str]:
+    pack = packdir / f"{name}.msgpack"
 
-    unpacker = msgpack.Unpacker(buf, use_list=False, raw=False)
-    unpacker.skip()             # width
-    unpacker.skip()             # height
-    tiles = unpacker.unpack()   # tiles
+    with pack.open("rb") as p:
+        unpacker = msgpack.Unpacker(p, use_list=False, raw=False)
+        unpacker.skip()             # width
+        unpacker.skip()             # height
+        tiles = unpacker.unpack()   # tiles
+
     return [t for t in tiles if t in VALID_TILES]
 
-def get_background(name: str) -> int:
-    resp = requests.get(THUMBNAIL_URL.format(normalize(name)))
-    buf = BytesIO(resp.content)
+def get_background(thumbdir: Path, name: str) -> int:
+    thumb = thumbdir / f"{normalize(name)}.png"
+    with thumb.open("rb") as t:
+        img = Image.open(t).convert('RGBA').resize(BG_SIZE)
+        img.save(BG_PATH / f"{name}.png")
 
-    img = Image.open(buf).convert('RGBA').resize(BG_SIZE)
-    img.save(BG_PATH.format(name))
-
-    color = ColorThief(buf).get_color(quality=1)
+        color = ColorThief(t).get_color(quality=1)
     return pack_rgb(color)
 
-def get_data() -> List[Tuple[str, datetime, str, List[str], str]]:
+def get_data(relfile: Path, packdir: Path, thumbdir: Path) -> List[Tuple[str, datetime, str, List[str], str]]:
     out = []
 
-    resp = requests.get(RELEASES_FILE_URL)
-    for line in resp.text.splitlines():
-        timestamp, _, details = line.split('\t')
+    with relfile.open("r") as f:
+        for line in f:
+            line = line.rstrip()
+            timestamp, _, details = line.split('\t')
 
-        try:
-            _, name, mappers = details.split('|')
-        except ValueError:
-            _, name = details.split('|')
-            mappers = None
+            try:
+                _, name, mappers = details.split('|')
+            except ValueError:
+                _, name = details.split('|')
+                mappers = None
 
-        if os.path.isfile(BG_PATH.format(name)):
-            continue
+            # This is an attempt at making updates incremental
+            if (BG_PATH / f"{name}.png").is_file():
+                continue
 
-        out.append((
-            name,
-            datetime.strptime(timestamp, '%Y-%m-%d %H:%M'),
-            mappers,
-            get_tiles(name),
-            get_background(name)
-        ))
+            out.append((
+                name,
+                datetime.strptime(timestamp, '%Y-%m-%d %H:%M'),
+                mappers,
+                get_tiles(packdir, name),
+                get_background(thumbdir, name)
+            ))
 
     return out
 
@@ -101,12 +101,24 @@ async def update_database(data):
 
     return f'stats_maps_static: INSERT {len(data)}'
 
-def main():
-    data = get_data()
+def main(relfile, packdir, thumbdir):
+    data = get_data(relfile, packdir, thumbdir)
     status = asyncio.run(update_database(data)) if data else 'Nothing to update'
 
     print(f'[{TIMESTAMP}] Successfully updated: {status}')
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) != 4:
+        print("Usage: {} <releases-file> <msgpack-dir> <thumbnail-dir>".format(sys.argv[0]))
+        sys.exit(1)
+
+    (relfile, packdir, thumbdir) = (Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))
+    if not relfile.is_file() or not packdir.is_dir() or not thumbdir.is_dir():
+        print("Invalid arguments")
+        exit(1)
+
+    if not BG_PATH.is_dir():
+        print(f"{BG_PATH} is not a directory")
+
+    main(relfile, packdir, thumbdir)

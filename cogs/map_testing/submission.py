@@ -126,7 +126,6 @@ class Submission:
 
         return (stdout, file)
 
-
 class InitialSubmission(Submission):
     __slots__ = Submission.__slots__ + ('name', 'mappers', 'server', 'map_channel')
 
