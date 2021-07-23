@@ -460,6 +460,33 @@ class MapTesting(commands.Cog):
         map_channel = self.get_map_channel(ctx.channel.id)
         await map_channel.set_state(state=MapState.RELEASED)
 
+    @commands.command()
+    @tester_check()
+    async def edit(self, ctx: commands.Context, *args: str):
+        """Edits a map according to the passed arguments"""
+        if has_map(ctx.message):
+            subm = Submission(ctx.message)
+        elif ctx.message.reference is not None:
+            replied_msg = await ctx.fetch_message(ctx.message.reference.message_id)
+            if has_map(replied_msg):
+                subm = Submission(replied_msg)
+            else:
+                await ctx.send("Replied message has no map")
+                return
+        else:
+            await ctx.send("Your message includes no map and you are also not replying to another message with a map")
+            return
+        stdout, file = await subm.edit_map(*args)
+        if stdout:
+            stdout = "```" + stdout + "```"
+        await ctx.channel.send(stdout, file=file)
+
+    @commands.command()
+    @tester_check()
+    async def optimize(self, ctx: commands.Context):
+        """Shortcut for the `edit` command, passes the arguments `--remove-everything-unused` and `--shrink-layers`"""
+        await self.edit(ctx, "--remove-everything-unused", "--shrink-layers")
+
     @commands.group()
     @tester_check()
     async def change(self, ctx: commands.Context):
