@@ -7,7 +7,7 @@ from typing import Optional
 
 import discord
 
-from utils.misc import run_process
+from utils.misc import run_process_shell, run_process_exec
 from utils.text import human_join, sanitize
 
 log = logging.getLogger(__name__)
@@ -25,6 +25,8 @@ class SubmissionState(enum.Enum):
 
 class Submission:
     __slots__ = ('message', 'author', 'channel', 'filename', '_bytes')
+
+    DIR = 'data/map-testing'
 
     def __init__(self, message: discord.Message, *, raw_bytes: Optional[bytes]=None):
         self.message = message
@@ -63,11 +65,41 @@ class Submission:
         except discord.HTTPException:
             pass
 
+    async def debug_map(self) -> Optional[str]:
+        tmp = f'{self.DIR}/tmp/{self.message.id}.map'
+
+        buf = await self.buffer()
+        with open(tmp, 'wb') as f:
+            f.write(buf.getvalue())
+
+        try:
+            dbg_args = ["-vvv", "--no-summary", "--no-file-paths", "--", tmp]
+            output, dbg_stderr = await run_process_exec(f'{self.DIR}/debug_load', *dbg_args)
+        except RuntimeError as exc:
+            ddnet_dbg_error = str(exc)
+        else:
+            ddnet_dbg_error = dbg_stderr
+
+        if ddnet_dbg_error:
+            return log.error('Debugging failed of map %r (%d): %s', self.filename, self.message.id, ddnet_dbg_error)
+
+        try:
+            ddnet_dbg_args = ["--directional-blocks", "--no-summary", "--no-file-paths", "--", tmp]
+            ddnet_dbg_stdout, ddnet_dbg_stderr = await run_process_exec(f'{self.DIR}/check_ddnet', *ddnet_dbg_args)
+        except RuntimeError as exc:
+            ddnet_dbg_error = str(exc)
+            log.error('DDNet checks failed of map %r (%d): %s', self.filename, self.message.id, ddnet_dbg_error)
+        if not ddnet_dbg_stderr:
+            output += ddnet_dbg_stdout
+
+        # cleanup
+        os.remove(tmp)
+
+        return output
+
 
 class InitialSubmission(Submission):
     __slots__ = Submission.__slots__ + ('name', 'mappers', 'server', 'map_channel')
-
-    DIR = 'data/map-testing'
 
     _FORMAT_RE = r'^\"(?P<name>.+)\" +by +(?P<mappers>.+) +\[(?P<server>.+)\]$'
 
@@ -124,7 +156,7 @@ class InitialSubmission(Submission):
             f.write(buf.getvalue())
 
         try:
-            stdout, stderr = await run_process(f'{self.DIR}/render_map {tmp} --size 1280')
+            stdout, stderr = await run_process_shell(f'{self.DIR}/render_map {tmp} --size 1280')
         except RuntimeError as exc:
             error = str(exc)
         else:
@@ -165,5 +197,8 @@ class InitialSubmission(Submission):
 
         thumbnail = await self.generate_thumbnail()
         await self.map_channel.send(self.map_channel.preview_url, file=thumbnail)
+        debug_output = await self.debug_map()
+        if debug_output:
+            await self.map_channel.send("```" + debug_output + "```")
 
         return Submission(message, raw_bytes=self._bytes)
