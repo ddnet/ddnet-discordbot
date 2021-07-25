@@ -494,7 +494,7 @@ class MapTesting(commands.Cog):
     @tester_check()
     async def optimize(self, ctx: commands.Context):
         """Shortcut for the `edit` command, passes the arguments `--remove-everything-unused` and `--shrink-layers`"""
-        await self.edit(ctx, "--remove-everything-unused", "--shrink-layers")
+        await self.edit(ctx, "--remove-everything-unused", "--shrink-tiles-layers")
 
     @commands.group()
     @tester_check()
