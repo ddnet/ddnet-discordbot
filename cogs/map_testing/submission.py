@@ -74,14 +74,12 @@ class Submission:
 
         try:
             dbg_args = ["-vvv", "--no-summary", "--no-file-paths", "--", tmp]
-            output, dbg_stderr = await run_process_exec(f'{self.DIR}/debug_load', *dbg_args)
+            dbg_stdout, dbg_stderr = await run_process_exec(f'{self.DIR}/debug_load', *dbg_args)
         except RuntimeError as exc:
             ddnet_dbg_error = str(exc)
-        else:
-            ddnet_dbg_error = dbg_stderr
-
-        if ddnet_dbg_error:
             return log.error('Debugging failed of map %r (%d): %s', self.filename, self.message.id, ddnet_dbg_error)
+
+        output = dbg_stdout + dbg_stderr
 
         try:
             ddnet_dbg_args = ["--directional-blocks", "--no-summary", "--no-file-paths", "--", tmp]
