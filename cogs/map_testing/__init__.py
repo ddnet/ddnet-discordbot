@@ -1,3 +1,4 @@
+import io
 import logging
 import re
 from datetime import datetime, timedelta
@@ -156,9 +157,6 @@ class MapTesting(commands.Cog):
     @commands.Cog.listener('on_message')
     async def handle_submission(self, message: discord.Message):
         author = message.author
-        if author == self.bot.user:
-            return
-
         if not has_map(message):
             return
 
@@ -178,13 +176,20 @@ class MapTesting(commands.Cog):
                 if by_mapper and map_channel.state in (MapState.WAITING, MapState.READY):
                     await map_channel.set_state(state=MapState.TESTING)
 
-                if by_mapper or is_staff(author):
+                if by_mapper or is_staff(author) or author == self.bot.user:
                     await self.upload_submission(subm)
                 else:
                     await subm.set_state(SubmissionState.VALIDATED)
                 debug_output = await subm.debug_map()
                 if debug_output:
-                    await message.channel.send("```" + debug_output + "```")
+                    if len(debug_output) + 6 < 2000:
+                        await message.reply("```" + debug_output + "```", mention_author=False)
+                    else:
+                        file = discord.File(io.StringIO(debug_output), filename="debug_output.txt")
+                        await message.reply("Error log in the attached file", file=file, mention_author=False)
+                else:
+                    await subm.message.add_reaction("👌")
+
 
     @commands.Cog.listener('on_raw_message_edit')
     async def handle_submission_edit(self, payload: discord.RawMessageUpdateEvent):
@@ -253,7 +258,13 @@ class MapTesting(commands.Cog):
             subm = Submission(message)
             debug_output = await subm.debug_map()
             if debug_output:
-                await message.reply("```" + debug_output + "```", mention_author=False)
+                if len(debug_output) + 6 < 2000:
+                    await message.reply("```" + debug_output + "```", mention_author=False)
+                else:
+                    file = discord.File(io.StringIO(debug_output), filename="debug_output.txt")
+                    await message.reply("Error log in the attached file", file=file, mention_author=False)
+            else:
+                await subm.message.add_reaction("👌")
 
         await self.upload_submission(subm)
         log.info('%s approved submission %r in channel #%s', user, subm.filename, channel)

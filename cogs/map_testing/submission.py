@@ -1,4 +1,5 @@
 import enum
+import io
 import logging
 import os
 import re
@@ -223,8 +224,15 @@ class InitialSubmission(Submission):
 
         thumbnail = await self.generate_thumbnail()
         await self.map_channel.send(self.map_channel.preview_url, file=thumbnail)
+
         debug_output = await self.debug_map()
         if debug_output:
-            await self.map_channel.send("```" + debug_output + "```")
+            if len(debug_output) + 6 < 2000:
+                await message.reply("```" + debug_output + "```", mention_author=False)
+            else:
+                file = discord.File(io.StringIO(debug_output), filename="debug_output.txt")
+                await message.reply("Error log in the attached file", file=file, mention_author=False)
+        else:
+            await message.add_reaction("👌")
 
         return Submission(message, raw_bytes=self._bytes)
