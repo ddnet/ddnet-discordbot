@@ -16,6 +16,7 @@ GUILD_DDNET         = 252358080522747904
 CHAN_WELCOME        = 311192969493348362
 CHAN_JOIN_LEAVE     = 255191476315750401
 CHAN_ANNOUNCEMENTS  = 420565311863914496
+CHAN_MAP_RELEASES   = 392853737099624449
 CHAN_LOGS           = 364164149359411201
 
 VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
@@ -134,7 +135,7 @@ class GuildLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.channel.id == CHAN_ANNOUNCEMENTS:
+        if message.channel.id in (CHAN_ANNOUNCEMENTS, CHAN_MAP_RELEASES):
             await message.publish()
 
 
