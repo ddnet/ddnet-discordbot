@@ -17,7 +17,9 @@ CHAN_WELCOME        = 311192969493348362
 CHAN_JOIN_LEAVE     = 255191476315750401
 CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_MAP_RELEASES   = 392853737099624449
-CHAN_LOGS           = 364164149359411201
+CHAN_LOGS           = 933330279496572998
+CHAN_ADMIN          = 321058698023796736
+CHAN_MODC           = 534520700548022272
 
 VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
 
@@ -47,7 +49,7 @@ class GuildLog(commands.Cog):
         await chan.send(msg)
 
     async def log_message(self, message: discord.Message):
-        if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() or message.channel.id == CHAN_LOGS:
+        if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() or message.channel.id in (CHAN_LOGS, CHAN_ADMIN, CHAN_MODC):
             return
 
         embed = discord.Embed(title='Message deleted', description=message.content, color=0xDD2E44, timestamp=datetime.utcnow())
@@ -113,7 +115,7 @@ class GuildLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        if not before.guild or before.guild.id != GUILD_DDNET or before.is_system() or before.channel.id == CHAN_LOGS:
+        if not before.guild or before.guild.id != GUILD_DDNET or before.is_system() or before.channel.id in (CHAN_LOGS, CHAN_ADMIN, CHAN_MODC) or before.author.bot:
             return
 
         if before.content == after.content:
