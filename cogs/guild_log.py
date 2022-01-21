@@ -48,7 +48,8 @@ class GuildLog(commands.Cog):
         await chan.send(msg)
 
     async def log_message(self, message: discord.Message):
-        if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() or message.channel.id in (CHAN_LOGS, CHAN_ADMIN, CHAN_MODC, CHAN_TESTER):
+        if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() \
+                or message.channel.id == CHAN_LOGS or message.channel.category.id == CAT_INTERNAL:
             return
 
         embed = discord.Embed(title='Message deleted', description=message.content, color=0xDD2E44, timestamp=datetime.utcnow())
