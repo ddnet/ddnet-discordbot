@@ -25,7 +25,8 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         self._last_result = None
 
     async def cog_check(self, ctx: commands.Context) -> bool:
-        return await self.bot.is_owner(ctx.author)
+        admin_id = self.bot.config.get('DDNET', 'ADMIN')
+        return ctx.author.id == int(admin_id)
 
     async def paste_upload(self, content: str) -> str:
         url = 'https://paste.pr0.tips/'
