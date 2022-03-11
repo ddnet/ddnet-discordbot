@@ -170,6 +170,7 @@ class ServerInfo:
 
     COUNTRYFLAGS = {
         'NLD': '🇳🇱',
+        'FRA': '🇫🇷',
         'GER': '🇩🇪',
         'RUS': '🇷🇺',
         'CHL': '🇨🇱',
