@@ -24,6 +24,7 @@ def convert(ppack, cache):
         data['points'] = unpacker.unpack()      # Points: `((player, points), ...)`
         unpacker.skip()                         # Weekly points: `((player, points), ...)`
         unpacker.skip()                         # Monthly points: `((player, points), ...)`
+        unpacker.skip()                         # Yearly points: `((player, points), ...)`
         data['teamrank'] = unpacker.unpack()    # Team rank points: `((player, points), ...)`
         data['rank'] = unpacker.unpack()        # Solo rank points: `((player, points), ...)`
         unpacker.skip()                         # Servers: `{type: (points, ((player, points), ...)), ...}`
