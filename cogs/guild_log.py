@@ -77,7 +77,7 @@ class GuildLog(commands.Cog):
         if message.channel.id == CHAN_REPORTS:
             chan = self.bot.get_channel(CHAN_REPORTS_LOGS)
             await chan.send(file=file, embed=embed)
-        elif message.channel.id != CHAN_REPORTS:
+        else:
             chan = self.bot.get_channel(CHAN_LOGS)
             await chan.send(file=file, embed=embed)
 
@@ -141,7 +141,7 @@ class GuildLog(commands.Cog):
         if before.channel.id == CHAN_REPORTS:
             chan = self.bot.get_channel(CHAN_REPORTS_LOGS)
             await chan.send(embed=embed)
-        elif before.channel.id != CHAN_REPORTS:
+        else:
             chan = self.bot.get_channel(CHAN_LOGS)
             await chan.send(embed=embed)
 
