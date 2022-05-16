@@ -191,6 +191,16 @@ class Moderator(commands.Cog):
         if f'<@&{ROLE_MODERATOR}>' in message.content and not is_staff(user):
             await reaction.remove(user)
 
+        if f'<@&{ROLE_MODERATOR}>' in message.content and is_staff(user):
+            await message.delete()
+
+    @commands.Cog.listener('on_message')
+    async def unwanted_message(self, message: discord.Message):
+        channel = message.channel
+        if channel.id == CHAN_REPORTS:
+            await asyncio.sleep(10 * 30)
+            await message.delete()
+
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         author = message.author

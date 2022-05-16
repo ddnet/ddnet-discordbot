@@ -18,6 +18,7 @@ CHAN_JOIN_LEAVE     = 255191476315750401
 CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_MAP_RELEASES   = 392853737099624449
 CHAN_LOGS           = 933330279496572998
+CHAN_LOGS_REPORT    = 975840383714099220
 CAT_INTERNAL        = 360793439123537920
 
 VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
@@ -73,8 +74,12 @@ class GuildLog(commands.Cog):
         embed.set_author(name=f'{author} → #{message.channel}', icon_url=author.avatar_url_as(format='png'))
         embed.set_footer(text=f'Author ID: {author.id} | Message ID: {message.id}')
 
-        chan = self.bot.get_channel(CHAN_LOGS)
-        await chan.send(file=file, embed=embed)
+        if message.channel.id == CHAN_REPORTS:
+            chan = self.bot.get_channel(CHAN_REPORTS_LOGS)
+            await chan.send(file=file, embed=embed)
+        elif message.channel.id != CHAN_REPORTS:
+            chan = self.bot.get_channel(CHAN_LOGS)
+            await chan.send(file=file, embed=embed)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
@@ -133,8 +138,12 @@ class GuildLog(commands.Cog):
         embed.set_author(name=f'{author} → #{before.channel}', icon_url=author.avatar_url_as(format='png'))
         embed.set_footer(text=f'Author ID: {author.id} | Message ID: {before.id}')
 
-        chan = self.bot.get_channel(CHAN_LOGS)
-        await chan.send(embed=embed)
+        if before.channel.id == CHAN_REPORTS:
+            chan = self.bot.get_channel(CHAN_REPORTS_LOGS)
+            await chan.send(embed=embed)
+        elif before.channel.id != CHAN_REPORTS:
+            chan = self.bot.get_channel(CHAN_LOGS)
+            await chan.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
