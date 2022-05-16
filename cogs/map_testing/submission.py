@@ -74,8 +74,7 @@ class Submission:
             f.write(buf.getvalue())
 
         try:
-            dbg_args = ["-vvv", "--no-summary", "--no-file-paths", "--", tmp]
-            dbg_stdout, dbg_stderr = await run_process_exec(f'{self.DIR}/debug_load', *dbg_args)
+            dbg_stdout, dbg_stderr = await run_process_exec(f'{self.DIR}/twmap_check', "-vv", "--", tmp)
         except RuntimeError as exc:
             ddnet_dbg_error = str(exc)
             return log.error('Debugging failed of map %r (%d): %s', self.filename, self.message.id, ddnet_dbg_error)
@@ -83,8 +82,7 @@ class Submission:
         output = dbg_stdout + dbg_stderr
 
         try:
-            ddnet_dbg_args = ["--directional-blocks", "--no-summary", "--no-file-paths", "--", tmp]
-            ddnet_dbg_stdout, ddnet_dbg_stderr = await run_process_exec(f'{self.DIR}/check_ddnet', *ddnet_dbg_args)
+            ddnet_dbg_stdout, ddnet_dbg_stderr = await run_process_exec(f'{self.DIR}/twmap_check_ddnet', "--", tmp)
         except RuntimeError as exc:
             ddnet_dbg_error = str(exc)
             log.error('DDNet checks failed of map %r (%d): %s', self.filename, self.message.id, ddnet_dbg_error)
@@ -97,6 +95,8 @@ class Submission:
         return output
 
     async def edit_map(self, *args: str) -> (str, Optional[discord.File]):
+        if "--mapdir" in args:
+            return "Can't save as MapDir using the discord bot", None
         tmp = f'{self.DIR}/tmp/{self.message.id}.map'
         edited_tmp = f'{tmp}_edit'
 
@@ -105,7 +105,7 @@ class Submission:
             f.write(buf.getvalue())
 
         try:
-            stdout, stderr = await run_process_exec(f'{self.DIR}/edit_map', tmp, edited_tmp, *args)
+            stdout, stderr = await run_process_exec(f'{self.DIR}/twmap_edit', tmp, edited_tmp, *args)
         except RuntimeError as exc:
             error = str(exc)
         else:
@@ -123,7 +123,7 @@ class Submission:
         # cleanup
         os.remove(tmp)
 
-        return (stdout, file)
+        return stdout, file
 
 class InitialSubmission(Submission):
     __slots__ = Submission.__slots__ + ('name', 'mappers', 'server', 'map_channel')
