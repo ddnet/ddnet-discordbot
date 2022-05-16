@@ -197,8 +197,13 @@ class Moderator(commands.Cog):
     @commands.Cog.listener('on_message')
     async def unwanted_message(self, message: discord.Message):
         channel = message.channel
+        author = message.author
         if channel.id == CHAN_REPORTS:
             await asyncio.sleep(10 * 30)
+            await message.delete()
+        else:
+            msg = f'Please carefully read the report example. Make sure to Highlight our Moderators using `@Moderator`!'
+            await author.send(msg)
             await message.delete()
 
     @commands.Cog.listener()
