@@ -23,7 +23,7 @@ initial_extensions = (
     'cogs.profile',
     'cogs.records',
     'cogs.status',
-    'cogs.votes',
+    'cogs.votess',
 )
 
 
