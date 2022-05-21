@@ -194,7 +194,7 @@ class Moderator(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         author = message.author
-        if message.guild is None or message.guild.id != GUILD_DDNET or message.channel.id == CHAN_REPORTS \
+        if message.guild is None or message.guild.id != GUILD_DDNET or message.author.bot or message.channel.id == CHAN_REPORTS \
            or is_staff(author) or f'<@&{ROLE_MODERATOR}>' not in message.content:
             return
 
