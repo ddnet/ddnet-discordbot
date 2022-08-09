@@ -74,7 +74,7 @@ class Submission:
             f.write(buf.getvalue())
 
         try:
-            dbg_stdout, dbg_stderr = await run_process_exec(f'{self.DIR}/twmap_check', "-vv", "--", tmp)
+            dbg_stdout, dbg_stderr = await run_process_exec(f'{self.DIR}/twmap-check', "-vv", "--", tmp)
         except RuntimeError as exc:
             ddnet_dbg_error = str(exc)
             return log.error('Debugging failed of map %r (%d): %s', self.filename, self.message.id, ddnet_dbg_error)
@@ -82,7 +82,7 @@ class Submission:
         output = dbg_stdout + dbg_stderr
 
         try:
-            ddnet_dbg_stdout, ddnet_dbg_stderr = await run_process_exec(f'{self.DIR}/twmap_check_ddnet', "--", tmp)
+            ddnet_dbg_stdout, ddnet_dbg_stderr = await run_process_exec(f'{self.DIR}/twmap-check-ddnet', "--", tmp)
         except RuntimeError as exc:
             ddnet_dbg_error = str(exc)
             log.error('DDNet checks failed of map %r (%d): %s', self.filename, self.message.id, ddnet_dbg_error)
