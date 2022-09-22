@@ -108,11 +108,11 @@ class MapTesting(commands.Cog):
 
         async with self.bot.session.post(url, data=data, headers=headers) as resp:
             if resp.status != 200:
-                fmt = 'Failed uploading %s %r to ddnet.tw: %s (status code: %d %s)'
+                fmt = 'Failed uploading %s %r to ddnet.org: %s (status code: %d %s)'
                 log.error(fmt, asset_type, filename, await resp.text(), resp.status, resp.reason)
-                raise RuntimeError('Could not upload file to ddnet.tw')
+                raise RuntimeError('Could not upload file to ddnet.org')
 
-            log.info('Successfully uploaded %s %r to ddnet.tw', asset_type, filename)
+            log.info('Successfully uploaded %s %r to ddnet.org', asset_type, filename)
 
     async def ddnet_delete(self, filename: str):
         url = self.bot.config.get('DDNET', 'DELETE')
@@ -121,11 +121,11 @@ class MapTesting(commands.Cog):
 
         async with self.bot.session.post(url, data=data, headers=headers) as resp:
             if resp.status != 200:
-                fmt = 'Failed deleting map %r on ddnet.tw: %s (status code: %d %s)'
+                fmt = 'Failed deleting map %r on ddnet.org: %s (status code: %d %s)'
                 log.error(fmt, filename, await resp.text(), resp.status, resp.reason)
-                raise RuntimeError('Could not delete map on ddnet.tw')
+                raise RuntimeError('Could not delete map on ddnet.org')
 
-            log.info('Successfully deleted map %r on ddnet.tw', filename)
+            log.info('Successfully deleted map %r on ddnet.org', filename)
 
     async def upload_submission(self, subm: Submission):
         try:

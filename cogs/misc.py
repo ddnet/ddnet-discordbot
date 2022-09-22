@@ -49,7 +49,7 @@ class Misc(commands.Cog):
     async def about(self, ctx: commands.Context):
         """Shows information about the bot"""
         title = 'Discord bot for DDraceNetwork'
-        embed = discord.Embed(title=title, color=0xFEA500, url='https://ddnet.tw')
+        embed = discord.Embed(title=title, color=0xFEA500, url='https://ddnet.org')
 
         embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url_as(format='png'))
 

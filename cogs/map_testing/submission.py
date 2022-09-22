@@ -219,7 +219,7 @@ class InitialSubmission(Submission):
 
         file = await self.get_file()
         msg = f'{self.author.mention} this is your map\'s testing channel! '\
-               'Post map updates here and remember to follow our mapper rules: https://ddnet.tw/rules'
+               'Post map updates here and remember to follow our mapper rules: https://ddnet.org/rules'
         message = await self.map_channel.send(msg, file=file)
 
         thumbnail = await self.generate_thumbnail()

@@ -15,7 +15,7 @@ from utils.text import clean_content, escape
 
 log = logging.getLogger(__name__)
 
-BASE_URL = 'https://ddnet.tw'
+BASE_URL = 'https://ddnet.org'
 
 
 class Player:
@@ -201,7 +201,7 @@ class ServerInfo:
         self.packets = self.Packets(kwargs.pop('packets_rx', -1), kwargs.pop('packets_tx', -1))
 
     def __str__(self) -> str:
-        return 'MAIN' if self.host == 'ddnet.tw' else self.host.split('.')[0].upper()
+        return 'MAIN' if self.host == 'ddnet.org' else self.host.split('.')[0].upper()
 
     def is_under_attack(self) -> bool:
         return self.packets.rx > self.PPS_THRESHOLD \

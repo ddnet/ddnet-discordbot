@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 rm -rf ddnet-sql ddnet-sql.zip
-wget https://ddnet.tw/stats/ddnet-sql.zip
+wget https://ddnet.org/stats/ddnet-sql.zip
 unzip ddnet-sql.zip
 rm ddnet-sql.zip
 

@@ -65,7 +65,7 @@ class Moderator(commands.Cog):
         async with self.bot.session.request(method, url, params=params, headers=headers) as resp:
             if resp.status not in (200, 201):
                 text = await resp.text()
-                fmt = 'Failed %s request for %r on ddnet.tw: %s (status code: %d %s)'
+                fmt = 'Failed %s request for %r on ddnet.org: %s (status code: %d %s)'
                 log.error(fmt, method, ip, text, resp.status, resp.reason)
                 raise RuntimeError(text)
 

@@ -63,7 +63,7 @@ class MapChannel:
 
     @property
     def preview_url(self) -> str:
-        return f'https://ddnet.tw/testmaps/?map={self.filename}'
+        return f'https://ddnet.org/testmaps/?map={self.filename}'
 
     @property
     def topic(self) -> str:
