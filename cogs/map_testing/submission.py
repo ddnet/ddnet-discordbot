@@ -105,7 +105,7 @@ class Submission:
             f.write(buf.getvalue())
 
         try:
-            stdout, stderr = await run_process_exec(f'{self.DIR}/twmap_edit', tmp, edited_tmp, *args)
+            stdout, stderr = await run_process_exec(f'{self.DIR}/twmap-edit', tmp, edited_tmp, *args)
         except RuntimeError as exc:
             error = str(exc)
         else:
