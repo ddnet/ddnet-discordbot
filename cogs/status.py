@@ -192,6 +192,7 @@ class ServerInfo:
         'ARG': '🇦🇷',
         'COL': '🇨🇴',
         'CRI': '🇨🇷',
+        'TWN': '🇹🇼',
     }
 
     def __init__(self, **kwargs):
