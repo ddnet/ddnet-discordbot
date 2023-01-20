@@ -2,18 +2,18 @@ import discord
 from discord.ext import commands
 import re
 
-GUILD_DDNet =               930664819303002123
-SKINS_SUBMIT_CHANNEL_ID =   986107035747766292
-ADMIN_ROLE_ID =             930665626370985994
-DISCORD_MODERATOR_ROLE_ID = 934131865512730656
-SKIN_DB_CREW_ROLE_ID =      930665730091929650
+GUILD_DDNET               =
+SKINS_SUBMIT_CHANNEL_ID   =   
+ADMIN_ROLE_ID             =             
+DISCORD_MODERATOR_ROLE_ID = 
+SKIN_DB_CREW_ROLE_ID      =      
 
 def is_staff(member: discord.Member) -> bool:
     return any(r.id in (ADMIN_ROLE_ID, DISCORD_MODERATOR_ROLE_ID, SKIN_DB_CREW_ROLE_ID) for r in member.roles)
 
 def check_if_staff(message: discord.Message):
     author = message.author
-    return message.guild is None or message.guild.id != GUILD_DDNet or message.channel.id != SKINS_SUBMIT_CHANNEL_ID or is_staff(author)
+    return message.guild is None or message.guild.id != GUILD_DDNET or message.channel.id != SKINS_SUBMIT_CHANNEL_ID or is_staff(author)
 
 def check_if_has_attachments(message: discord.Message):
     if len(message.attachments) == 0:
@@ -85,8 +85,8 @@ class SkinDB(commands.Cog):
             await message.author.send(check_message)
             return
 
-        f3_emoji = self.bot.get_emoji(933103235651223632)
-        f4_emoji = self.bot.get_emoji(933102663841751061)
+        f3_emoji = self.bot.get_emoji()
+        f4_emoji = self.bot.get_emoji()
 
         if len(message.attachments) > 2:
             await message.author.send(

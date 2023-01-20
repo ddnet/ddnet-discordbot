@@ -16,17 +16,15 @@ from utils.text import clean_content, escape_backticks
 
 log = logging.getLogger(__name__)
 
-GUILD_DDNET     = 930664819303002123
-CHAN_REPORTS    = 934131515296735272
-CHAN_MODERATOR  = 934131414721507398
-CHAN_BOTTERS    = 934131667466063902
-CHAN_DEV        = 934178218221666305
-CHAN_WIKI       = 1014644820205129778
-ROLE_ADMIN      = 930665626370985994
-ROLE_MODERATOR  = 934131865512730656
-ROLE_MUTED      = 934131935683416075
-
-# Ban = namedtuple('Ban', 'ip expires name reason mod region')
+GUILD_DDNET     = 
+CHAN_REPORTS    = 
+CHAN_MODERATOR  = 
+CHAN_BOTTERS    = 
+CHAN_DEV        = 
+CHAN_WIKI       = 
+ROLE_ADMIN      = 
+ROLE_MODERATOR  = 
+ROLE_MUTED      = 
 
 def is_staff(member: discord.Member) -> bool:
     return any(r.id in (ROLE_ADMIN, ROLE_MODERATOR) for r in member.roles)
