@@ -97,8 +97,11 @@ class Moderator(commands.Cog):
         KoG = extract_servers(jsonData, ['Gores', 'TestGores'], "kog")
 
         ipaddr = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,4}')
-        re_match = ipaddr.findall(message.content)[0]
-
+        try:
+            re_match = ipaddr.findall(message.content)[0]
+        except IndexError:
+            return
+        
         if re_match in DDNetddr:
             message_text = f'`{re_match}` is an official DDNet server. Non-Steam: <ddnet://{re_match}/> Steam: steam://run/412220//{re_match}/'
         elif re_match in DDNetPVP:
