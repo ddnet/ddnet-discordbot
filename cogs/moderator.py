@@ -4,26 +4,21 @@
 import asyncio
 import logging
 import re
-from collections import namedtuple
-from datetime import datetime, timedelta
-from typing import Optional
+import requests
 
 import discord
 from discord.ext import commands
-
-from utils.text import clean_content, escape_backticks
 
 log = logging.getLogger(__name__)
 
 GUILD_DDNET     = 252358080522747904
 CHAN_REPORTS    = 779761780129005568
-CHAN_MODERATOR  = 345588928482508801
-CHAN_BOTTERS    = 562648944908435476
+CHAN_DEV        = 293493549758939136
+CHAN_WIKI       = 871738312849752104
 ROLE_ADMIN      = 293495272892399616
 ROLE_MODERATOR  = 252523225810993153
-ROLE_MUTED      = 768872500263911495
+ROLE_MUTED      = 987001532581052446
 
-Ban = namedtuple('Ban', 'ip expires name reason mod region')
 
 def is_staff(member: discord.Member) -> bool:
     return any(r.id in (ROLE_ADMIN, ROLE_MODERATOR) for r in member.roles)
@@ -32,178 +27,22 @@ def is_staff(member: discord.Member) -> bool:
 class Moderator(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self._current_ban = None
-        self._active_ban = asyncio.Event()
-        self._task = bot.loop.create_task(self.dispatch_unbans())
         self._warned_users = set()
+        self.servers_url = "https://master1.ddnet.tw/ddnet/15/servers.json"
 
-    def cog_unload(self):
-        self._task.cancel()
-
-    def restart_dispatch(self):
-        self._task.cancel()
-        self._task = self.bot.loop.create_task(self.dispatch_unbans())
-
-    async def ddnet_request(self, method: str, ip: str, modname: Optional[str]=None, name: Optional[str]=None, reason: Optional[str]=None, region: Optional[str]=None, expires: Optional[datetime]=None, note: Optional[str]=None):
-        url = self.bot.config.get('DDNET', 'BAN')
-        headers = {'X-DDNet-Token': self.bot.config.get('DDNET', 'BAN-TOKEN')}
-
-        params = {'ip': ip, 'note': ""}
-        if modname is not None:
-            params['note'] += modname
-        if name is not None:
-            params['note'] += f': {name}'
-        if reason is not None:
-            params['reason'] = reason
-        if expires is not None:
-            params['reason'] += f'. Until {expires:%b %d %H:%M} UTC'
-        if region is not None:
-            params['region'] = region
-        if note is not None:
-            params['note'] += f'({note})'
-
-        async with self.bot.session.request(method, url, params=params, headers=headers) as resp:
-            if resp.status not in (200, 201):
-                text = await resp.text()
-                fmt = 'Failed %s request for %r on ddnet.org: %s (status code: %d %s)'
-                log.error(fmt, method, ip, text, resp.status, resp.reason)
-                raise RuntimeError(text)
-
-    async def ddnet_ban(self, ip: str, name: str, expires: datetime, reason: str, mod: str, region: Optional[str]=None):
-        await self.ddnet_request('POST', ip, mod, name, reason, region, expires)
-
-        query = """INSERT INTO ddnet_bans (ip, expires, name, reason, mod, region) VALUES ($1, $2, $3, $4, $5, $6)
-                   ON CONFLICT (ip) DO UPDATE SET expires = $2, name = $3, reason = $4, mod = $5, region = $6;"""
-        await self.bot.pool.execute(query, ip, expires, name, reason, mod, region)
-
-        self._active_ban.set()
-        if self._current_ban is not None and expires < self._current_ban.expires:
-            self.restart_dispatch()
-
-    async def ddnet_unban(self, ip: str):
-        log.info('Unbanning ip %r', ip)
-        await self.ddnet_request('DELETE', ip)
-
-        query = 'DELETE FROM ddnet_bans WHERE ip = $1;'
-        await self.bot.pool.execute(query, ip)
-
-        if self._current_ban is not None and self._current_ban.ip == ip:
-            self.restart_dispatch()
-
-    async def get_active_ban(self) -> Ban:
-        query = 'SELECT * FROM ddnet_bans ORDER BY expires LIMIT 1;'
-        record = await self.bot.pool.fetchrow(query)
-        if record is None:
-            self._active_ban.clear()
-            self._current_ban = None
-            await self._active_ban.wait()
-            return await self.get_active_ban()
-        else:
-            return Ban(**record)
-
-    async def dispatch_unbans(self):
-        while not self.bot.is_closed():
-            ban = self._current_ban = await self.get_active_ban()
-            now = datetime.utcnow()
-
-            if ban.expires > now:
-                to_sleep = (ban.expires - now).total_seconds()
-                await asyncio.sleep(to_sleep)
-
-            await self.ddnet_unban(ban.ip)
-
-    async def _global_ban(self, ctx: commands.Context, ip: str, name: str, minutes: int, reason: str, region: Optional[str]=None):
-        if minutes < 1:
-            return await ctx.send('Minutes need to be greater than 0')
-
-        if region is not None and len(region) != 3:
-            return await ctx.send('Invalid region')
-
-        if len(reason) > 39:
-            return await ctx.send('Reason too long')
-
-        expires = datetime.utcnow() + timedelta(minutes=min(minutes, 60 * 24 * 30))
-
-        try:
-            await self.ddnet_ban(ip, name, expires, reason, str(ctx.author), region)
-        except RuntimeError as exc:
-            await ctx.send(exc)
-        else:
-            await ctx.send(f'Successfully banned `{ip}` until {expires:%Y-%m-%d %H:%M} UTC')
-
-    def cog_check(self, ctx: commands.Context) -> bool:
-        return ctx.channel.id in (CHAN_MODERATOR, CHAN_BOTTERS) and is_staff(ctx.author)
-
-    @commands.command()
-    async def global_ban(self, ctx: commands.Context, ip: str, name: str, minutes: int, *, reason: clean_content):
-        """Ban an ip from all DDNet servers.
-           Minutes need to be greater than 0.
-        """
-        await self._global_ban(ctx, ip, name, minutes, reason)
-
-    @commands.command()
-    async def global_ban_region(self, ctx: commands.Context, region: str, ip: str, name: str, minutes: int, *, reason: clean_content):
-        """Ban an ip from all DDNet servers in given region.
-           Minutes need to be greater than 0. Region needs to be the 3 char server code.
-        """
-        await self._global_ban(ctx, ip, name, minutes, reason, region)
-
-    @global_ban.error
-    @global_ban_region.error
-    async def global_ban_error(self, ctx: commands.Context, error: commands.CommandError):
-        if isinstance(error, commands.BadArgument):
-            await ctx.send('Minutes need to be greater than 0')
-
-    @commands.command(usage='<ip|name>')
-    async def global_unban(self, ctx: commands.Context, *, name: str):
-        """Unban an ip from all DDNet servers. If you pass a name, all currently globally banned ips associated with that name will be unbanned."""
-        if re.match(r'^[\d\.-]*$', name) is None:
-            query = 'SELECT ip FROM ddnet_bans WHERE name = $1;'
-            ips = [r['ip'] for r in await self.bot.pool.fetch(query, name)]
-            if not ips:
-                return await ctx.send(f'`{escape_backticks(name)}` isn\'t banned')
-        else:
-            ips = [name]
-
-        for ip in ips:
-            try:
-                await self.ddnet_unban(ip)
-            except RuntimeError as exc:
-                await ctx.send(exc)
-            else:
-                await ctx.send(f'Successfully unbanned `{ip}`')
-
-    @commands.command()
-    async def global_bans(self, ctx: commands.Context):
-        """Show all currently globally banned ips"""
-        admin_cog = self.bot.get_cog('Admin')
-        query = """SELECT ip, name, to_char(expires, \'YYYY-MM-DD HH24:MI\') AS expires, reason, mod, region
-                   FROM ddnet_bans ORDER BY expires;
-                """
-        await admin_cog.sql(ctx, query=query)
-
-    @commands.Cog.listener()
-    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.Member):
-        message = reaction.message
-        if message.guild is None or message.guild.id != GUILD_DDNET:
-            return
-
-        if f'<@&{ROLE_MODERATOR}>' in message.content and not is_staff(user):
-            await reaction.remove(user)
-
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    @commands.Cog.listener('on_message')
+    async def mentions_outside_reports(self, message: discord.Message):
         author = message.author
         if message.guild is None or message.guild.id != GUILD_DDNET or message.channel.id == CHAN_REPORTS \
-           or is_staff(author) or f'<@&{ROLE_MODERATOR}>' not in message.content:
+           or message.author.bot or is_staff(author) or f'<@&{ROLE_MODERATOR}>' not in message.content:
             return
 
         await message.delete()
 
         if author not in self._warned_users:
-            msg = f'Don\'t ping Moderators outside of <#{CHAN_REPORTS}>. If you do it again, you will be muted.'
+            warning = f'Don\'t ping Moderators outside of <#{CHAN_REPORTS}>. If you do it again, you will be muted.'
             try:
-                await author.send(msg)
+                await author.send(warning)
             except discord.Forbidden:
                 pass
 
@@ -213,6 +52,70 @@ class Moderator(commands.Cog):
             await author.add_roles(muted_role)
             await asyncio.sleep(60 * 60)
             await author.remove_roles(muted_role)
+
+    @commands.Cog.listener('on_message')
+    async def link_filter(self, message: discord.Message):
+
+        if message.guild is None or message.guild.id != GUILD_DDNET or message.channel.id not in (CHAN_DEV, CHAN_WIKI):
+            return
+
+        link_pattern = re.compile(r'https?:\/\/(www\.)?t\.me', re.IGNORECASE)
+        if link_pattern.search(message.content):
+            await message.delete()
+
+    @commands.Cog.listener('on_message')
+    async def server_link(self, message: discord.Message):
+        if message.guild is None or message.guild.id != GUILD_DDNET or message.channel.id != CHAN_REPORTS \
+                or message.author.bot:
+            return
+
+        jsondata = requests.get("https://info2.ddnet.tw/info").json()
+
+        def extract_servers(json, tags, network):
+            server_list = None
+            if network == "ddnet":
+                server_list = json.get('servers')
+            elif network == "kog":
+                server_list = json.get('servers-kog')
+
+            all_servers = []
+            for address in server_list:
+                server = address.get('servers')
+                for tag in tags:
+                    server_lists = server.get(tag)
+                    if server_lists is not None:
+                        all_servers += server_lists
+            return all_servers
+
+        ddnet = extract_servers(jsondata, ['DDNet', 'Test', 'Tutorial'], "ddnet")
+        ddnetpvp = extract_servers(jsondata, ['Block', 'Infection', 'iCTF', 'gCTF', 'Vanilla', 'zCatch',
+                                              'TeeWare', 'TeeSmash', 'Foot', 'xPanic', 'Monster'], "ddnet")
+        nobyfng = extract_servers(jsondata, ['FNG'], "ddnet")
+        kog = extract_servers(jsondata, ['Gores', 'TestGores'], "kog")
+
+        ipaddr = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,4}')
+        try:
+            re_match = ipaddr.findall(message.content)[0]
+        except IndexError:
+            return
+
+        if re_match in ddnet:
+            message_text = f'`{re_match}` is an official DDNet server. ' \
+                           f'Non-Steam: <ddnet://{re_match}/> Steam: steam://run/412220//{re_match}/'
+        elif re_match in ddnetpvp:
+            message_text = f'`{re_match}` is an official DDNet PvP server. ' \
+                           f'Non-Steam: <ddnet://{re_match}/> Steam: steam://run/412220//{re_match}/'
+        elif re_match in kog:
+            message_text = f'`{re_match}` appears to be a KoG server. DDNet and KoG aren\'t affiliated. ' \
+                           f'Join their discord and ask for help there instead. https://discord.gg/3G5SJY49nY'
+        elif re_match in nobyfng:
+            message_text = f'`{re_match}` appears to be a FNG server found within the DDNet tab. ' \
+                           f'These servers are classified as official but are not regulated by us. ' \
+                           f'For support, join this https://discord.gg/utB4Rs3 discord server instead.'
+        else:
+            message_text = f'`{re_match}` is an unknown server address and not affiliated with DDNet or KoG.'
+
+        await message.channel.send(message_text)
 
 
 def setup(bot: commands.bot):
