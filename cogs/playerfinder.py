@@ -226,14 +226,6 @@ class PlayerFinder(commands.Cog):
 
         await self.send_message(player_embed)
 
-    @commands.command(name='debug')
-    @commands.has_any_role(ROLE_ADMIN, ROLE_MODERATOR)
-    async def debug(self, ctx: commands.Context):
-        players_online = ""
-        for player, servers in self.players_online_filtered.items():
-            players_online += f"{player}: {servers}\n"
-        await ctx.send(f"**Current stored player information:**\n{players_online}")
-
     @commands.command(name="stop_search")
     @commands.has_any_role(ROLE_ADMIN, ROLE_MODERATOR)
     @in_channel(CHAN_BOT_SPAM)
