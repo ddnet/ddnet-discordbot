@@ -256,36 +256,6 @@ class Status(commands.Cog, name='DDNet Status'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    async def fetch_servers(self) -> List[Server]:
-        url = f'{BASE_URL}/status/index.json'
-        async with self.bot.session.get(url) as resp:
-            if resp.status != 200:
-                log.error('Failed to fetch DDNet server data (status code: %d %s)', resp.status, resp.reason)
-                raise RuntimeError('Could not fetch DDNet servers')
-
-            js = await resp.json()
-
-            return [Server(**s) for s in js]
-
-    @commands.command()
-    async def find(self, ctx: commands.Context, *, player: clean_content=None):
-        """Find a player on a DDNet server"""
-        player = player or ctx.author.display_name
-
-        try:
-            servers = await self.fetch_servers()
-        except RuntimeError as exc:
-            return await ctx.send(exc)
-
-        servers = [s for s in servers if player in s]
-        if not servers:
-            return await ctx.send('Could not find that player')
-
-        server = max(servers, key=lambda s: len(s.clients))
-
-        menu = Pages(server.embeds)
-        await menu.start(ctx)
-
     async def fetch_status(self) -> ServerStatus:
         url = f'{BASE_URL}/status/json/stats.json'
         async with self.bot.session.get(url) as resp:

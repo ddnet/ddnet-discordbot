@@ -18,6 +18,7 @@ CHAN_JOIN_LEAVE     = 255191476315750401
 CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_MAP_RELEASES   = 392853737099624449
 CHAN_LOGS           = 933330279496572998
+CHAN_PLAYERFINDER   = 968485530230743050
 CAT_INTERNAL        = 360793439123537920
 
 VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
@@ -49,7 +50,7 @@ class GuildLog(commands.Cog):
 
     async def log_message(self, message: discord.Message):
         if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() \
-                or message.channel.id == CHAN_LOGS or message.channel.category.id == CAT_INTERNAL:
+                or message.channel.id in (CHAN_LOGS, CHAN_PLAYERFINDER) or message.channel.category.id == CAT_INTERNAL:
             return
 
         embed = discord.Embed(title='Message deleted', description=message.content, color=0xDD2E44, timestamp=datetime.utcnow())
