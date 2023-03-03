@@ -142,7 +142,11 @@ class Github(commands.Cog):
     async def on_message(self, message: discord.Message):
         if message.channel.id != CHAN_DEVELOPER or (message.content and message.content[0] == self.bot.command_prefix) or message.author.bot or self.ratelimited():
             return
-
+        
+        codeblocks = re.findall(r"```(?:\w+\n)?(.+?)```", message.content, flags=re.DOTALL)
+        for codeblock in codeblocks:
+            message.content = message.content.replace(f"```{codeblock}```", '')
+        
         matches = re.finditer(_ISSUE_RE, message.content)
         links = []
         for match in matches:
