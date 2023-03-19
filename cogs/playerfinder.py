@@ -151,9 +151,10 @@ class PlayerFinder(commands.Cog):
                 formatted = self.format_address(address)
                 if formatted is not None:
                     server_addresses.append(formatted)
-            for player in server["info"]["clients"]:
-                for address in server_addresses:
-                    players[player["name"]].append((server["info"]["name"], address))
+            if "clients" in server["info"]:
+                for player in server["info"]["clients"]:
+                    for address in server_addresses:
+                        players[player["name"]].append((server["info"]["name"], address))
         return players
 
     @commands.command(name='find')
