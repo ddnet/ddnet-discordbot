@@ -22,6 +22,7 @@ class PlayerFinder(commands.Cog):
         self.player_file = "find_players.json"
         self.players_online_filtered = {}
         self.sent_messages = []
+        self.find_players.start()
 
     async def get(self, url, **kwargs):
         with FuturesSession() as s:
