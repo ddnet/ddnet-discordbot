@@ -175,6 +175,12 @@ class PlayerFinder(commands.Cog):
         try:
             if not self.sent_messages:
                 self.sent_messages.append(await self.bot.get_channel(CHAN_BOT_SPAM).send(embed=embed))
+
+                channel = self.bot.get_channel(CHAN_BOT_SPAM)
+                async for message in channel.history(limit=20):
+                    if message.embeds and message != self.sent_messages[0]:
+                        await message.delete()
+                        await asyncio.sleep(1)
             else:
                 channel = self.bot.get_channel(CHAN_BOT_SPAM)
                 async for message in channel.history(limit=1):
