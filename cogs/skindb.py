@@ -119,18 +119,22 @@ def crop_and_generate_image(img):
     image_surprised_r_eye = resize_image(image_surprised_r_eye, 0.8)
     image_surprised_r_eye_flipped = ImageOps.mirror(image_surprised_r_eye)
 
+    def paste_part(part, canvas, pos):
+        padded = Image.new('RGBA', canvas.size)
+        padded.paste(part, pos)
+        return Image.alpha_composite(canvas, padded)
+
     def create_tee_image(image_left_eye, image_right_eye_flipped):
         tee = Image.new("RGBA", (96, 64), (0, 0, 0, 0))
 
-        tee.paste(image_body_shadow_resized, (16, 0))
-        tee.paste(image_feet_shadow_back.convert("RGB"), (8, 30), image_feet_shadow_back)
-        tee.paste(image_feet_shadow_front.convert("RGB"), (24, 30), image_feet_shadow_front)
-        tee.paste(image_feet_back.convert("RGB"), (8, 30), image_feet_back)
-        tee.paste(image_body_resized.convert("RGB"), (16, 0), image_body_resized)
-        tee.paste(image_feet_front.convert("RGB"), (24, 30), image_feet_front)
-
-        tee.paste(image_left_eye.convert("RGB"), (39, 18), image_left_eye)
-        tee.paste(image_right_eye_flipped.convert("RGB"), (47, 18), image_right_eye_flipped)
+        tee = paste_part(image_body_shadow_resized, tee, (16, 0))
+        tee = paste_part(image_feet_shadow_back, tee, (8, 30))
+        tee = paste_part(image_feet_shadow_front, tee, (24, 30))
+        tee = paste_part(image_feet_back, tee, (8, 30))
+        tee = paste_part(image_body_resized, tee, (16, 0))
+        tee = paste_part(image_feet_front, tee, (24, 30))
+        tee = paste_part(image_left_eye, tee, (39, 18))
+        tee = paste_part(image_right_eye_flipped, tee, (47, 18))
 
         return tee
 
