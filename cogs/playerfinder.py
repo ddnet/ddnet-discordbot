@@ -14,6 +14,15 @@ ROLE_ADMIN      = 293495272892399616
 CHAN_BOT_SPAM   = 1078979471761211462
 
 
+def in_channel(channel_id):
+    async def channel_restriction(ctx):
+        if ctx.channel.id != channel_id:
+            return False
+        return True
+
+    return commands.check(channel_restriction)
+
+
 class PlayerFinder(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -27,14 +36,6 @@ class PlayerFinder(commands.Cog):
     async def get(self, url, **kwargs):
         with FuturesSession() as s:
             return await asyncio.wrap_future(s.get(url, **kwargs))
-
-    def in_channel(self, channel_id):
-        async def channel_restriction(ctx):
-            if ctx.channel.id != channel_id:
-                return False
-            return True
-
-        return commands.check(channel_restriction)
 
     @commands.command(name='list')
     @commands.has_any_role(ROLE_ADMIN, ROLE_MODERATOR)
@@ -104,6 +105,35 @@ class PlayerFinder(commands.Cog):
         if removed_players:
             await ctx.send(f'Removed players:\n{", ".join(removed_players)}.')
             self.players_online_filtered.clear()
+
+    @commands.command(name='info')
+    @commands.has_any_role(ROLE_ADMIN, ROLE_MODERATOR)
+    @in_channel(CHAN_BOT_SPAM)
+    async def send_info(self, ctx: commands.Context, player_name: str):
+        with open(self.player_file, 'r', encoding='utf-8') as f:
+            players = json.load(f)
+
+        if player_name not in players:
+            await ctx.send(f'Player not in watchlist.')
+        else:
+            reason = players.get(player_name, "No reason provided")
+            await ctx.send(f"{player_name} was added with Reason: {reason}")
+
+    @commands.command(name='edit')
+    @commands.has_any_role(ROLE_ADMIN, ROLE_MODERATOR)
+    @in_channel(CHAN_BOT_SPAM)
+    async def edit_info(self, ctx: commands.Context, player_name: str, *, reason: str):
+        with open(self.player_file, 'r', encoding='utf-8') as f:
+            player_list = json.load(f)
+
+        if player_name not in player_list:
+            await ctx.send(f'Player {player_name} not found.')
+        else:
+            player_list[player_name] = reason
+            with open(self.player_file, 'w', encoding='utf-8') as f:
+                json.dump(player_list, f)
+
+            await ctx.send(f'Reason for {player_name} updated to:\n{reason}')
 
     @commands.command(name='clear')
     @commands.has_any_role(ROLE_ADMIN, ROLE_MODERATOR)
