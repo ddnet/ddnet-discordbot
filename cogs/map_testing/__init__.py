@@ -325,7 +325,7 @@ class MapTesting(commands.Cog):
                 await map_channel.set_permissions(member, read_messages=True)
 
     def get_map_channel_from_ann(self, content: str) -> Optional[MapChannel]:
-        map_url_re = r'\[(?P<name>.+)\]\(<?https://ddnet\.tw/(?:maps|mappreview)/\?map=.+?>?\)'
+        map_url_re = r'\[(?P<name>.+)\]\(<?https://ddnet\.org/(?:maps|mappreview)/\?map=.+?>?\)'
         match = re.search(map_url_re, content)
         return match and self.get_map_channel(name=match.group('name'))
 
