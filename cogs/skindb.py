@@ -132,9 +132,9 @@ def crop_and_generate_image(img):
         tee = paste_part(image_feet_shadow_front, tee, (24, 30))
         tee = paste_part(image_feet_back, tee, (8, 30))
         tee = paste_part(image_body_resized, tee, (16, 0))
-        tee = paste_part(image_feet_front, tee, (24, 30))
         tee = paste_part(image_left_eye, tee, (39, 18))
         tee = paste_part(image_right_eye_flipped, tee, (47, 18))
+        tee = paste_part(image_feet_front, tee, (24, 30))
 
         return tee
 
