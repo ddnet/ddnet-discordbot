@@ -31,6 +31,11 @@ class PlayerFinder(commands.Cog):
         self.player_file = "find_players.json"
         self.players_online_filtered = {}
         self.sent_messages = []
+
+    def cog_unload(self) -> None:
+        self.find_players.cancel()
+
+    def cog_load(self) -> None:
         self.find_players.start()
 
     async def get(self, url, **kwargs):
@@ -307,6 +312,5 @@ class PlayerFinder(commands.Cog):
     def cog_unload(self):
         self.search_player.stop()
 
-
-def setup(bot: commands.Bot):
-    bot.add_cog(PlayerFinder(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(PlayerFinder(bot))
