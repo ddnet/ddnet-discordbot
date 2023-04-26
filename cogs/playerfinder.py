@@ -260,8 +260,6 @@ class PlayerFinder(commands.Cog):
                 player_embed.add_field(name=f"Player: {player_name}",
                                        value=f"Server: {server_name}"
                                              f"\nReason: {reason}"
-                                             f"\nAddress:"
-                                             f"\nNon-Steam <ddnet://{address}/>"
                                              f"\nSteam <steam://run/412220//{address}/>",
                                        inline=False)
         else:
