@@ -8,33 +8,10 @@ import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.image import save, wrap_new
+from utils.image import save, auto_wrap_text
 from utils.misc import executor
 
 DIR = 'data/assets'
-
-
-def wrap(font: ImageFont, text: str, line_width: int) -> List[str]:
-    words = text.split()
-
-    lines = []
-    line = []
-
-    for word in words:
-        newline = ' '.join(line + [word])
-
-        w, _ = font.getsize(newline)
-
-        if w > line_width:
-            lines.append(' '.join(line))
-            line = [word]
-        else:
-            line.append(word)
-
-    if line:
-        lines.append(' '.join(line))
-
-    return ('\n'.join(lines)).strip()
 
 
 class Memes(commands.Cog):
@@ -51,21 +28,41 @@ class Memes(commands.Cog):
         canv = ImageDraw.Draw(base)
         font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 46)
 
-        canv.text((600, 100), wrap(font, text1, 400), fill='black', font=font)
-        if text2 is not None:
-            canv.text((600, 500), wrap(font, text2, 400), fill='black', font=font)
+        font1, text1 = auto_wrap_text(font, text1, 400, 325)
+        canv.text((575, 50), text1, fill='black', font=font1)
+        font2, text2 = auto_wrap_text(font, text2, 400, 400)
+        canv.text((575, 475), text2, fill='black', font=font2)
 
         return save(base)
 
     async def default(self, ctx: commands.Context, text1: str, text2: str):
-        buf = await self.generate(ctx.command.name, text1, text2)
+        try:
+            buf = await self.generate(ctx.command.name, text1, text2)
+        except ValueError as exc:
+            return await ctx.send(exc)
+
         file = discord.File(buf, filename=f'{ctx.command.name}.png')
         await ctx.send(file=file)
 
+    @executor
+    def generate_ohno(self, text: str) -> BytesIO:
+        base = Image.open(f'{DIR}/memes/ohno.png')
+        canv = ImageDraw.Draw(base)
+        font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 40)
+
+        font1, text1 = auto_wrap_text(font, text, 400, 125)
+        canv.text((575, 50), text1, fill='black', font=font1)
+
+        return save(base)
+
     @commands.command()
     async def ohno(self, ctx: commands.Context, *, text: str):
-        buf = await self.generate('ohno', text)
-        file = discord.File(buf, filename='ohno.png')
+        try:
+            buf = await self.generate_ohno(text)
+        except ValueError as exc:
+            return await ctx.send(exc)
+        
+        file = discord.File(buf, filename='teebob.png')
         await ctx.send(file=file)
 
     @executor
@@ -74,14 +71,18 @@ class Memes(commands.Cog):
         canv = ImageDraw.Draw(base)
         font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 40)
 
-        box = ((100, 110), (360, 370))
-        wrap_new(canv, box, text, font=font)
+        font1, text1 = auto_wrap_text(font, text, 260, 260)
+        canv.text((100, 110), text1, fill='black', font=font1)
 
         return save(base)
 
     @commands.command()
     async def teebob(self, ctx: commands.Context, *, text: str):
-        buf = await self.generate_teebob(text)
+        try:
+            buf = await self.generate_teebob(text)
+        except ValueError as exc:
+            return await ctx.send(exc)
+        
         file = discord.File(buf, filename='teebob.png')
         await ctx.send(file=file)
 
@@ -91,16 +92,24 @@ class Memes(commands.Cog):
         canv = ImageDraw.Draw(base)
         font = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 30)
 
-        canv.text((10, 10), wrap(font, text1, 310), fill='black', font=font)
-        canv.text((10, 180), wrap(font, text2, 310), fill='black', font=font)
-        canv.text((10, 360), wrap(font, text3, 310), fill='black', font=font)
-        canv.text((10, 530), wrap(font, text4, 310), fill='black', font=font)
+        font1, text1 = auto_wrap_text(font, text1, 310, 150)
+        canv.text((10, 10), text1, fill='black', font=font1)
+        font2, text2 = auto_wrap_text(font, text2, 310, 150)
+        canv.text((10, 180), text2, fill='black', font=font2)
+        font3, text3 = auto_wrap_text(font, text3, 310, 150)
+        canv.text((10, 360), text3, fill='black', font=font3)
+        font4, text4 = auto_wrap_text(font, text4, 310, 150)
+        canv.text((10, 530), text4, fill='black', font=font4)
 
         return save(base)
 
     @commands.command()
     async def clown(self, ctx: commands.Context, text1: str, text2: str, text3: str, text4: str):
-        buf = await self.generate_clown(text1, text2, text3, text4)
+        try:
+            buf = await self.generate_clown(text1, text2, text3, text4)
+        except ValueError as exc:
+            return await ctx.send(exc)
+        
         file = discord.File(buf, filename='clown.png')
         await ctx.send(file=file)
 
