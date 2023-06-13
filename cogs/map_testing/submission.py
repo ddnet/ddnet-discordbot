@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from io import BytesIO
-from typing import Optional
+from typing import Optional, Tuple
 
 import discord
 
@@ -94,7 +94,7 @@ class Submission:
 
         return output
 
-    async def edit_map(self, *args: str) -> (str, Optional[discord.File]):
+    async def edit_map(self, *args: str) -> Tuple[str, Optional[discord.File]]:
         if "--mapdir" in args:
             return "Can't save as MapDir using the discord bot", None
         tmp = f'{self.DIR}/tmp/{self.message.id}.map'
