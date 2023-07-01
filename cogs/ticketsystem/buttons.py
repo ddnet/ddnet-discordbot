@@ -50,13 +50,12 @@ class CreateButton(discord.ui.View):
             interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
         }
 
-        category = interaction.guild.get_channel(CAT_MODERATORION)
         logs_channel = interaction.guild.get_channel(CHAN_LOGS)
         new_channel_position = logs_channel.position + 1
         ticket_creator_id = interaction.user.id
 
         ticket_channel = await interaction.guild.create_text_channel(
-            name=ticket_name, category=category, position=new_channel_position, overwrites=overwrites,
+            name=ticket_name, position=new_channel_position, overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>")
 
         embed = discord.Embed(
