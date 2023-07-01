@@ -1,0 +1,3 @@
+echo Deepfly: ON
+bind mouse1 "+fire; +toggle cl_dummy_hammer 1 0"
+bind c "echo Deepfly: OFF; cl_dummy_hammer 0; bind mouse1 +fire; bind c exec deepfly.txt"

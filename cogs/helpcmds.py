@@ -1,0 +1,154 @@
+import discord
+from discord.ext import commands
+
+
+class HelpCommands(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def staff(self, ctx: commands.Context):
+        file = discord.File('data/avatar.png', filename='avatar.png')
+
+        embed = discord.Embed(
+            title="DDNet Staff List",
+            description="The link below will give you a full list of all DDNet staff members.",
+            colour=discord.Colour.random())
+        embed.add_field(
+            name="URL:",
+            value="https://ddnet.org/staff/")
+        embed.set_thumbnail(url='attachment://avatar.png')
+
+        await ctx.send(file=file, embed=embed)
+
+    @commands.command()
+    async def configdir(self, ctx: commands.Context):
+        file = discord.File('data/avatar.png', filename='avatar.png')
+
+        embed = discord.Embed(
+            title="DDNet config directory & settings_ddnet.cfg file location:",
+            description="\n\n__**On Windows:**__"
+                        "\nOld: `%appdata%\Teeworlds`"
+                        "\nNew: `%appdata%\DDNet`"
+                        "\n\n__**On Linux:**__"
+                        "\nOld: `~/.teeworlds`"
+                        "\nNew: `~/.local/share/ddnet`"
+                        "\n\n__**On macOS:**__"
+                        "\nOld: `~/Library/Application Support/Teeworlds`"
+                        "\nNew: `~/Library/Application Support/DDNet`"
+                        "\n\n*The settings_ddnet.cfg file contains all your friends, control, "
+                        "player & graphic settings.*",
+            colour=discord.Colour.random())
+
+        embed.set_thumbnail(url='attachment://avatar.png')
+
+        await ctx.send(file=file, embed=embed)
+
+    @commands.command()
+    async def deepfly(self, ctx: commands.Context):
+        file = discord.File('data/avatar.png', filename='avatar.png')
+        bindconfig = discord.File('data/deepfly.txt', filename='deepfly.txt')
+        embed = discord.Embed(
+            title="How to bind and configure deepfly:",
+            description="It is __highly recommended to read__ the article below thoroughly, "
+                        "you may learn a bunch of useful things."
+                        "\n\n**URL:**"
+                        "\nhttps://wiki.ddnet.org/wiki/Binds#Deep_Fly"
+                        "\n\nor if you prefer to not read:"
+                        "\n\nMove the attached text file to your config directory, "
+                        "and then type: `exec deepfly.txt` into the ingame console (F1)."
+                        "\nTo toggle deepfly on/off, press the C key on your keyboard.",
+            colour=discord.Colour.random())
+
+        embed.set_thumbnail(url='attachment://avatar.png')
+
+        await ctx.send(file=file, embed=embed)
+        await ctx.send(file=bindconfig)
+
+    @commands.command()
+    async def skins(self, ctx: commands.Context):
+        file = discord.File('data/avatar.png', filename='avatar.png')
+
+        embed = discord.Embed(
+            title="How can I get other players to see the skin that I created?",
+            description="\nThere are two ways to get other players to see your custom skin:"
+                        "\n\n**Method 1:**"
+                        "\nThey need to manually add your skin to their game files by pasting it in the skins "
+                        "folder in the config directory."
+                        "\n\n**Method 2:**"
+                        "\nYour skin gets added to the official SkinDB and automatically downloaded for all other "
+                        "players if the `Download skins` option is enabled (Clientside)"
+                        f"\n\n For more info on how to get your skin uploaded to the SkinDB, "
+                        f"visit this channel: <#{985554143525601350}>",
+            colour=discord.Colour.random())
+
+        embed.set_thumbnail(url='attachment://avatar.png')
+
+        await ctx.send(file=file, embed=embed)
+
+    @commands.command()
+    async def kog(self, ctx: commands.Context):
+        file = discord.File('data/avatar.png', filename='avatar.png')
+
+        embed = discord.Embed(
+            title="King of Gores / KoG",
+            description="DDNet is not affiliated with KoG"
+                        "\n\nIf you require assistance on a server within the KoG tab, "
+                        "join their Discord server by clicking on the invite link below.",
+            colour=discord.Colour.random())
+        embed.add_field(
+            name="URL:",
+            value="https://discord.gg/3G5SJY49nY")
+
+        embed.set_thumbnail(url='attachment://avatar.png')
+
+        await ctx.send(file=file, embed=embed)
+
+    @commands.command()
+    async def binds(self, ctx: commands.Context):
+        file = discord.File('data/avatar.png', filename='avatar.png')
+
+        embed = discord.Embed(
+            title="How do I bind x ?",
+            description="\n# Most useful resources:",
+            colour=discord.Colour.random())
+        embed.add_field(
+            name="wiki.ddnet.org",
+            value="\nContent: \nThorough explanation how binds work, Deepfly, 45° Aim bind, Rainbow Tee"
+                  "\n\n**URL:**"
+                  "\n[wiki.ddnet.org](https://wiki.ddnet.org/wiki/Binds)")
+        embed.add_field(
+            name="DDNet Forums",
+            value="\nContent: \nClient-, Chat-, Dummy-, Mouse-, Player- and RCON settings"
+                  "\n\n**URL:**"
+                  "\n[forum.ddnet.org](https://forum.ddnet.org/viewtopic.php?f=16&t=2537)")
+
+        embed.set_thumbnail(url='attachment://avatar.png')
+
+        await ctx.send(file=file, embed=embed)
+
+    @commands.command()
+    async def crash(self, ctx: commands.Context):
+        file = discord.File('data/avatar.png', filename='avatar.png')
+
+        embed = discord.Embed(
+            title="Crash Logs",
+            description="To help us debug the cause for your crash, provide the following information:"
+                        "\n* Operating System"
+                        "\n - Windows, Linux or macOS?"
+                        "\n - 32Bit or 64Bit?"
+                        "\n* Client version"
+                        "\n* Steam or Standalone?"
+                        "\n - Steam: Nightly or releasecandidate beta?"
+                        "\n* The most recent crash log from your dumps folder found in your config directory "
+                        "(drag and drop the file into this channel)",
+
+            colour=discord.Colour.random())
+
+        embed.set_thumbnail(url='attachment://avatar.png')
+
+        await ctx.send(file=file, embed=embed)
+
+
+async def setup(bot):
+    await bot.add_cog(HelpCommands(bot))
