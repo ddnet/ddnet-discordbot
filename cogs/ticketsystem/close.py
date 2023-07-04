@@ -38,7 +38,7 @@ class CloseButton(discord.ui.View):
         if not any(channel_id[0] == interaction.channel.id for channel_id in channel_ids):
             return
 
-        ticket_channels = [interaction.client.get_channel(channel_id[0]) for channel_id in channel_ids]
+        ticket_channel = interaction.client.get_channel(interaction.channel.id)
         default_message = f"Your ticket has been closed by staff." if is_staff(
             interaction.user) else "Your ticket has been closed."
         ticket_creator = await interaction.client.fetch_user(ticket_creator_id)
@@ -60,8 +60,8 @@ class CloseButton(discord.ui.View):
         with open(self.ticket_data_file, "w") as f:
             json.dump(self.ticket_data, f, indent=4)
 
-        transcript_filename = f'{ticket_channels[0].name}.txt'
-        await transcript(self.bot, ticket_channels[0].id, filename=transcript_filename)
+        transcript_filename = f'{interaction.channel.name}.txt'
+        await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
 
         try:
             transcript_file = discord.File(transcript_filename)

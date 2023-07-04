@@ -201,10 +201,6 @@ class TicketSystem(commands.Cog):
         if not any(channel_id[0] == ctx.channel.id for channel_id in channel_ids):
             return
 
-        ticket_channels = [self.bot.get_channel(channel_id[0]) for channel_id in channel_ids]
-        transcript_filename = f'{ticket_channels[0].name}.txt'
-        await transcript(self.bot, ticket_channels[0].id, filename=transcript_filename)
-
         if is_staff(ctx.author):
             default_message = "Your ticket has been closed by staff."
             ext_message = f"{default_message} " \
@@ -213,6 +209,7 @@ class TicketSystem(commands.Cog):
         else:
             ext_message = "Your ticket has been closed."
 
+        ticket_channel = self.bot.get_channel(ctx.channel.id)
         ticket_creator = await self.bot.fetch_user(ticket_creator_id)
         await ticket_creator.send(ext_message)
 
@@ -232,8 +229,8 @@ class TicketSystem(commands.Cog):
         with open(self.ticket_data_file, "w") as f:
             json.dump(self.ticket_data, f, indent=4)
 
-        transcript_filename = f'{ticket_channels[0].name}.txt'
-        await transcript(self.bot, ticket_channels[0].id, filename=transcript_filename)
+        transcript_filename = f'{ticket_channel.name}.txt'
+        await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
 
         try:
             transcript_file = discord.File(transcript_filename)
