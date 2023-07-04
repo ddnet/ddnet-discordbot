@@ -47,7 +47,9 @@ class CreateButton(discord.ui.View):
         overwrites = {
             interaction.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-            interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
+            interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            interaction.guild.get_role(ROLE_MODERATOR): discord.PermissionOverwrite(read_messages=True,
+                                                                                    send_messages=True)
         }
 
         category = interaction.guild.get_channel(CAT_MODERATORION)
