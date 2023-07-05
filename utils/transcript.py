@@ -3,7 +3,7 @@
 async def transcript(bot, channel_id, filename):
     channel = await bot.fetch_channel(channel_id)
     messages = []
-    async for message in channel.history(limit=None):
+    async for message in channel.history(limit=None, oldest_first=True):
         if message.author.bot:
             continue
         created_at = message.created_at.replace(microsecond=0, tzinfo=None)
