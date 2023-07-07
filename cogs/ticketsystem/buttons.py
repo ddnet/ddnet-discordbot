@@ -43,13 +43,15 @@ class CreateButton(discord.ui.View):
         if has_open_ticket:
             return
 
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
         ticket_name = f"ig-issue-{interaction.user.name}"
         overwrites = {
             interaction.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             interaction.guild.get_role(ROLE_MODERATOR): discord.PermissionOverwrite(read_messages=True,
-                                                                                    send_messages=True)
+                                                                                    send_messages=True),
         }
 
         category = interaction.guild.get_channel(CAT_MODERATORION)
@@ -101,10 +103,12 @@ class CreateButton(discord.ui.View):
         message = await ticket_channel.send(
             f'<@&{ROLE_MODERATOR}> {interaction.user.mention}',
             embeds=[embed, embed2], view=CloseButton(interaction.client, self.ticket_data))
-        # await message.add_reaction('☑️')
+
         await ticket_channel.send(f'', view=ModeratorButton(interaction.client))
-        await interaction.response.send_message(  # noqa
+
+        await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
+
         await self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "ingame-issue")
 
         if interaction.response.is_done():  # noqa
@@ -116,6 +120,8 @@ class CreateButton(discord.ui.View):
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="rename")
         if has_open_ticket:
             return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
 
         ticket_name = f"rename-{interaction.user.name}"
         overwrites = {
@@ -161,9 +167,11 @@ class CreateButton(discord.ui.View):
             f'<@&{ROLE_ADMIN}> {interaction.user.mention}',
             embeds=[embed, embed2], view=CloseButton(interaction.client, self.ticket_data))
 
-        await interaction.response.send_message(  # noqa
+        await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
+
         await self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "rename")
+
         if interaction.response.is_done():  # noqa
             return
 
@@ -173,6 +181,8 @@ class CreateButton(discord.ui.View):
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="ban_appeal")
         if has_open_ticket:
             return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
 
         ticket_name = f"ban-appeal-{interaction.user.name}"
         overwrites = {
@@ -227,9 +237,11 @@ class CreateButton(discord.ui.View):
             embeds=[embed, embed2],
             view=CloseButton(interaction.client, self.ticket_data))
 
-        await interaction.response.send_message(  # noqa
+        await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
+
         await self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "ban_appeal")
+
         if interaction.response.is_done():  # noqa
             return
 
@@ -239,6 +251,8 @@ class CreateButton(discord.ui.View):
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="complaint")
         if has_open_ticket:
             return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
 
         ticket_name = f"complaint-{interaction.user.name}"
         overwrites = {
@@ -282,9 +296,11 @@ class CreateButton(discord.ui.View):
         message = await ticket_channel.send(f'<@&{ROLE_ADMIN}> {interaction.user.mention}', embeds=[embed, embed2],
                                             view=CloseButton(interaction.client, self.ticket_data))
 
-        await interaction.response.send_message(  # noqa
+        await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
+
         await self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "complaint")
+
         if interaction.response.is_done():  # noqa
             return
 
@@ -294,6 +310,8 @@ class CreateButton(discord.ui.View):
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="other")
         if has_open_ticket:
             return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
 
         ticket_name = f"other-{interaction.user.name}"
         overwrites = {
@@ -331,8 +349,10 @@ class CreateButton(discord.ui.View):
             f'<@&{ROLE_ADMIN}> {interaction.user.mention}',
             embeds=[embed, embed2], view=CloseButton(interaction.client, self.ticket_data))
 
-        await interaction.response.send_message(  # noqa
+        await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
+
         await self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "other")
+
         if interaction.response.is_done():  # noqa
             return

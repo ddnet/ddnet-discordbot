@@ -297,7 +297,7 @@ class TicketSystem(commands.Cog):
         with open(score_file, "r") as file:
             scores = json.load(file)
 
-        topic = "Scores:"
+        topic = "Issues Resolved:"
         for user_id, score in scores.items():
             topic += f" <@{user_id}> = {score} |"
 

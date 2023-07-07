@@ -6,7 +6,7 @@ from discord.ui import Button, button, View
 from utils.transcript import transcript
 
 CAT_TICKETS            = 1124657181363556403
-CHAN_T_TRANSCRIPTs     = 1124657432816267394
+CHAN_T_TRANSCRIPTS     = 1124657432816267394
 CHAN_MODERATOR         = 345588928482508801
 ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
@@ -17,17 +17,15 @@ def is_staff(member: discord.Member) -> bool:
     return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
 
 
-class CloseButton(discord.ui.View):
+class ConfirmView(discord.ui.View):
     def __init__(self, bot, ticket_data):
         super().__init__(timeout=None)
         self.bot = bot
+        self.ticket_data_file = 'data/ticket_data.json'
         self.ticket_data = ticket_data
-        self.ticket_data_file = "data/ticket_data.json"
 
-    @discord.ui.button(label='Close', style=discord.ButtonStyle.blurple, custom_id='CreateButton:close_ticket')
-    async def t_close(self, interaction: discord.Interaction, button: Button):
-        """Button which closes a Ticket"""
-
+    @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green, custom_id='confirm:close_ticket')
+    async def confirm(self, interaction: discord.Interaction, button: Button):
         ticket_creator_id = int(interaction.channel.topic.split(": ")[1].strip("<@!>"))
         ticket_data = self.ticket_data.get(str(ticket_creator_id))
 
@@ -65,7 +63,7 @@ class CloseButton(discord.ui.View):
 
         try:
             transcript_file = discord.File(transcript_filename)
-            transcript_channel = self.bot.get_channel(1100394849129201805)
+            transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
             await transcript_channel.send(f'Ticket created by: {ticket_creator} ({ticket_creator.id})',
                                           file=transcript_file)
             os.remove(transcript_filename)
@@ -74,9 +72,25 @@ class CloseButton(discord.ui.View):
 
         await interaction.channel.delete()
 
-        if interaction.response.is_done():  # noqa
-            return
+    @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red, custom_id='cancel:close_ticket')
+    async def cancel(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.defer()
+        await interaction.delete_original_response()
+        await interaction.followup.send('Ticket closure cancelled.', ephemeral=True)
 
+class CloseButton(discord.ui.View):
+    def __init__(self, bot, ticket_data):
+        super().__init__(timeout=None)
+        self.bot = bot
+        self.ticket_data = ticket_data
+
+    @discord.ui.button(label='Close', style=discord.ButtonStyle.blurple, custom_id='CreateButton:close_ticket')
+    async def t_close(self, interaction: discord.Interaction, button: Button):
+        """Button which closes a Ticket"""
+
+        # Create a confirmation view for the interaction
+        await interaction.response.send_message('Are you sure you want to close the ticket?', ephemeral=True,
+                                                view=ConfirmView(self.bot, self.ticket_data))
 
 class ModeratorButton(discord.ui.View):
     def __init__(self, bot):
