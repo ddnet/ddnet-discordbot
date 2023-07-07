@@ -348,25 +348,30 @@ class TicketSystem(commands.Cog):
         self.verify_message[message.id] = verify_message.id
 
     @commands.Cog.listener('on_message_edit')
-    async def message_delete_handler(self, before: discord.Message, after: discord.Message):
+    async def message_edit_handler(self, before: discord.Message, after: discord.Message):
         if before.author.bot:
             return
 
+        ip_pattern = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}')
+        ip_match = ip_pattern.search(after.content)
+
+        if not ip_match:
+            return
+
+        ipv4 = ip_match.group(0)
+        server_link_message = server_link(ipv4)
+
         if before.id in self.verify_message:
-            preview_message_id = self.verify_message[before.id]
-
-            ip_pattern = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}')
-            ip_match = ip_pattern.search(after.content)
-
-            if not ip_match:
-                return
-
-            ipv4 = ip_match.group(0)
-            server_link_message = server_link(ipv4)
-
-            preview_message = await before.channel.fetch_message(preview_message_id)
-
+            preview_message = await before.channel.fetch_message(self.verify_message[before.id])
             await preview_message.edit(content=server_link_message)
+        else:
+            if after.channel.name.startswith('ig-issue-') and after.channel not in self.mentions:
+                at_mention_moderator = f'<@&{ROLE_MODERATOR}>'
+                server_link_message += '\n' + at_mention_moderator
+                self.mentions.add(after.channel)
+
+            verify_message = await after.channel.send(server_link_message)
+            self.verify_message[after.id] = verify_message.id
 
 
 async def setup(bot):
