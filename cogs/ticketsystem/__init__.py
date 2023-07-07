@@ -86,6 +86,8 @@ class TicketSystem(commands.Cog):
         self.update_scores_topic.start()
         self.channel = None
         self.scores = {}
+        self.mentions = set()
+        self.verify_message = {}
 
     async def process_ticket_data(self, interaction, ticket_channel, ticket_creator_id, ticket_category):
         ticket_num = self.ticket_data.get(str(interaction.user.id), {}).get("ticket_num", 0) + 1
@@ -184,9 +186,6 @@ class TicketSystem(commands.Cog):
         $close <message>
         """
 
-        if ctx.channel.category.id != CAT_TICKETS and ctx.channel.category.id != CAT_MODERATION:
-            return
-
         if not ctx.channel.topic or not ctx.channel.topic.startswith("Ticket author:"):
             await ctx.send('This is not a ticket channel you goof.')
             return
@@ -201,13 +200,18 @@ class TicketSystem(commands.Cog):
         if not any(channel_id[0] == ctx.channel.id for channel_id in channel_ids):
             return
 
+        for channel_id, category in channel_ids:
+            if channel_id == ctx.channel.id:
+                ticket_category = category
+                break
+
         if is_staff(ctx.author):
-            default_message = "Your ticket has been closed by staff."
+            default_message = f"Your <{ticket_category}> ticket has been closed by staff."
             ext_message = f"{default_message} " \
                           f"\nThis is the message that has been left for you by our team: " \
                           f"\n> {message}" if message else default_message
         else:
-            ext_message = "Your ticket has been closed."
+            ext_message = f"Your <{ticket_category}> ticket has been closed."
 
         ticket_channel = self.bot.get_channel(ctx.channel.id)
         ticket_creator = await self.bot.fetch_user(ticket_creator_id)
@@ -263,6 +267,7 @@ class TicketSystem(commands.Cog):
                 else:
                     inactivity_count[str(channel_id)] = inactivity_count.get(str(channel_id), 0) + 1
 
+                # TODO: Add some more logic, e.g send a message that a ticket is about to be closed at 2 Inactivity.
                 if inactivity_count[str(channel_id)] >= 3:
                     topic = ticket_channel.topic
                     ticket_creator_id = int(topic.split(": ")[1].strip("<@!>"))
@@ -334,10 +339,34 @@ class TicketSystem(commands.Cog):
         ipv4 = ip_match.group(0)
         server_link_message = server_link(ipv4)
 
-        embed = discord.Embed(title="Report", colour=discord.Colour.random())
-        embed.add_field(name='', value=f'{server_link_message}', inline=False)
+        if message.channel.name.startswith('ig-issue-') and message.channel not in self.mentions:
+            at_mention_moderator = f'<@&{ROLE_MODERATOR}>'
+            server_link_message += '\n' + at_mention_moderator
+            self.mentions.add(message.channel)
 
-        await message.channel.send(server_link_message)
+        verify_message = await message.channel.send(server_link_message)
+        self.verify_message[message.id] = verify_message.id
+
+    @commands.Cog.listener('on_message_edit')
+    async def message_delete_handler(self, before: discord.Message, after: discord.Message):
+        if before.author.bot:
+            return
+
+        if before.id in self.verify_message:
+            preview_message_id = self.verify_message[before.id]
+
+            ip_pattern = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}')
+            ip_match = ip_pattern.search(after.content)
+
+            if not ip_match:
+                return
+
+            ipv4 = ip_match.group(0)
+            server_link_message = server_link(ipv4)
+
+            preview_message = await before.channel.fetch_message(preview_message_id)
+
+            await preview_message.edit(content=server_link_message)
 
 
 async def setup(bot):

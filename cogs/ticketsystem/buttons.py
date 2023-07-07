@@ -54,7 +54,7 @@ class CreateButton(discord.ui.View):
                                                                                     send_messages=True),
         }
 
-        category = interaction.guild.get_channel(CAT_MODERATORION)
+        category = interaction.guild.get_channel(CAT_TICKETS)
         logs_channel = interaction.guild.get_channel(CHAN_LOGS)
         new_channel_position = logs_channel.position + 1
         ticket_creator_id = interaction.user.id
@@ -101,7 +101,7 @@ class CreateButton(discord.ui.View):
                   f'use either the close button below or type `$close`.', inline=False)
 
         message = await ticket_channel.send(
-            f'<@&{ROLE_MODERATOR}> {interaction.user.mention}',
+            f'{interaction.user.mention}',
             embeds=[embed, embed2], view=CloseButton(interaction.client, self.ticket_data))
 
         await ticket_channel.send(f'', view=ModeratorButton(interaction.client))

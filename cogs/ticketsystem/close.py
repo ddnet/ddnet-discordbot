@@ -36,8 +36,13 @@ class ConfirmView(discord.ui.View):
         if not any(channel_id[0] == interaction.channel.id for channel_id in channel_ids):
             return
 
+        for channel_id, category in channel_ids:
+            if channel_id == interaction.channel.id:
+                ticket_category = category
+                break
+
         ticket_channel = interaction.client.get_channel(interaction.channel.id)
-        default_message = f"Your ticket has been closed by staff." if is_staff(
+        default_message = f"Your <{ticket_category}> ticket has been closed by staff." if is_staff(
             interaction.user) else "Your ticket has been closed."
         ticket_creator = await interaction.client.fetch_user(ticket_creator_id)
         await ticket_creator.send(default_message)
