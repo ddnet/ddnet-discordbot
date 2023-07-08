@@ -48,15 +48,18 @@ def check_text_format(message: discord.Message):
         return (False,
                 'Your message isn\'t properly formatted. Follow the message format written in <#986941590780149780>. Also keep in mind licenses are now required for every submission.')
 
-    licenses = ["CC0", "CC-BY", "CC-BY-SA"]
+    licenses = ["CC0", "CC BY", "CC BY-SA", "CC BY-NC-ND"]
     if re_match.group('license') is not None:
         if not any(lisense in re_match.group('license') for lisense in licenses):
-            return (False, 'Wrong License. Possible licenses: `(CC0)`, `(CC-BY)` or `(CC-BY-SA)`'
+            return (False, 'Wrong License. Possible licenses: `(CC0)`, `(CC BY)` or `(CC BY-SA)`'
                            '\n```md'
                            '\n# Recommended License Types'
                            '\nCC0 - skin is common property, everyone can use/edit/share it however they like'
-                           '\nCC-BY - skin can be used/edited/shared, but must be credited'
-                           '\nCC-BY-SA - skin can be used/edited/shared, but must be credited and derived works must also be shared under the same license```')
+                           '\nCC BY - skin can be used/edited/shared, but must be credited'
+                           '\nCC BY-SA - skin can be used/edited/shared, but must be credited and derived works '
+                           'must also be shared under the same license'
+                           '\nCC BY-NC-ND - Skin can be used/shared, must be credited, no commercial use, '
+                           'no derivatives```')
     return (True, None)
 
 
