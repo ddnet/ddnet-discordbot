@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 
 from cogs.ticketsystem.buttons import MainMenu
 from cogs.ticketsystem.close import CloseButton, ModeratorButton
+from cogs.ticketsystem.subscribe import SubscribeMenu
 from utils.transcript import transcript
 
 GUILD_DDNET            = 252358080522747904
@@ -89,7 +90,7 @@ class TicketSystem(commands.Cog):
         self.mentions = set()
         self.verify_message = {}
 
-    async def process_ticket_data(self, interaction, ticket_channel, ticket_creator_id, ticket_category):
+    def process_ticket_data(self, interaction, ticket_channel, ticket_creator_id, ticket_category):
         ticket_num = self.ticket_data.get(str(interaction.user.id), {}).get("ticket_num", 0) + 1
 
         creator_data = self.ticket_data.setdefault(str(ticket_creator_id), {})
@@ -105,7 +106,7 @@ class TicketSystem(commands.Cog):
         with open(self.ticket_data_file, "w") as f:
             json.dump(self.ticket_data, f, indent=4)
 
-    @commands.command()
+    @commands.command(hidden=True)
     async def button(self, ctx):
         if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
             return
@@ -151,7 +152,16 @@ class TicketSystem(commands.Cog):
 
         await ctx.send(embed=embed, view=MainMenu(self.ticket_data, self.process_ticket_data))
 
-    @commands.command()
+    @commands.command(hidden=True)
+    async def subscribe_button(self, ctx):
+        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+            return
+
+        await ctx.send(f'Choose the ticket categories you wish to receive notifications for, '
+                       f'or use the Subscribe/Unsubscribe buttons to manage notifications for all categories.',
+                       view=SubscribeMenu())
+
+    @commands.command(hidden=True)
     async def invite(self, ctx, user: Union[discord.Member, discord.Role]):
         """Adds a user or role to the ticket. Example:
         $invite <discord username or role>
@@ -179,7 +189,7 @@ class TicketSystem(commands.Cog):
         else:
             await ctx.send("Invalid user or role provided.")
 
-    @commands.command()
+    @commands.command(hidden=True)
     async def close(self, ctx, *, message=None):
         """Closes a Ticket.
         Staff members can include a small message for the ticket creator. Example:
@@ -302,8 +312,10 @@ class TicketSystem(commands.Cog):
         with open(score_file, "r") as file:
             scores = json.load(file)
 
+        sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
         topic = "Issues Resolved:"
-        for user_id, score in scores.items():
+        for user_id, score in sorted_scores:
             topic += f" <@{user_id}> = {score} |"
 
         topic = topic.rstrip("|")
@@ -324,10 +336,11 @@ class TicketSystem(commands.Cog):
         self.bot.add_view(view=MainMenu(self.ticket_data, self.process_ticket_data))
         self.bot.add_view(view=CloseButton(self.bot, self.ticket_data))
         self.bot.add_view(view=ModeratorButton(self.bot))
+        self.bot.add_view(view=SubscribeMenu())
 
     @commands.Cog.listener('on_message')
     async def server_link_verify(self, message: discord.Message):
-        if message.author.bot:
+        if message.author.bot or message.guild.id != GUILD_DDNET:
             return
 
         ip_pattern = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}')

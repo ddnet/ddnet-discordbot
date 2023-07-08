@@ -18,6 +18,10 @@ class MainMenu(discord.ui.View):
         self.ticket_data = ticket_data
         self.process_ticket_data = process_ticket_data
 
+        with open('data/subscribers.json', "r") as file:
+            self.subscribers = json.load(file)
+
+
     """Limits tickets per person to one"""
 
     async def check_for_open_ticket(self, interaction, ticket_category) -> bool:
@@ -51,7 +55,7 @@ class MainMenu(discord.ui.View):
             interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True),
             interaction.guild.get_role(ROLE_MODERATOR): discord.PermissionOverwrite(read_messages=True,
-                                                                                    send_messages=True),
+                                                                                    send_messages=True)
         }
 
         category = interaction.guild.get_channel(CAT_TICKETS)
@@ -62,6 +66,8 @@ class MainMenu(discord.ui.View):
         ticket_channel = await interaction.guild.create_text_channel(
             name=ticket_name, category=category, position=new_channel_position, overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>")
+
+        self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "ingame-issue")
 
         embed = discord.Embed(
                         title="How to properly file a report", color=0xff0000)
@@ -100,16 +106,20 @@ class MainMenu(discord.ui.View):
             value=f'\n\nIf you wish to close this ticket or opened this ticket by mistake, '
                   f'use either the close button below or type `$close`.', inline=False)
 
+        user_ids = self.subscribers["subscriptions"]["categories"].get('In-game Issue', [])
+        mention_subscribers = [f"<@{user_id}>" for user_id in user_ids]
+        mention_message = " ".join(mention_subscribers) + f' {interaction.user.mention}'
+
         message = await ticket_channel.send(
-            f'{interaction.user.mention}',
-            embeds=[embed, embed2], view=CloseButton(interaction.client, self.ticket_data))
+            mention_message,
+            embeds=[embed, embed2],
+            view=CloseButton(interaction.client, self.ticket_data)
+        )
 
         await ticket_channel.send(f'', view=ModeratorButton(interaction.client))
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-
-        await self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "ingame-issue")
 
         if interaction.response.is_done():  # noqa
             return
@@ -138,6 +148,8 @@ class MainMenu(discord.ui.View):
             name=ticket_name, category=category, position=new_channel_position, overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>")
 
+        self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "rename")
+
         embed = discord.Embed(title="Player Rename", colour=2210995)
         embed.add_field(name=f'',
                         value=f'Hello {interaction.user.mention},'
@@ -163,17 +175,18 @@ class MainMenu(discord.ui.View):
             value=f'\n\nIf you wish to close this ticket or opened this ticket by mistake, '
                   f'use either the close button below or type `$close`.', inline=False)
 
+        user_ids = self.subscribers["subscriptions"]["categories"].get('Rename', [])
+        mention_subscribers = [f"<@{user_id}>" for user_id in user_ids]
+        mention_message = " ".join(mention_subscribers) + f' {interaction.user.mention}'
+
         message = await ticket_channel.send(
-            f'<@&{ROLE_ADMIN}> {interaction.user.mention}',
-            embeds=[embed, embed2], view=CloseButton(interaction.client, self.ticket_data))
+            mention_message,
+            embeds=[embed, embed2],
+            view=CloseButton(interaction.client, self.ticket_data)
+        )
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-
-        await self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "rename")
-
-        if interaction.response.is_done():  # noqa
-            return
 
     @discord.ui.button(label='Ban Appeal', style=discord.ButtonStyle.blurple, custom_id='MainMenu:ban_appeal')
     async def t_ban_appeal(self, interaction: discord.Interaction, button: Button):  # noqa
@@ -203,6 +216,8 @@ class MainMenu(discord.ui.View):
             name=ticket_name, category=category, position=new_channel_position, overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>")
 
+        self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "ban_appeal")
+
         embed = discord.Embed(title="Ban appeal", colour=2210995)
         embed.add_field(
             name=f'',
@@ -230,17 +245,18 @@ class MainMenu(discord.ui.View):
                   f'use either the close button below or type `$close`.',
             inline=False)
 
+        user_ids = self.subscribers["subscriptions"]["categories"].get('Ban Appeal', [])
+        mention_subscribers = [f"<@{user_id}>" for user_id in user_ids]
+        mention_message = " ".join(mention_subscribers) + f' {interaction.user.mention}'
+
         message = await ticket_channel.send(
-            f'<@&{ROLE_MODERATOR}> '
-            # f'<@&{ROLE_ADMIN}> '
-            f'{interaction.user.mention}',
+            mention_message,
             embeds=[embed, embed2],
-            view=CloseButton(interaction.client, self.ticket_data))
+            view=CloseButton(interaction.client, self.ticket_data)
+        )
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-
-        await self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "ban_appeal")
 
         if interaction.response.is_done():  # noqa
             return
@@ -270,6 +286,8 @@ class MainMenu(discord.ui.View):
             name=ticket_name, category=category, position=new_channel_position, overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>")
 
+        self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "complaint")
+
         embed = discord.Embed(title="Ban appeal", colour=2210995)
         embed.add_field(
             name=f'',
@@ -293,13 +311,18 @@ class MainMenu(discord.ui.View):
             value=f'\n\nIf you wish to close this ticket or opened this ticket by mistake, '
                   f'use either the close button below or type `$close`.', inline=False)
 
-        message = await ticket_channel.send(f'<@&{ROLE_ADMIN}> {interaction.user.mention}', embeds=[embed, embed2],
-                                            view=CloseButton(interaction.client, self.ticket_data))
+        user_ids = self.subscribers["subscriptions"]["categories"].get('Complaint', [])
+        mention_subscribers = [f"<@{user_id}>" for user_id in user_ids]
+        mention_message = " ".join(mention_subscribers) + f' {interaction.user.mention}'
+
+        message = await ticket_channel.send(
+            mention_message,
+            embeds=[embed, embed2],
+            view=CloseButton(interaction.client, self.ticket_data)
+        )
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-
-        await self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "complaint")
 
         if interaction.response.is_done():  # noqa
             return
@@ -328,6 +351,8 @@ class MainMenu(discord.ui.View):
             name=ticket_name, category=category, position=new_channel_position, overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>")
 
+        self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "other")
+
         embed = discord.Embed(title="Other", colour=2210995)
         embed.add_field(name=f'',
                         value=f'Hello {interaction.user.mention},'
@@ -345,14 +370,19 @@ class MainMenu(discord.ui.View):
             value=f'\n\nIf you wish to close this ticket or opened this ticket by mistake, '
                   f'use either the close button below or type `$close`.', inline=False)
 
+        user_ids = self.subscribers["subscriptions"]["categories"].get("Other", [])
+        mention_subscribers = [f"<@{user_id}>" for user_id in user_ids]
+        mention_message = " ".join(mention_subscribers) + f' {interaction.user.mention}'
+        print(user_ids)
+
         message = await ticket_channel.send(
-            f'<@&{ROLE_ADMIN}> {interaction.user.mention}',
-            embeds=[embed, embed2], view=CloseButton(interaction.client, self.ticket_data))
+            mention_message,
+            embeds=[embed, embed2],
+            view=CloseButton(interaction.client, self.ticket_data)
+        )
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-
-        await self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "other")
 
         if interaction.response.is_done():  # noqa
             return
