@@ -89,7 +89,7 @@ class CloseButton(discord.ui.View):
         self.bot = bot
         self.ticket_data = ticket_data
 
-    @discord.ui.button(label='Close', style=discord.ButtonStyle.blurple, custom_id='CreateButton:close_ticket')
+    @discord.ui.button(label='Close', style=discord.ButtonStyle.blurple, custom_id='MainMenu:close_ticket')
     async def t_close(self, interaction: discord.Interaction, button: Button):
         """Button which closes a Ticket"""
 

@@ -12,7 +12,7 @@ ROLE_DISCORD_MODERATOR = 737776812234506270
 ROLE_MODERATOR         = 252523225810993153
 
 
-class CreateButton(discord.ui.View):
+class MainMenu(discord.ui.View):
     def __init__(self, ticket_data, process_ticket_data):
         super().__init__(timeout=None)
         self.ticket_data = ticket_data
@@ -36,7 +36,7 @@ class CreateButton(discord.ui.View):
                     return True
         return False
 
-    @discord.ui.button(label='In-game Issue', style=discord.ButtonStyle.blurple, custom_id='CreateButton:ig-issue')
+    @discord.ui.button(label='In-game Issue', style=discord.ButtonStyle.blurple, custom_id='MainMenu:ig-issue')
     async def t_ingame_issue(self, interaction: discord.Interaction, button: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="ingame-issue")
@@ -114,7 +114,7 @@ class CreateButton(discord.ui.View):
         if interaction.response.is_done():  # noqa
             return
 
-    @discord.ui.button(label='Rename', style=discord.ButtonStyle.blurple, custom_id='CreateButton:renames')
+    @discord.ui.button(label='Rename', style=discord.ButtonStyle.blurple, custom_id='MainMenu:renames')
     async def t_renames(self, interaction: discord.Interaction, button: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="rename")
@@ -175,7 +175,7 @@ class CreateButton(discord.ui.View):
         if interaction.response.is_done():  # noqa
             return
 
-    @discord.ui.button(label='Ban Appeal', style=discord.ButtonStyle.blurple, custom_id='CreateButton:ban_appeal')
+    @discord.ui.button(label='Ban Appeal', style=discord.ButtonStyle.blurple, custom_id='MainMenu:ban_appeal')
     async def t_ban_appeal(self, interaction: discord.Interaction, button: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="ban_appeal")
@@ -245,7 +245,7 @@ class CreateButton(discord.ui.View):
         if interaction.response.is_done():  # noqa
             return
 
-    @discord.ui.button(label='Complaint', style=discord.ButtonStyle.blurple, custom_id='CreateButton:complaints')
+    @discord.ui.button(label='Complaint', style=discord.ButtonStyle.blurple, custom_id='MainMenu:complaints')
     async def t_complaints(self, interaction: discord.Interaction, button: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="complaint")
@@ -304,7 +304,7 @@ class CreateButton(discord.ui.View):
         if interaction.response.is_done():  # noqa
             return
 
-    @discord.ui.button(label='Other', style=discord.ButtonStyle.blurple, custom_id='CreateButton:other')
+    @discord.ui.button(label='Other', style=discord.ButtonStyle.blurple, custom_id='MainMenu:other')
     async def t_other(self, interaction: discord.Interaction, button: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="other")

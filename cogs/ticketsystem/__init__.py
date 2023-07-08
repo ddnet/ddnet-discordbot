@@ -8,7 +8,7 @@ import requests
 from discord.ext import commands, tasks
 from datetime import datetime, timedelta, timezone
 
-from cogs.ticketsystem.buttons import CreateButton
+from cogs.ticketsystem.buttons import MainMenu
 from cogs.ticketsystem.close import CloseButton, ModeratorButton
 from utils.transcript import transcript
 
@@ -149,7 +149,7 @@ class TicketSystem(commands.Cog):
                               f"will review it and assist you accordingly. ",
                         inline=False)
 
-        await ctx.send(embed=embed, view=CreateButton(self.ticket_data, self.process_ticket_data))
+        await ctx.send(embed=embed, view=MainMenu(self.ticket_data, self.process_ticket_data))
 
     @commands.command()
     async def invite(self, ctx, user: Union[discord.Member, discord.Role]):
@@ -321,7 +321,7 @@ class TicketSystem(commands.Cog):
         with open(self.ticket_data_file, "r") as f:
             self.ticket_data = json.load(f)
 
-        self.bot.add_view(view=CreateButton(self.ticket_data, self.process_ticket_data))
+        self.bot.add_view(view=MainMenu(self.ticket_data, self.process_ticket_data))
         self.bot.add_view(view=CloseButton(self.bot, self.ticket_data))
         self.bot.add_view(view=ModeratorButton(self.bot))
 
