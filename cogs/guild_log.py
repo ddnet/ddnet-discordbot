@@ -43,7 +43,10 @@ class GuildLog(commands.Cog):
         if member.guild.id != GUILD_DDNET or member.bot:
             return
 
-        msg = f'📤 **{escape(str(member))}** just left the server <:mmm:395753965410582538>'
+        if member.discriminator == "0":
+            msg = f'📤 **{escape(str(member.name))}** just left the server <:mmm:395753965410582538>'
+        else:
+            msg = f'📤 **{escape(str(member))}** just left the server <:mmm:395753965410582538>'
         chan = self.bot.get_channel(CHAN_JOIN_LEAVE)
         await chan.send(msg)
 
