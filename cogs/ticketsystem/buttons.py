@@ -1,12 +1,11 @@
 import discord
+import json
 
 from discord.ui import Button, button, View
 from cogs.ticketsystem.close import CloseButton, ModeratorButton
 
 CAT_TICKETS            = 1124657181363556403
-CAT_MODERATORION       = 968484659950403585
 CHAN_INFO              = 1124657351442579486
-CHAN_LOGS              = 968485530230743050
 ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
 ROLE_MODERATOR         = 252523225810993153
@@ -59,8 +58,8 @@ class MainMenu(discord.ui.View):
         }
 
         category = interaction.guild.get_channel(CAT_TICKETS)
-        logs_channel = interaction.guild.get_channel(CHAN_LOGS)
-        new_channel_position = logs_channel.position + 1
+        logs_channel = interaction.guild.get_channel(CHAN_INFO)
+        new_channel_position = logs_channel.position
         ticket_creator_id = interaction.user.id
 
         ticket_channel = await interaction.guild.create_text_channel(
@@ -141,7 +140,7 @@ class MainMenu(discord.ui.View):
         }
         category = interaction.guild.get_channel(CAT_TICKETS)
         info_channel = interaction.guild.get_channel(CHAN_INFO)
-        new_channel_position = info_channel.position + 1
+        new_channel_position = info_channel.position
         ticket_creator_id = interaction.user.id
 
         ticket_channel = await interaction.guild.create_text_channel(
@@ -209,7 +208,7 @@ class MainMenu(discord.ui.View):
 
         category = interaction.guild.get_channel(CAT_TICKETS)
         info_channel = interaction.guild.get_channel(CHAN_INFO)
-        new_channel_position = info_channel.position + 1
+        new_channel_position = info_channel.position
         ticket_creator_id = interaction.user.id
 
         ticket_channel = await interaction.guild.create_text_channel(
@@ -279,7 +278,7 @@ class MainMenu(discord.ui.View):
 
         category = interaction.guild.get_channel(CAT_TICKETS)
         info_channel = interaction.guild.get_channel(CHAN_INFO)
-        new_channel_position = info_channel.position + 1
+        new_channel_position = info_channel.position
         ticket_creator_id = interaction.user.id
 
         ticket_channel = await interaction.guild.create_text_channel(
@@ -345,7 +344,7 @@ class MainMenu(discord.ui.View):
 
         category = interaction.guild.get_channel(CAT_TICKETS)
         info_channel = interaction.guild.get_channel(CHAN_INFO)
-        new_channel_position = info_channel.position + 1
+        new_channel_position = info_channel.position
         ticket_creator_id = interaction.user.id
         ticket_channel = await interaction.guild.create_text_channel(
             name=ticket_name, category=category, position=new_channel_position, overwrites=overwrites,
@@ -373,7 +372,6 @@ class MainMenu(discord.ui.View):
         user_ids = self.subscribers["subscriptions"]["categories"].get("Other", [])
         mention_subscribers = [f"<@{user_id}>" for user_id in user_ids]
         mention_message = " ".join(mention_subscribers) + f' {interaction.user.mention}'
-        print(user_ids)
 
         message = await ticket_channel.send(
             mention_message,

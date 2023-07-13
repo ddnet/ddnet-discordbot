@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 
-class HelpCommands(commands.Cog):
+class HelpCommands(commands.Cog, name='Help Commands'):
     def __init__(self, bot):
         self.bot = bot
 
@@ -26,7 +26,7 @@ class HelpCommands(commands.Cog):
         file = discord.File('data/avatar.png', filename='avatar.png')
 
         embed = discord.Embed(
-            title="DDNet config directory & settings_ddnet.cfg file location:",
+            title="DDNet config directory & settings_ddnet.cfg location:",
             description="\n\n__**On Windows:**__"
                         "\nOld: `%appdata%\Teeworlds`"
                         "\nNew: `%appdata%\DDNet`"
@@ -36,8 +36,7 @@ class HelpCommands(commands.Cog):
                         "\n\n__**On macOS:**__"
                         "\nOld: `~/Library/Application Support/Teeworlds`"
                         "\nNew: `~/Library/Application Support/DDNet`"
-                        "\n\n*The settings_ddnet.cfg file contains all your friends, control, "
-                        "player & graphic settings.*",
+                        "\n\nThe settings_ddnet.cfg file contains all your friends, control, player & game settings.",
             colour=discord.Colour.random())
 
         embed.set_thumbnail(url='attachment://avatar.png')
@@ -53,11 +52,11 @@ class HelpCommands(commands.Cog):
             description="It is __highly recommended to read__ the article below thoroughly, "
                         "you may learn a bunch of useful things."
                         "\n\n**URL:**"
-                        "\nhttps://wiki.ddnet.org/wiki/Binds#Deep_Fly"
-                        "\n\nor if you prefer to not read:"
+                        "\nhttps://wiki.ddnet.org/wiki/Binds#Deepfly"
+                        "\n\nIf you prefer to not read the article:"
                         "\n\nMove the attached text file to your config directory, "
                         "and then type: `exec deepfly.txt` into the ingame console (F1)."
-                        "\nTo toggle deepfly on/off, press the C key on your keyboard.",
+                        "\nTo toggle deepfly on/off, press \"C\" on your keyboard.",
             colour=discord.Colour.random())
 
         embed.set_thumbnail(url='attachment://avatar.png')
@@ -76,8 +75,7 @@ class HelpCommands(commands.Cog):
                         "\nThey need to manually add your skin to their game files by pasting it in the skins "
                         "folder in the config directory."
                         "\n\n**Method 2:**"
-                        "\nYour skin gets added to the official SkinDB and automatically downloaded for all other "
-                        "players if the `Download skins` option is enabled (Clientside)"
+                        "\nYour skin gets added to the official SkinDB."
                         f"\n\n For more info on how to get your skin uploaded to the SkinDB, "
                         f"visit this channel: <#{985554143525601350}>",
             colour=discord.Colour.random())
@@ -92,13 +90,13 @@ class HelpCommands(commands.Cog):
 
         embed = discord.Embed(
             title="King of Gores / KoG",
-            description="DDNet is not affiliated with KoG"
+            description="DDNet and KoG aren't affiliated."
                         "\n\nIf you require assistance on a server within the KoG tab, "
-                        "join their Discord server by clicking on the invite link below.",
+                        "join their Discord server by clicking on the link below.",
             colour=discord.Colour.random())
         embed.add_field(
             name="URL:",
-            value="https://discord.gg/3G5SJY49nY")
+            value="https://discord.kog.tw/")
 
         embed.set_thumbnail(url='attachment://avatar.png')
 
@@ -110,7 +108,7 @@ class HelpCommands(commands.Cog):
 
         embed = discord.Embed(
             title="How do I bind x ?",
-            description="\n# Most useful resources:",
+            description="",
             colour=discord.Colour.random())
         embed.add_field(
             name="wiki.ddnet.org",
@@ -139,12 +137,37 @@ class HelpCommands(commands.Cog):
                         "\n - 32Bit or 64Bit?"
                         "\n* Client version"
                         "\n* Steam or Standalone?"
-                        "\n - Steam: Nightly or releasecandidate beta?"
-                        "\n* The most recent crash log from your dumps folder found in your config directory "
-                        "(drag and drop the file into this channel)",
-
+                        "\n - Steam: Stable, Nightly or releasecandidate beta?"
+                        "\n* Upload the most recent crash log file from your dumps folder in the config directory "
+                        "(drag and drop it here).",
             colour=discord.Colour.random())
 
+        embed.set_thumbnail(url='attachment://avatar.png')
+
+        await ctx.send(file=file, embed=embed)
+
+    @commands.command(name='login')
+    async def kog_login(self, ctx: commands.Context):
+        file = discord.File('data/avatar.png', filename='avatar.png')
+
+        embed = discord.Embed(
+            title="KoG Login and Account Migration",
+            description="**If you already had an account on KoG, watch the following video.**"
+                        "\n\n**URL:**"
+                        "\n[www.youtube.com](https://www.youtube.com/watch?v=d1kbt-srlac)",
+            colour=discord.Colour.random())
+        embed.add_field(
+            name=f'For new Players:',
+            value=f'Creating an ingame login is simple:'
+                  f'\n1. Login into your [kog.tw](https://kog.tw/) account ( old account )'
+                  f'\n2. Click on your username at the top right.'
+                  f'\n3. Click on In-game login.'
+                  f'\n4. Generate an In-game login.'
+                  f'\n5. Join any KoG server and paste the /login command')
+        embed.add_field(
+            name=f'This is not required on DDNet.',
+            value=f'',
+            inline=False)
         embed.set_thumbnail(url='attachment://avatar.png')
 
         await ctx.send(file=file, embed=embed)

@@ -94,7 +94,7 @@ class TicketSystem(commands.Cog):
         ticket_num = self.ticket_data.get(str(interaction.user.id), {}).get("ticket_num", 0) + 1
 
         creator_data = self.ticket_data.setdefault(str(ticket_creator_id), {})
-        creator_data.setdefault('channel_ids', []).append((int(ticket_channel.id), ticket_category))
+        creator_data.setdefault('channel_ids', []).append([int(ticket_channel.id), ticket_category])
 
         inactivity_count = creator_data.setdefault('inactivity_count', {})
         for channel_id, _ in creator_data['channel_ids']:
@@ -166,11 +166,13 @@ class TicketSystem(commands.Cog):
         """Adds a user or role to the ticket. Example:
         $invite <discord username or role>
         """
-        if ctx.channel.category.id not in [CAT_TICKETS, CAT_MODERATION] and is_staff(ctx.author.roles):
+        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or not is_staff(ctx.author):
             return
 
         if not ctx.channel.topic or not ctx.channel.topic.startswith("Ticket author:"):
-            await ctx.send('This is not a ticket channel you goof.')
+            return
+
+        if isinstance(user, discord.Role) and user.id == ctx.guild.default_role.id:
             return
 
         channel = ctx.channel
@@ -186,7 +188,10 @@ class TicketSystem(commands.Cog):
             overwrite.send_messages = True
             await channel.set_permissions(user, overwrite=overwrite)
             await ctx.send(f"{user.mention} role has been added to the channel.")
-        else:
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.BadUnionArgument):
             await ctx.send("Invalid user or role provided.")
 
     @commands.command(hidden=True)
@@ -195,24 +200,25 @@ class TicketSystem(commands.Cog):
         Staff members can include a small message for the ticket creator. Example:
         $close <message>
         """
+        if ctx.guild is None or ctx.guild.id != GUILD_DDNET:
+            return
 
         if not ctx.channel.topic or not ctx.channel.topic.startswith("Ticket author:"):
-            await ctx.send('This is not a ticket channel you goof.')
             return
 
         ticket_creator_id = int(ctx.channel.topic.split(": ")[1].strip("<@!>"))
         ticket_data = self.ticket_data.get(str(ticket_creator_id))
 
-        if ticket_data is None:
+        if not is_staff(ctx.author) and ctx.author.id != ticket_creator_id:
             return
 
         channel_ids = ticket_data.get("channel_ids", [])
-        if not any(channel_id[0] == ctx.channel.id for channel_id in channel_ids):
-            return
+        ticket_category = None
 
         for channel_id, category in channel_ids:
             if channel_id == ctx.channel.id:
                 ticket_category = category
+                channel_ids.remove([channel_id, category])
                 break
 
         if is_staff(ctx.author):
@@ -226,11 +232,6 @@ class TicketSystem(commands.Cog):
         ticket_channel = self.bot.get_channel(ctx.channel.id)
         ticket_creator = await self.bot.fetch_user(ticket_creator_id)
         await ticket_creator.send(ext_message)
-
-        for channel_id in channel_ids:
-            if channel_id[0] == ctx.channel.id:
-                channel_ids.remove(channel_id)
-                break
 
         del ticket_data["inactivity_count"][str(ctx.channel.id)]
         ticket_data["ticket_num"] -= 1
@@ -340,7 +341,7 @@ class TicketSystem(commands.Cog):
 
     @commands.Cog.listener('on_message')
     async def server_link_verify(self, message: discord.Message):
-        if message.author.bot or message.guild.id != GUILD_DDNET:
+        if message.guild is None or message.author.bot or message.guild.id != GUILD_DDNET:
             return
 
         ip_pattern = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}')

@@ -33,25 +33,22 @@ class ConfirmView(discord.ui.View):
         if ticket_data is None:
             return
 
-        channel_ids = ticket_data.get("channel_ids", [])
-        if not any(channel_id[0] == interaction.channel.id for channel_id in channel_ids):
+        if not is_staff(interaction.user) and interaction.user.id != ticket_creator_id:
             return
+
+        channel_ids = ticket_data.get("channel_ids", [])
 
         for channel_id, category in channel_ids:
             if channel_id == interaction.channel.id:
                 ticket_category = category
+                channel_ids.remove([channel_id, category])
                 break
 
         ticket_channel = interaction.client.get_channel(interaction.channel.id)
-        default_message = f"Your <{ticket_category}> ticket has been closed by staff." if is_staff(
-            interaction.user) else "Your ticket has been closed."
+        default_message = f"Your <{ticket_category}> ticket has been closed by staff." \
+            if is_staff(interaction.user) else "Your ticket has been closed."
         ticket_creator = await interaction.client.fetch_user(ticket_creator_id)
         await ticket_creator.send(default_message)
-
-        for channel_id in channel_ids:
-            if channel_id[0] == interaction.channel.id:
-                channel_ids.remove(channel_id)
-                break
 
         del ticket_data["inactivity_count"][str(interaction.channel.id)]
         ticket_data["ticket_num"] -= 1
@@ -80,9 +77,10 @@ class ConfirmView(discord.ui.View):
 
     @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red, custom_id='cancel:close_ticket')
     async def cancel(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.defer()
+        await interaction.response.defer() # noqa
         await interaction.delete_original_response()
         await interaction.followup.send('Ticket closure cancelled.', ephemeral=True)
+
 
 class CloseButton(discord.ui.View):
     def __init__(self, bot, ticket_data):
@@ -94,9 +92,9 @@ class CloseButton(discord.ui.View):
     async def t_close(self, interaction: discord.Interaction, button: Button):
         """Button which closes a Ticket"""
 
-        # Create a confirmation view for the interaction
-        await interaction.response.send_message('Are you sure you want to close the ticket?', ephemeral=True,
+        await interaction.response.send_message('Are you sure you want to close the ticket?', ephemeral=True, # noqa
                                                 view=ConfirmView(self.bot, self.ticket_data))
+
 
 class ModeratorButton(discord.ui.View):
     def __init__(self, bot):
