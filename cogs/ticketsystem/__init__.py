@@ -221,23 +221,43 @@ class TicketSystem(commands.Cog):
         ticket_channel = self.bot.get_channel(ctx.channel.id)
         ticket_creator = await self.bot.fetch_user(ticket_creator_id)
 
+        ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
+
         transcript_filename = f'{ticket_channel.name}.txt'
         await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
 
         try:
-            transcript_file = discord.File(transcript_filename)
+            logs_channel = self.bot.get_channel(CHAN_LOGS)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-            await transcript_channel.send(
-                f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) '
-                f'and closed by <@{ctx.author.id}> (Global Name: {ctx.author})',
-                file=transcript_file,
-                allowed_mentions=discord.AllowedMentions(users=False)
-            )
+            message = f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) ' \
+                      f'and closed by <@{ctx.author.id}> (Global Name: {ctx.author})'
+
+            if ticket_category in ('report', 'ban_appeal'):
+                transcript_file = discord.File(transcript_filename)
+                await logs_channel.send(
+                    message,
+                    file=transcript_file,
+                    allowed_mentions=discord.AllowedMentions(users=False)
+                )
+                # have to do this twice because discord.File objects are single use only
+                transcript_file = discord.File(transcript_filename)
+                await transcript_channel.send(
+                    message,
+                    file=transcript_file,
+                    allowed_mentions=discord.AllowedMentions(users=False)
+                )
+            else:
+                transcript_file = discord.File(transcript_filename)
+                await transcript_channel.send(
+                    message,
+                    file=transcript_file,
+                    allowed_mentions=discord.AllowedMentions(users=False)
+                )
+
             os.remove(transcript_filename)
         except FileNotFoundError:
             pass
 
-        ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
         await ctx.channel.delete()
 
         if is_staff(ctx.author):
@@ -301,26 +321,32 @@ class TicketSystem(commands.Cog):
                     await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
 
                     try:
-                        transcript_file = discord.File(transcript_filename)
                         logs_channel = self.bot.get_channel(CHAN_LOGS)
+                        transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
+                        message = f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}), ' \
+                                  f'closed due to inactivity.'
 
                         if ticket_category in ('report', 'ban_appeal'):
+                            transcript_file = discord.File(transcript_filename)
                             await logs_channel.send(
-                                f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}), '
-                                f'closed due to inactivity.',
+                                message,
                                 file=transcript_file,
                                 allowed_mentions=discord.AllowedMentions(users=False)
                             )
-                        # have to do this twice because discord.File objects are single use only
-                        transcript_file = discord.File(transcript_filename)
-                        transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-
-                        await transcript_channel.send(
-                            f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}), '
-                            f'closed due to inactivity.',
-                            file=transcript_file,
-                            allowed_mentions=discord.AllowedMentions(users=False)
-                        )
+                            # have to do this twice because discord.File objects are single use only
+                            transcript_file = discord.File(transcript_filename)
+                            await transcript_channel.send(
+                                message,
+                                file=transcript_file,
+                                allowed_mentions=discord.AllowedMentions(users=False)
+                            )
+                        else:
+                            transcript_file = discord.File(transcript_filename)
+                            await transcript_channel.send(
+                                message,
+                                file=transcript_file,
+                                allowed_mentions=discord.AllowedMentions(users=False)
+                            )
 
                         os.remove(transcript_filename)
                     except FileNotFoundError:

@@ -9,6 +9,7 @@ from utils.transcript import transcript
 CAT_TICKETS            = 1124657181363556403
 CHAN_T_TRANSCRIPTS     = 1124657432816267394
 CHAN_MODERATOR         = 345588928482508801
+CHAN_LOGS              = 968485530230743050
 ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
 ROLE_MODERATOR         = 252523225810993153
@@ -60,23 +61,43 @@ class ConfirmView(discord.ui.View):
         ticket_channel = interaction.client.get_channel(interaction.channel.id)
         ticket_creator = await interaction.client.fetch_user(ticket_creator_id)
 
+        ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
+
         transcript_filename = f'{interaction.channel.name}.txt'
         await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
 
         try:
-            transcript_file = discord.File(transcript_filename)
+            logs_channel = self.bot.get_channel(CHAN_LOGS)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-            await transcript_channel.send(
-                f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) '
-                f'and closed by <@{interaction.user.id}> (Global Name: {interaction.user})',
-                file=transcript_file,
-                allowed_mentions=discord.AllowedMentions(users=False)
-            )
+            message = f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) ' \
+                      f'and closed by <@{interaction.user.id}> (Global Name: {interaction.user})'
+
+            if ticket_category in ('report', 'ban_appeal'):
+                transcript_file = discord.File(transcript_filename)
+                await logs_channel.send(
+                    message,
+                    file=transcript_file,
+                    allowed_mentions=discord.AllowedMentions(users=False)
+                )
+                # have to do this twice because discord.File objects are single use only
+                transcript_file = discord.File(transcript_filename)
+                await transcript_channel.send(
+                    message,
+                    file=transcript_file,
+                    allowed_mentions=discord.AllowedMentions(users=False)
+                )
+            else:
+                transcript_file = discord.File(transcript_filename)
+                await transcript_channel.send(
+                    message,
+                    file=transcript_file,
+                    allowed_mentions=discord.AllowedMentions(users=False)
+                )
+
             os.remove(transcript_filename)
         except FileNotFoundError:
             pass
 
-        ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
         await interaction.channel.delete()
 
         default_message = f"Your ticket (category \"{ticket_category}\") has been closed by staff." \
