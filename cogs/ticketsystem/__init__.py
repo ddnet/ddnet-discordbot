@@ -229,27 +229,27 @@ class TicketSystem(commands.Cog):
         try:
             logs_channel = self.bot.get_channel(CHAN_LOGS)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-            message = f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) ' \
+            t_message = f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) ' \
                       f'and closed by <@{ctx.author.id}> (Global Name: {ctx.author})'
 
             if ticket_category in ('report', 'ban_appeal'):
                 transcript_file = discord.File(transcript_filename)
                 await logs_channel.send(
-                    message,
+                    t_message,
                     file=transcript_file,
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
                 # have to do this twice because discord.File objects are single use only
                 transcript_file = discord.File(transcript_filename)
                 await transcript_channel.send(
-                    message,
+                    t_message,
                     file=transcript_file,
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
             else:
                 transcript_file = discord.File(transcript_filename)
                 await transcript_channel.send(
-                    message,
+                    t_message,
                     file=transcript_file,
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
@@ -264,7 +264,7 @@ class TicketSystem(commands.Cog):
             default_message = f"Your ticket (category \"{ticket_category}\") has been closed by staff."
             ext_message = f"{default_message} " \
                           f"\nThis is the message that has been left for you by our team: " \
-                          f"\n>> {message}" if message else default_message
+                          f"\n> {message}" if message else default_message
         else:
             ext_message = None
 
