@@ -9,7 +9,7 @@ from discord.ext import commands, tasks
 from datetime import datetime, timedelta, timezone
 
 from cogs.ticketsystem.buttons import MainMenu
-from cogs.ticketsystem.close import CloseButton, ModeratorButton
+from cogs.ticketsystem.close import CloseButton, process_ticket_closure
 from cogs.ticketsystem.subscribe import SubscribeMenu
 from utils.transcript import transcript
 
@@ -18,6 +18,7 @@ CAT_TICKETS            = 1124657181363556403
 CAT_MODERATION         = 968484659950403585
 CHAN_MODERATOR         = 345588928482508801
 CHAN_T_TRANSCRIPTS     = 1124657432816267394
+CHAN_LOGS              = 968485530230743050
 CHAN_INFO              = 1124657351442579486
 ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
@@ -64,16 +65,16 @@ def server_link(addr):
                        f'\n<steam://run/412220//{re_match[0]}/'
     elif re_match[0] in kog:
         message_text = f'{re_match[0]} appears to be a KoG server. DDNet and KoG aren\'t affiliated. ' \
-                       f'\nJoin their discord and ask for help there instead. https://discord.kog.tw/ '
-        # return {"errfng": message_text}
+                       f'\nJoin their discord and ask for help there instead. <https://discord.kog.tw/>'
+        return {"errfng": message_text}
     elif re_match[0] in nobyfng:
         message_text = f'{re_match[0]} appears to be a FNG server found within the DDNet tab. ' \
                        f'\nThese servers are classified as official but are not regulated by us. ' \
                        f'\nFor support, join this https://discord.gg/utB4Rs3 discord server instead.'
-        # return {"errkog": message_text}
+        return {"errkog": message_text}
     else:
         message_text = f'{re_match[0]} is not a DDNet or KoG server.'
-        # return {"errunknown": message_text}
+        return {"errunknown": message_text}
 
     return message_text
 
@@ -90,76 +91,81 @@ class TicketSystem(commands.Cog):
         self.mentions = set()
         self.verify_message = {}
 
-    def process_ticket_data(self, interaction, ticket_channel, ticket_creator_id, ticket_category):
-        ticket_num = self.ticket_data.get(str(interaction.user.id), {}).get("ticket_num", 0) + 1
-
-        creator_data = self.ticket_data.setdefault(str(ticket_creator_id), {})
-        creator_data.setdefault('channel_ids', []).append([int(ticket_channel.id), ticket_category])
-
-        inactivity_count = creator_data.setdefault('inactivity_count', {})
-        for channel_id, _ in creator_data['channel_ids']:
-            inactivity_count.setdefault(str(channel_id), 0)
-
-        creator_data['ticket_num'] = ticket_num
-        creator_data['inactivity_count'] = inactivity_count
-
-        with open(self.ticket_data_file, "w") as f:
-            json.dump(self.ticket_data, f, indent=4)
-
     @commands.command(hidden=True)
     async def button(self, ctx):
         if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
             return
 
-        embed = discord.Embed(title="🎫  Welcome to our ticket system!",
-                              description="If you've been banned and want to appeal the decision, need to request a "
-                                          "rename, or have a complaint about the behavior of other users or moderators,"
-                                          " you can create a ticket using the buttons below.",
-                              colour=34483)
-        embed.add_field(name="In-Game Issues",
-                        value=f"If you encounter any behavior within the game that violates our rules, such as "
-                              f"**blocking, fun-voting, cheating, or any other form of misconduct**, you can open a "
-                              f"ticket in this given category to address the problem."
-                              f"\n\nNote:\nPlease refrain from creating a support ticket for technical issues "
-                              f"like DoS attacks or in-game lags",
-                        inline=False)
-        embed.add_field(name="Rename Requests",
-                        value=f"The rules for rename requests are:"
-                              f"\n- The original name should have 3k or more points on it"
-                              f"\n- Your last rename should be at least one year ago"
-                              f"\n- You must be able to provide proof of owning the points being moved"
-                              f"\n- The names shouldn't be banned",
-                        inline=False)
-        embed.add_field(name="Ban appeals",
-                        value=f"If you've been banned unfairly from our in-game servers, you are eligible to appeal the"
-                              f" decision. Please note that ban appeals are not guaranteed to be successful, and our "
-                              f"team reserves the right to deny any appeal at their discretion."
-                              f"\n\nNote: Only file a ticket if you've been banned across all servers or from one of "
-                              f"our moderators.",
-                        inline=False)
-        embed.add_field(name="Complaints",
-                        value=f"If a staff member's behavior in our community has caused you concern, you have the "
-                              f"option to make a complaint. Please note that complaints must be "
-                              f"based on specific incidents or behaviors and not on personal biases or general "
-                              f"dissatisfaction.",
-                        inline=False)
-        embed.add_field(name="Other",
-                        value=f"If you have an issue or request that doesn't fit into any of the specific categories "
-                              f"provided, you can still use our ticket system by selecting the \"Other\" option. "
-                              f"This will allow you to explain your issue or request in detail, and we "
-                              f"will review it and assist you accordingly. ",
-                        inline=False)
-
-        await ctx.send(embed=embed, view=MainMenu(self.ticket_data, self.process_ticket_data))
+        embed = discord.Embed(
+            title="🎫  Welcome to our ticket system!",
+            description="If you've been banned and want to appeal the decision, need to request a "
+                        "rename, or have a complaint about the behavior of other users or moderators,"
+                        " you can create a ticket using the buttons below.",
+            colour=34483
+        )
+        embed.add_field(
+            name="Report",
+            value=f"If you encounter any behavior within the game that violates our rules, such as "
+                  f"**blocking, fun-voting, cheating, or any other form of misconduct**, you can open a "
+                  f"ticket in this given category to address the problem."
+                  f"\n\nNote:\nPlease refrain from creating a support ticket for technical issues "
+                  f"like DoS attacks or in-game lags",
+            inline=False
+        )
+        embed.add_field(
+            name="Rename Requests",
+            value=f"The rules for rename requests are:"
+                  f"\n- The original name should have 3k or more points on it"
+                  f"\n- Your last rename should be at least one year ago"
+                  f"\n- You must be able to provide proof of owning the points being moved"
+                  f"\n- The names shouldn't be banned",
+            inline=False
+        )
+        embed.add_field(
+            name="Ban appeals",
+            value=f"If you've been banned unfairly from our in-game servers, you are eligible to appeal the"
+                  f" decision. Please note that ban appeals are not guaranteed to be successful, and our "
+                  f"team reserves the right to deny any appeal at their discretion."
+                  f"\n\nNote: Only file a ticket if you've been banned across all servers or from one of "
+                  f"our moderators.",
+            inline=False
+        )
+        embed.add_field(
+            name="Complaints",
+            value=f"If a staff member's behavior in our community has caused you concern, you have the "
+                  f"option to make a complaint. Please note that complaints must be "
+                  f"based on specific incidents or behaviors and not on personal biases or general "
+                  f"dissatisfaction.",
+            inline=False
+        )
+        embed.add_field(
+            name="Other",
+            value=f"If you have an issue or request that doesn't fit into any of the specific categories "
+                  f"provided, you can still use our ticket system by selecting the \"Other\" option. "
+                  f"This will allow you to explain your issue or request in detail, and we "
+                  f"will review it and assist you accordingly."
+                  f"\n\n**Note: No technical support.**",
+            inline=False
+        )
+        embed_warning = discord.Embed(
+            title="If you create tickets with no valid reason or solely to troll, "
+                        "you will be given a timeout.",
+            description="",
+            colour=16776960
+        )
+        await ctx.message.delete()
+        await ctx.send(embeds=[embed, embed_warning], view=MainMenu(self.ticket_data))
 
     @commands.command(hidden=True)
     async def subscribe_button(self, ctx):
         if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
             return
 
-        await ctx.send(f'Choose the ticket categories you wish to receive notifications for, '
-                       f'or use the Subscribe/Unsubscribe buttons to manage notifications for all categories.',
-                       view=SubscribeMenu())
+        await ctx.send(
+            f'Choose the ticket categories you wish to receive notifications for, '
+            f'or use the Subscribe/Unsubscribe buttons to manage notifications for all categories.',
+            view=SubscribeMenu(self.ticket_data)
+        )
 
     @commands.command(hidden=True)
     async def invite(self, ctx, user: Union[discord.Member, discord.Role]):
@@ -196,7 +202,8 @@ class TicketSystem(commands.Cog):
 
     @commands.command(hidden=True)
     async def close(self, ctx, *, message=None):
-        """Closes a Ticket.
+        """
+        Closes a Ticket.
         Staff members can include a small message for the ticket creator. Example:
         $close <message>
         """
@@ -207,42 +214,12 @@ class TicketSystem(commands.Cog):
             return
 
         ticket_creator_id = int(ctx.channel.topic.split(": ")[1].strip("<@!>"))
-        ticket_data = self.ticket_data.get(str(ticket_creator_id))
 
         if not is_staff(ctx.author) and ctx.author.id != ticket_creator_id:
             return
 
-        channel_ids = ticket_data.get("channel_ids", [])
-        ticket_category = None
-
-        for channel_id, category in channel_ids:
-            if channel_id == ctx.channel.id:
-                ticket_category = category
-                channel_ids.remove([channel_id, category])
-                break
-
-        if is_staff(ctx.author):
-            default_message = f"Your <{ticket_category}> ticket has been closed by staff."
-            ext_message = f"{default_message} " \
-                          f"\nThis is the message that has been left for you by our team: " \
-                          f"\n> {message}" if message else default_message
-        else:
-            ext_message = f"Your <{ticket_category}> ticket has been closed."
-
         ticket_channel = self.bot.get_channel(ctx.channel.id)
         ticket_creator = await self.bot.fetch_user(ticket_creator_id)
-        await ticket_creator.send(ext_message)
-
-        del ticket_data["inactivity_count"][str(ctx.channel.id)]
-        ticket_data["ticket_num"] -= 1
-
-        if ticket_data["ticket_num"] < 1:
-            self.ticket_data.pop(str(ticket_creator_id), None)
-        else:
-            self.ticket_data[str(ticket_creator_id)] = ticket_data
-
-        with open(self.ticket_data_file, "w") as f:
-            json.dump(self.ticket_data, f, indent=4)
 
         transcript_filename = f'{ticket_channel.name}.txt'
         await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
@@ -250,17 +227,37 @@ class TicketSystem(commands.Cog):
         try:
             transcript_file = discord.File(transcript_filename)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-            await transcript_channel.send(f'Ticket created by: {ticket_creator} ({ticket_creator.id})',
-                                          file=transcript_file)
+            await transcript_channel.send(
+                f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) '
+                f'and closed by <@{ctx.author.id}> (Global Name: {ctx.author})',
+                file=transcript_file,
+                allowed_mentions=discord.AllowedMentions(users=False)
+            )
             os.remove(transcript_filename)
         except FileNotFoundError:
             pass
 
+        ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
         await ctx.channel.delete()
 
+        if is_staff(ctx.author):
+            default_message = f"Your ticket (category \"{ticket_category}\") has been closed by staff."
+            ext_message = f"{default_message} " \
+                          f"\nThis is the message that has been left for you by our team: " \
+                          f"\n>> {message}" if message else default_message
+        else:
+            ext_message = None
+
+        try:
+            if ext_message is not None:
+                await ticket_creator.send(ext_message)
+        except discord.Forbidden:
+            pass
+
+    # TODO: Notify a ticket creator that no one is available to assist them with their issue. (Late at night)
     @tasks.loop(hours=1)
     async def check_inactive_tickets(self):
-        ticket_data_copy = self.ticket_data.copy()
+        ticket_data_copy = self.ticket_data.get("tickets", {}).copy()
         for user_id, ticket_data in ticket_data_copy.items():
             channel_ids = ticket_data.get("channel_ids", [])
             inactivity_count = ticket_data.get("inactivity_count", {})
@@ -268,37 +265,74 @@ class TicketSystem(commands.Cog):
             for channel_id, ticket_category in channel_ids:
                 ticket_channel = self.bot.get_channel(channel_id)
 
+                topic = ticket_channel.topic
+                ticket_creator_id = int(topic.split(": ")[1].strip("<@!>"))
+                ticket_creator = await self.bot.fetch_user(ticket_creator_id)
+
                 now = datetime.utcnow().replace(tzinfo=timezone.utc)
-                recent_messages = [msg async for msg in
-                                   ticket_channel.history(limit=1, after=now - timedelta(hours=6))]
+
+                recent_messages = []
+                async for msg in ticket_channel.history(limit=5, oldest_first=False, after=now - timedelta(hours=12)):
+                    if not msg.author.bot:
+                        recent_messages.append(msg)
 
                 if recent_messages and recent_messages[0].created_at.astimezone(timezone.utc) > now - timedelta(
-                        days=1):
+                        hours=12):
                     inactivity_count[str(channel_id)] = 0
                 else:
                     inactivity_count[str(channel_id)] = inactivity_count.get(str(channel_id), 0) + 1
 
-                # TODO: Add some more logic, e.g send a message that a ticket is about to be closed at 2 Inactivity.
+                if inactivity_count[str(channel_id)] == 2:
+                    await ticket_channel.send(
+                        f'<@{ticket_creator.id}>, this ticket is about to be closed due to inactivity.'
+                        f'\nIf your report or question has been answered, consider closing '
+                        f'this ticket yourself by typing $close.'
+                    )
+                    pass
+
                 if inactivity_count[str(channel_id)] >= 3:
-                    topic = ticket_channel.topic
-                    ticket_creator_id = int(topic.split(": ")[1].strip("<@!>"))
-                    ticket_creator = await self.bot.fetch_user(ticket_creator_id)
+                    ticket_category = process_ticket_closure(
+                        self,
+                        ticket_channel.id,
+                        ticket_creator_id=ticket_creator_id
+                    )
 
-                    message = f"Your <{ticket_category}> ticket has been closed due to inactivity."
+                    transcript_filename = f'{ticket_channel.name}.txt'
+                    await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
 
-                    await ticket_creator.send(message)
+                    try:
+                        transcript_file = discord.File(transcript_filename)
+                        logs_channel = self.bot.get_channel(CHAN_LOGS)
+
+                        if ticket_category in ('report', 'ban_appeal'):
+                            await logs_channel.send(
+                                f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}), '
+                                f'closed due to inactivity.',
+                                file=transcript_file,
+                                allowed_mentions=discord.AllowedMentions(users=False)
+                            )
+                        # have to do this twice because discord.File objects are single use only
+                        transcript_file = discord.File(transcript_filename)
+                        transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
+
+                        await transcript_channel.send(
+                            f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}), '
+                            f'closed due to inactivity.',
+                            file=transcript_file,
+                            allowed_mentions=discord.AllowedMentions(users=False)
+                        )
+
+                        os.remove(transcript_filename)
+                    except FileNotFoundError:
+                        pass
+
+                    try:
+                        message = f"Your ticket (category \"{ticket_category}\") has been closed due to inactivity."
+                        await ticket_creator.send(message)
+                    except discord.Forbidden:
+                        pass
+
                     await ticket_channel.delete()
-
-                    for channel_id in channel_ids:
-                        if channel_id[0] == ticket_channel.id:
-                            channel_ids.remove(channel_id)
-                            break
-
-                    del ticket_data["inactivity_count"][str(ticket_channel.id)]
-                    ticket_data["ticket_num"] -= 1
-
-                    if ticket_data["ticket_num"] < 1:
-                        self.ticket_data.pop(str(ticket_creator_id))
 
         with open(self.ticket_data_file, "w") as f:
             json.dump(self.ticket_data, f, indent=4)
@@ -334,10 +368,9 @@ class TicketSystem(commands.Cog):
         with open(self.ticket_data_file, "r") as f:
             self.ticket_data = json.load(f)
 
-        self.bot.add_view(view=MainMenu(self.ticket_data, self.process_ticket_data))
+        self.bot.add_view(view=MainMenu(self.ticket_data))
         self.bot.add_view(view=CloseButton(self.bot, self.ticket_data))
-        self.bot.add_view(view=ModeratorButton(self.bot))
-        self.bot.add_view(view=SubscribeMenu())
+        self.bot.add_view(view=SubscribeMenu(self.ticket_data))
 
     @commands.Cog.listener('on_message')
     async def server_link_verify(self, message: discord.Message):
@@ -351,15 +384,25 @@ class TicketSystem(commands.Cog):
             return
 
         ipv4 = ip_match.group(0)
-        server_link_message = server_link(ipv4)
+        result = server_link(ipv4)
 
-        if message.channel.name.startswith('ig-issue-') and message.channel not in self.mentions:
-            at_mention_moderator = f'<@&{ROLE_MODERATOR}>'
-            server_link_message += '\n' + at_mention_moderator
-            self.mentions.add(message.channel)
+        if message.channel:
+            if "errfng" in result:
+                content = result["errfng"]
+            elif "errkog" in result:
+                content = result["errkog"]
+            elif "errunknown" in result:
+                content = result["errunknown"]
+            elif message.channel.name.startswith('report-') and message.channel not in self.mentions:
+                server_link_message = result
+                at_mention_moderator = f'<@&{ROLE_MODERATOR}>'
+                content = server_link_message + '\n' + at_mention_moderator
+                self.mentions.add(message.channel)
+            else:
+                content = result
 
-        verify_message = await message.channel.send(server_link_message)
-        self.verify_message[message.id] = verify_message.id
+            verify_message = await message.channel.send(content)
+            self.verify_message[message.id] = verify_message.id
 
     @commands.Cog.listener('on_message_edit')
     async def message_edit_handler(self, before: discord.Message, after: discord.Message):
@@ -373,19 +416,34 @@ class TicketSystem(commands.Cog):
             return
 
         ipv4 = ip_match.group(0)
-        server_link_message = server_link(ipv4)
+        result = server_link(ipv4)
 
-        if before.id in self.verify_message:
-            preview_message = await before.channel.fetch_message(self.verify_message[before.id])
-            await preview_message.edit(content=server_link_message)
-        else:
-            if after.channel.name.startswith('ig-issue-') and after.channel not in self.mentions:
-                at_mention_moderator = f'<@&{ROLE_MODERATOR}>'
-                server_link_message += '\n' + at_mention_moderator
-                self.mentions.add(after.channel)
+        if after.channel.name.startswith('report-') and after.channel not in self.mentions:
+            at_mention_moderator = f'<@&{ROLE_MODERATOR}>'
+            result += '\n' + at_mention_moderator
+            self.mentions.add(after.channel)
 
-            verify_message = await after.channel.send(server_link_message)
+            preview_message = await before.channel.fetch_message(self.verify_message.get(before.id))
+
+            if preview_message:
+                await preview_message.delete()
+
+            verify_message = await after.channel.send(result)
             self.verify_message[after.id] = verify_message.id
+        else:
+            verify_message_id = self.verify_message.get(before.id)
+
+            if verify_message_id:
+                preview_message = await before.channel.fetch_message(verify_message_id)
+
+                if "errfng" in result:
+                    await preview_message.edit(content=result["errfng"])
+                elif "errkog" in result:
+                    await preview_message.edit(content=result["errkog"])
+                elif "errunknown" in result:
+                    await preview_message.edit(content=result["errunknown"])
+                else:
+                    await preview_message.edit(content=result)
 
 
 async def setup(bot):

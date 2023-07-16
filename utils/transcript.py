@@ -1,4 +1,4 @@
-# transcript.py
+# transcript.py: Collects all messages from a channel and writes them to a file.
 
 async def transcript(bot, channel_id, filename):
     channel = await bot.fetch_channel(channel_id)

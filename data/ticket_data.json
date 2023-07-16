@@ -1,1 +1,12 @@
-{}
+{
+    "tickets": {},
+    "subscriptions": {
+        "categories": {
+            "Report": [],
+            "Rename": [],
+            "Ban Appeal": [],
+            "Complaint": [],
+            "Other": []
+        }
+    }
+}
