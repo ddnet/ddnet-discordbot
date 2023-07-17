@@ -34,7 +34,7 @@ class MainMenu(discord.ui.View):
         with open(self.ticket_data_file, "w") as f:
             json.dump(self.ticket_data, f, indent=4)
 
-        user_ids = self.ticket_data["subscriptions"]["categories"].get('Rename', [])
+        user_ids = self.ticket_data["subscriptions"]["categories"].get(ticket_category, [])
         mention_subscribers = [f"<@{user_id}>" for user_id in user_ids]
         mention_message = " ".join(mention_subscribers) + f' {interaction.user.mention}'
 

@@ -2,11 +2,11 @@
     "tickets": {},
     "subscriptions": {
         "categories": {
-            "Report": [],
-            "Rename": [],
-            "Ban Appeal": [],
-            "Complaint": [],
-            "Other": []
+            "report": [],
+            "rename": [],
+            "ban_appeal": [],
+            "complaint": [],
+            "other": []
         }
     }
 }

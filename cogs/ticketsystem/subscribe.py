@@ -13,11 +13,11 @@ class SubscribeMenu(discord.ui.View):
     @discord.ui.select(
         placeholder='To which categories would you like to subscribe to?',
         options=[
-            discord.SelectOption(label='Report', value='Reports'),
-            discord.SelectOption(label='Rename', value='Renames'),
-            discord.SelectOption(label='Ban Appeal', value='Ban Appeals'),
-            discord.SelectOption(label='Complaint', value='Complaint'),
-            discord.SelectOption(label='Other', value='Other')
+            discord.SelectOption(label='Report', value='report'),
+            discord.SelectOption(label='Rename', value='rename'),
+            discord.SelectOption(label='Ban Appeal', value='ban_appeal'),
+            discord.SelectOption(label='Complaint', value='complaint'),
+            discord.SelectOption(label='Other', value='other')
         ],
         max_values=5, custom_id='Subscribe:Menu'
     )
@@ -28,13 +28,12 @@ class SubscribeMenu(discord.ui.View):
             ticket_data = json.load(file)
 
         selected_values = interaction.data['values']
-        selected_options = [
-            option for option in self.children[0].options if option.value in selected_values
-        ]
-        selected_categories = [option.label for option in selected_options]
+        selected_options = [option for option in select_item.options if option.value in selected_values]
+
+        labels_values_dict = {option.label: option.value for option in selected_options}
 
         for category in ticket_data['subscriptions']['categories']:
-            if category in selected_categories:
+            if category in labels_values_dict.values():
                 if interaction.user.id not in ticket_data['subscriptions']['categories'][category]:
                     ticket_data['subscriptions']['categories'][category].append(interaction.user.id)
             else:
@@ -46,9 +45,9 @@ class SubscribeMenu(discord.ui.View):
         with open('data/ticket_data.json', 'w') as file:
             json.dump(ticket_data, file, indent=4)
 
-        subscribed_categories = [category for category in selected_categories if
-                                 interaction.user.id in ticket_data['subscriptions']['categories'][category]]
-        category_message = "You have subscribed to the following categories:\n- " + "\n- ".join(subscribed_categories)
+        subscribed_labels = [label for label, value in labels_values_dict.items() if
+                             interaction.user.id in ticket_data['subscriptions']['categories'][value]]
+        category_message = "You have subscribed to the following categories:\n- " + "\n- ".join(subscribed_labels)
 
         for option in select_item.options:
             option.default = False
