@@ -7,7 +7,14 @@ async def transcript(bot, channel_id, filename):
         if message.author.bot:
             continue
         created_at = message.created_at.replace(microsecond=0, tzinfo=None)
-        messages.append(f"{created_at} {message.author}: {message.content}")
+        content = f"{created_at} {message.author}: {message.content}"
+
+        if len(message.attachments) > 0:
+            attachments = [attachment.url for attachment in message.attachments]
+            attachment_link = '\n'.join(attachments)
+            content += f"\nAttachments:\n{attachment_link}"
+
+        messages.append(content)
 
     if len(messages) < 2:
         return
