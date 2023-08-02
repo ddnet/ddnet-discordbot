@@ -2,6 +2,7 @@ import discord
 import os
 import json
 import discord.ext
+import logging
 
 from discord.ui import Button, button, View
 from utils.transcript import transcript
@@ -69,7 +70,7 @@ class ConfirmView(discord.ui.View):
         try:
             logs_channel = self.bot.get_channel(CHAN_LOGS)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-            message = f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) ' \
+            message = f'"{ticket_category.capitalize()}" Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) ' \
                       f'and closed by <@{interaction.user.id}> (Global Name: {interaction.user})'
 
             if ticket_category in ('report', 'ban_appeal'):
@@ -109,6 +110,11 @@ class ConfirmView(discord.ui.View):
         except discord.Forbidden:
             pass
 
+        logging.info(
+            f"{interaction.user} (ID: {interaction.user.id}) closed {ticket_category.capitalize()} a ticket made by {ticket_creator} "
+            f"(ID: {ticket_creator_id}). Removed Channel named {interaction.channel.name} (ID: {interaction.channel_id})"
+        )
+
     @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red, custom_id='cancel:close_ticket')
     async def cancel(self, interaction: discord.Interaction, button: Button):
         await interaction.response.defer()  # noqa
@@ -122,7 +128,6 @@ class CloseButton(discord.ui.View):
         self.bot = bot
         self.ticket_data = ticket_data
         self.click_count = 0
-        self.channel = None
         self.scores = {}
 
     @discord.ui.button(label='Close', style=discord.ButtonStyle.blurple, custom_id='MainMenu:close_ticket')

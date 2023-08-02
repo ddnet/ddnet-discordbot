@@ -4,6 +4,7 @@ import os
 from typing import Union
 import re
 import requests
+import logging
 
 from discord.ext import commands, tasks
 from datetime import datetime, timedelta, timezone
@@ -86,8 +87,6 @@ class TicketSystem(commands.Cog):
         self.ticket_data = {}
         self.check_inactive_tickets.start()
         self.update_scores_topic.start()
-        self.channel = None
-        self.scores = {}
         self.mentions = set()
         self.verify_message = {}
 
@@ -229,8 +228,8 @@ class TicketSystem(commands.Cog):
         try:
             logs_channel = self.bot.get_channel(CHAN_LOGS)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-            t_message = f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) ' \
-                      f'and closed by <@{ctx.author.id}> (Global Name: {ctx.author})'
+            t_message = (f'\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> '
+                         f'(Global Name: {ticket_creator}) and closed by <@{ctx.author.id}> (Global Name: {ctx.author})')
 
             if ticket_category in ('report', 'ban_appeal'):
                 transcript_file = discord.File(transcript_filename)
@@ -273,6 +272,11 @@ class TicketSystem(commands.Cog):
                 await ticket_creator.send(ext_message)
         except discord.Forbidden:
             pass
+
+        logging.info(
+            f"{ctx.author} (ID: {ctx.author.id}) closed a ticket made by {ticket_creator} "
+            f"(ID: {ticket_creator_id}). Removed Channel named {ctx.channel.name} (ID: {ctx.channel.id})"
+        )
 
     # TODO: Notify a ticket creator that no one is available to assist them with their issue. (Late at night)
     @tasks.loop(hours=1)
@@ -323,8 +327,8 @@ class TicketSystem(commands.Cog):
                     try:
                         logs_channel = self.bot.get_channel(CHAN_LOGS)
                         transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-                        message = f'Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}), ' \
-                                  f'closed due to inactivity.'
+                        message = (f'\"{ticket_category.capitalize()}\"Ticket created by: <@{ticket_creator.id}> '
+                                   f'(Global Name: {ticket_creator}), closed due to inactivity.')
 
                         if ticket_category in ('report', 'ban_appeal'):
                             transcript_file = discord.File(transcript_filename)

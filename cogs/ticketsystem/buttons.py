@@ -1,5 +1,6 @@
 import discord
 import json
+import logging
 
 from discord.ui import Button, button, View
 from cogs.ticketsystem.close import CloseButton
@@ -57,7 +58,7 @@ class MainMenu(discord.ui.View):
                     return True
         return False
 
-    @discord.ui.button(label='Report', style=discord.ButtonStyle.blurple, custom_id='MainMenu:report')
+    @discord.ui.button(label='Report', style=discord.ButtonStyle.danger, custom_id='MainMenu:report')
     async def t_reports(self, interaction: discord.Interaction, button: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="report")
@@ -147,6 +148,7 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
+        logging.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Report" ticket.')
 
         if interaction.response.is_done():  # noqa
             return
@@ -226,6 +228,10 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
+        logging.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Rename" ticket.')
+
+        if interaction.response.is_done():  # noqa
+            return
 
     @discord.ui.button(label='Ban Appeal', style=discord.ButtonStyle.blurple, custom_id='MainMenu:ban_appeal')
     async def t_ban_appeal(self, interaction: discord.Interaction, button: Button):  # noqa
@@ -311,6 +317,7 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
+        logging.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Ban Appeal" ticket.')
 
         if interaction.response.is_done():  # noqa
             return
@@ -390,6 +397,7 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
+        logging.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Complaint" ticket.')
 
         if interaction.response.is_done():  # noqa
             return
@@ -465,6 +473,7 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
+        logging.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Other" ticket.')
 
         if interaction.response.is_done():  # noqa
             return
