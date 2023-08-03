@@ -63,7 +63,7 @@ def server_link(addr):
                        f'\n<steam://run/412220//{re_match[0]}>/'
     elif re_match[0] in ddnetpvp:
         message_text = f'{re_match[0]} is an official DDNet PvP server. ' \
-                       f'\n<steam://run/412220//{re_match[0]}/'
+                       f'\n<steam://run/412220//{re_match[0]}>/'
     elif re_match[0] in kog:
         message_text = f'{re_match[0]} appears to be a KoG server. DDNet and KoG aren\'t affiliated. ' \
                        f'\nJoin their discord and ask for help there instead. <https://discord.kog.tw/>'
@@ -425,8 +425,8 @@ class TicketSystem(commands.Cog):
                 content = result["errunknown"]
             elif message.channel.name.startswith('report-') and message.channel not in self.mentions:
                 server_link_message = result
-                at_mention_moderator = f'<@&{ROLE_MODERATOR}>'
-                content = server_link_message + '\n' + at_mention_moderator
+                at_mention_moderator = f'\n <@&{ROLE_MODERATOR}>'
+                content = server_link_message + at_mention_moderator
                 self.mentions.add(message.channel)
             else:
                 content = result
