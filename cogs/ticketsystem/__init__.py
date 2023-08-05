@@ -229,7 +229,8 @@ class TicketSystem(commands.Cog):
             logs_channel = self.bot.get_channel(CHAN_LOGS)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
             t_message = (f'\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> '
-                         f'(Global Name: {ticket_creator}) and closed by <@{ctx.author.id}> (Global Name: {ctx.author})')
+                         f'(Global Name: {ticket_creator}) and closed by <@{ctx.author.id}> (Global Name: {ctx.author})'
+                         f'\n Ticket Channel ID: {ticket_channel.id}')
 
             if ticket_category in ('report', 'ban_appeal'):
                 transcript_file = discord.File(transcript_filename)
@@ -328,7 +329,8 @@ class TicketSystem(commands.Cog):
                         logs_channel = self.bot.get_channel(CHAN_LOGS)
                         transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
                         message = (f'\"{ticket_category.capitalize()}\"Ticket created by: <@{ticket_creator.id}> '
-                                   f'(Global Name: {ticket_creator}), closed due to inactivity.')
+                                   f'(Global Name: {ticket_creator}), closed due to inactivity.'
+                                   f'\n Ticket Channel ID: {ticket_channel.id}')
 
                         if ticket_category in ('report', 'ban_appeal'):
                             transcript_file = discord.File(transcript_filename)
@@ -425,7 +427,7 @@ class TicketSystem(commands.Cog):
                 content = result["errunknown"]
             elif message.channel.name.startswith('report-') and message.channel not in self.mentions:
                 server_link_message = result
-                at_mention_moderator = f'\n <@&{ROLE_MODERATOR}>'
+                at_mention_moderator = f'\n<@&{ROLE_MODERATOR}>'
                 content = server_link_message + at_mention_moderator
                 self.mentions.add(message.channel)
             else:

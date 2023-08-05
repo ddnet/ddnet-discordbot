@@ -70,8 +70,9 @@ class ConfirmView(discord.ui.View):
         try:
             logs_channel = self.bot.get_channel(CHAN_LOGS)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-            message = f'"{ticket_category.capitalize()}" Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator}) ' \
-                      f'and closed by <@{interaction.user.id}> (Global Name: {interaction.user})'
+            message = (f'\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator})'
+                      f' and closed by <@{interaction.user.id}> (Global Name: {interaction.user})'
+                       f'\n Ticket Channel ID: {ticket_channel.id}')
 
             if ticket_category in ('report', 'ban_appeal'):
                 transcript_file = discord.File(transcript_filename)
