@@ -49,7 +49,7 @@ class ConfirmView(discord.ui.View):
     def __init__(self, bot, ticket_data):
         super().__init__(timeout=None)
         self.bot = bot
-        self.ticket_data_file = 'data/ticket_data.json'
+        self.ticket_data_file = 'data/ticket-system/ticket_data.json'
         self.ticket_data = ticket_data
 
     @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green, custom_id='confirm:close_ticket')
@@ -64,7 +64,7 @@ class ConfirmView(discord.ui.View):
 
         ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
 
-        transcript_filename = f'{interaction.channel.name}.txt'
+        transcript_filename = f'data/ticket-system/transcripts-temp/{ticket_channel.name}-{ticket_channel.id}.txt'
         await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
 
         try:
@@ -95,21 +95,34 @@ class ConfirmView(discord.ui.View):
                     file=transcript_file,
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
+        except FileNotFoundError:
+            pass
 
+        # another file object for message if transcript exists
+        try:
+            transcript_file = discord.File(transcript_filename)
+        except FileNotFoundError:
+            transcript_file = None
+
+        default_message = f"Your ticket (category \"{ticket_category}\") has been closed by staff." \
+            if is_staff(interaction.user) else None
+
+        if transcript_file or default_message is not None:
+            default_message = default_message or f"Your ticket (category \"{ticket_category}\") has been closed."
+            default_message += "\n**Transcript:**" if transcript_file is not None else ""
+
+        try:
+            if default_message:
+                await ticket_creator.send(default_message, file=transcript_file)
+        except discord.Forbidden:
+            pass
+
+        try:
             os.remove(transcript_filename)
         except FileNotFoundError:
             pass
 
         await interaction.channel.delete()
-
-        default_message = f"Your ticket (category \"{ticket_category}\") has been closed by staff." \
-            if is_staff(interaction.user) else None
-
-        try:
-            if default_message is not None:
-                await ticket_creator.send(default_message)
-        except discord.Forbidden:
-            pass
 
         logging.info(
             f"{interaction.user} (ID: {interaction.user.id}) closed {ticket_category.capitalize()} a ticket made by {ticket_creator} "
@@ -165,7 +178,7 @@ class CloseButton(discord.ui.View):
                 return
 
         else:
-            score_file = "data/scores.json"
+            score_file = "data/ticket-system/scores.json"
             with open(score_file, "r") as file:
                 self.scores = json.load(file)
 

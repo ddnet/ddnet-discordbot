@@ -16,7 +16,7 @@ class MainMenu(discord.ui.View):
     def __init__(self, ticket_data):
         super().__init__(timeout=None)
         self.ticket_data = ticket_data
-        self.ticket_data_file = "data/ticket_data.json"
+        self.ticket_data_file = "data/ticket-system/ticket_data.json"
 
     def process_ticket_data(self, interaction, ticket_channel, ticket_creator_id, ticket_category):
         ticket_num = \

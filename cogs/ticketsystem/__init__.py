@@ -83,7 +83,7 @@ def server_link(addr):
 class TicketSystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.ticket_data_file = "data/ticket_data.json"
+        self.ticket_data_file = "data/ticket-system/ticket_data.json"
         self.ticket_data = {}
         self.check_inactive_tickets.start()
         self.update_scores_topic.start()
@@ -222,16 +222,18 @@ class TicketSystem(commands.Cog):
 
         ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
 
-        transcript_filename = f'{ticket_channel.name}.txt'
+        transcript_filename = f'data/ticket-system/transcripts-temp/{ticket_channel.name}-{ticket_channel.id}.txt'
         await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
 
         try:
             logs_channel = self.bot.get_channel(CHAN_LOGS)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-            t_message = (f'\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> '
-                         f'(Global Name: {ticket_creator}) and closed by <@{ctx.author.id}> (Global Name: {ctx.author})'
-                         f'\n Ticket Channel ID: {ticket_channel.id}')
+            t_message = (
+                f'**Ticket Channel ID: {ticket_channel.id}**'
+                f'\n\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> '
+                f'(Global Name: {ticket_creator}) and closed by <@{ctx.author.id}> (Global Name: {ctx.author})')
 
+            # have to do this twice, discord file objects are single use only
             if ticket_category in ('report', 'ban_appeal'):
                 transcript_file = discord.File(transcript_filename)
                 await logs_channel.send(
@@ -239,7 +241,7 @@ class TicketSystem(commands.Cog):
                     file=transcript_file,
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
-                # have to do this twice because discord.File objects are single use only
+
                 transcript_file = discord.File(transcript_filename)
                 await transcript_channel.send(
                     t_message,
@@ -253,26 +255,34 @@ class TicketSystem(commands.Cog):
                     file=transcript_file,
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
+        except FileNotFoundError:
+            pass
 
+        # for default_message if transcript exists
+        try:
+            transcript_file = discord.File(transcript_filename)
+        except FileNotFoundError:
+            transcript_file = None
+
+        default_message = f"Your ticket (category \"{ticket_category}\") has been closed by staff." \
+            if is_staff(ctx.author) else None
+
+        if transcript_file or default_message is not None:
+            default_message = default_message or f"Your ticket (category \"{ticket_category}\") has been closed."
+            default_message += "\n**Transcript:**" if transcript_file is not None else ""
+
+        try:
+            if default_message:
+                await ticket_creator.send(content=default_message, file=transcript_file)
+        except discord.Forbidden:
+            pass
+
+        try:
             os.remove(transcript_filename)
         except FileNotFoundError:
             pass
 
         await ctx.channel.delete()
-
-        if is_staff(ctx.author):
-            default_message = f"Your ticket (category \"{ticket_category}\") has been closed by staff."
-            ext_message = f"{default_message} " \
-                          f"\nThis is the message that has been left for you by our team: " \
-                          f"\n> {message}" if message else default_message
-        else:
-            ext_message = None
-
-        try:
-            if ext_message is not None:
-                await ticket_creator.send(ext_message)
-        except discord.Forbidden:
-            pass
 
         logging.info(
             f"{ctx.author} (ID: {ctx.author.id}) closed a ticket made by {ticket_creator} "
@@ -297,12 +307,12 @@ class TicketSystem(commands.Cog):
                 now = datetime.utcnow().replace(tzinfo=timezone.utc)
 
                 recent_messages = []
-                async for msg in ticket_channel.history(limit=5, oldest_first=False, after=now - timedelta(hours=12)):
+                async for msg in ticket_channel.history(limit=5, oldest_first=False):
                     if not msg.author.bot:
                         recent_messages.append(msg)
 
                 if recent_messages and recent_messages[0].created_at.astimezone(timezone.utc) > now - timedelta(
-                        hours=12):
+                        days=1):
                     inactivity_count[str(channel_id)] = 0
                 else:
                     inactivity_count[str(channel_id)] = inactivity_count.get(str(channel_id), 0) + 1
@@ -315,14 +325,14 @@ class TicketSystem(commands.Cog):
                     )
                     pass
 
-                if inactivity_count[str(channel_id)] >= 3:
+                if inactivity_count[str(channel_id)] >= 6:
                     ticket_category = process_ticket_closure(
                         self,
                         ticket_channel.id,
                         ticket_creator_id=ticket_creator_id
                     )
 
-                    transcript_filename = f'{ticket_channel.name}.txt'
+                    transcript_filename = f'data/ticket-system/transcripts-temp/{ticket_channel.name}-{ticket_channel.id}.txt'
                     await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
 
                     try:
@@ -353,18 +363,32 @@ class TicketSystem(commands.Cog):
                                 file=transcript_file,
                                 allowed_mentions=discord.AllowedMentions(users=False)
                             )
+                    except FileNotFoundError:
+                        pass
 
+                    # another file object for message if transcript exists
+                    try:
+                        transcript_file = discord.File(transcript_filename)
+                    except FileNotFoundError:
+                        transcript_file = None
+
+                    try:
+                        message = f"Your ticket (category \"{ticket_category}\") has been closed due to inactivity."
+                        message += "\n**Transcript:**" if transcript_file is not None else ""
+                        await ticket_creator.send(message, file=transcript_file)
+                    except discord.Forbidden:
+                        pass
+
+                    try:
                         os.remove(transcript_filename)
                     except FileNotFoundError:
                         pass
 
-                    try:
-                        message = f"Your ticket (category \"{ticket_category}\") has been closed due to inactivity."
-                        await ticket_creator.send(message)
-                    except discord.Forbidden:
-                        pass
-
                     await ticket_channel.delete()
+
+                    logging.info(
+                        f" Removed channel named {ticket_channel.name} (ID: {ticket_channel.id}), due to inactivity."
+                    )
 
         with open(self.ticket_data_file, "w") as f:
             json.dump(self.ticket_data, f, indent=4)
@@ -375,7 +399,7 @@ class TicketSystem(commands.Cog):
 
     @tasks.loop(hours=1)
     async def update_scores_topic(self):
-        score_file = "data/scores.json"
+        score_file = "data/ticket-system/scores.json"
         with open(score_file, "r") as file:
             scores = json.load(file)
 

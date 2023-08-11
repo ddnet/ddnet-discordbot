@@ -8,7 +8,7 @@ class SubscribeMenu(discord.ui.View):
     def __init__(self, ticket_data):
         super().__init__(timeout=None)
         self.ticket_data = ticket_data
-        self.subscribers = 'data/ticket_data.json'
+        self.subscribers = 'data/ticket-system/ticket_data.json'
 
     @discord.ui.select(
         placeholder='To which categories would you like to subscribe to?',
@@ -42,7 +42,7 @@ class SubscribeMenu(discord.ui.View):
 
         self.ticket_data.update(ticket_data)
 
-        with open('data/ticket_data.json', 'w') as file:
+        with open('data/ticket-system/ticket_data.json', 'w') as file:
             json.dump(ticket_data, file, indent=4)
 
         subscribed_labels = [label for label, value in labels_values_dict.items() if
