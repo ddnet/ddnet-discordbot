@@ -6,7 +6,6 @@ from discord.ui import Button, button, View
 from cogs.ticketsystem.close import CloseButton
 
 CAT_TICKETS            = 1124657181363556403
-CHAN_INFO              = 1124657351442579486
 ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
 ROLE_MODERATOR         = 252523225810993153
@@ -87,14 +86,13 @@ class MainMenu(discord.ui.View):
         }
 
         category = interaction.guild.get_channel(CAT_TICKETS)
-        logs_channel = interaction.guild.get_channel(CHAN_INFO)
-        new_channel_position = logs_channel.position
+        channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
 
         ticket_channel = await interaction.guild.create_text_channel(
             name=ticket_name,
             category=category,
-            position=new_channel_position,
+            position=channel_position,
             overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>")
 
@@ -177,13 +175,16 @@ class MainMenu(discord.ui.View):
                 read_messages=True,
                 send_messages=True)
         }
+
         category = interaction.guild.get_channel(CAT_TICKETS)
-        info_channel = interaction.guild.get_channel(CHAN_INFO)
-        new_channel_position = info_channel.position
+        channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
 
         ticket_channel = await interaction.guild.create_text_channel(
-            name=ticket_name, category=category, position=new_channel_position, overwrites=overwrites,
+            name=ticket_name,
+            category=category,
+            position=channel_position,
+            overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>")
 
         mention_message = self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "rename")
@@ -262,14 +263,13 @@ class MainMenu(discord.ui.View):
         }
 
         category = interaction.guild.get_channel(CAT_TICKETS)
-        info_channel = interaction.guild.get_channel(CHAN_INFO)
-        new_channel_position = info_channel.position
+        channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
 
         ticket_channel = await interaction.guild.create_text_channel(
             name=ticket_name,
             category=category,
-            position=new_channel_position,
+            position=channel_position,
             overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>"
         )
@@ -322,7 +322,7 @@ class MainMenu(discord.ui.View):
         if interaction.response.is_done():  # noqa
             return
 
-    @discord.ui.button(label='Complaint', style=discord.ButtonStyle.blurple, custom_id='MainMenu:complaints')
+    @discord.ui.button(label='Staff Complaint', style=discord.ButtonStyle.blurple, custom_id='MainMenu:complaints')
     async def t_complaints(self, interaction: discord.Interaction, button: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="complaint")
@@ -347,21 +347,20 @@ class MainMenu(discord.ui.View):
         }
 
         category = interaction.guild.get_channel(CAT_TICKETS)
-        info_channel = interaction.guild.get_channel(CHAN_INFO)
-        new_channel_position = info_channel.position
+        channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
 
         ticket_channel = await interaction.guild.create_text_channel(
             name=ticket_name,
             category=category,
-            position=new_channel_position,
+            position=channel_position,
             overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>"
         )
 
         mention_message = self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "complaint")
 
-        embed = discord.Embed(title="Ban appeal", colour=2210995)
+        embed = discord.Embed(title="Complaint", colour=2210995)
         embed.add_field(
             name=f'',
             value=f'Hello {interaction.user.mention},'
@@ -427,14 +426,13 @@ class MainMenu(discord.ui.View):
         }
 
         category = interaction.guild.get_channel(CAT_TICKETS)
-        info_channel = interaction.guild.get_channel(CHAN_INFO)
-        new_channel_position = info_channel.position
+        channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
 
         ticket_channel = await interaction.guild.create_text_channel(
             name=ticket_name,
             category=category,
-            position=new_channel_position,
+            position=channel_position,
             overwrites=overwrites,
             topic=f"Ticket author: <@{ticket_creator_id}>"
         )

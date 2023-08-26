@@ -112,16 +112,18 @@ class TicketSystem(commands.Cog):
             inline=False
         )
         embed.add_field(
-            name="Rename Requests",
+            name="Rename Request",
             value=f"The rules for rename requests are:"
                   f"\n- The original name should have 3k or more points on it"
-                  f"\n- Your last rename should be at least one year ago"
+                  f"\n- Your last rename should be __at least one year ago__"
                   f"\n- You must be able to provide proof of owning the points being moved"
-                  f"\n- The names shouldn't be banned",
+                  f"\n- The names shouldn't be banned"
+                  f"\n- If you request a rename and then later change your mind, know that it won't be reverted until at"
+                  f" least one year has passed. Think carefully.",
             inline=False
         )
         embed.add_field(
-            name="Ban appeals",
+            name="Ban Appeal",
             value=f"If you've been banned unfairly from our in-game servers, you are eligible to appeal the"
                   f" decision. Please note that ban appeals are not guaranteed to be successful, and our "
                   f"team reserves the right to deny any appeal at their discretion."
@@ -130,11 +132,10 @@ class TicketSystem(commands.Cog):
             inline=False
         )
         embed.add_field(
-            name="Complaints",
+            name="Staff Complaint",
             value=f"If a staff member's behavior in our community has caused you concern, you have the "
                   f"option to make a complaint. Please note that complaints must be "
-                  f"based on specific incidents or behaviors and not on personal biases or general "
-                  f"dissatisfaction.",
+                  f"based on specific incidents or behaviors and not on personal biases or general dissatisfaction.",
             inline=False
         )
         embed.add_field(
