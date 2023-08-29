@@ -259,22 +259,28 @@ class TicketSystem(commands.Cog):
         except FileNotFoundError:
             pass
 
-        # for default_message if transcript exists
+        # for response if transcript exists
         try:
             transcript_file = discord.File(transcript_filename)
         except FileNotFoundError:
             transcript_file = None
 
-        default_message = f"Your ticket (category \"{ticket_category}\") has been closed by staff." \
-            if is_staff(ctx.author) else None
+        if is_staff(ctx.author):
+            response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed by staff."
+            response = f"{response} " \
+                          f"\nThis is the message that has been left for you by our team: " \
+                          f"\n> {message}" if message else response
+        else:
+            response = None
 
-        if transcript_file or default_message is not None:
-            default_message = default_message or f"Your ticket (category \"{ticket_category}\") has been closed."
-            default_message += "\n**Transcript:**" if transcript_file is not None else ""
+        if response is None:
+            response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed."
+
+        response += "\n**Transcript:**" if transcript_file is not None else ""
 
         try:
-            if default_message:
-                await ticket_creator.send(content=default_message, file=transcript_file)
+            if response:
+                await ticket_creator.send(content=response, file=transcript_file)
         except discord.Forbidden:
             pass
 
