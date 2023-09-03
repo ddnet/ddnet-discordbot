@@ -1,4 +1,5 @@
 import io
+import itertools
 import logging
 import re
 from datetime import datetime, timedelta
@@ -14,9 +15,10 @@ from cogs.map_testing.submission import InitialSubmission, Submission, Submissio
 
 log = logging.getLogger(__name__)
 
-CAT_MAP_TESTING     = 449352010072850443
-CAT_WAITING_MAPPER  = 746076708196843530
-CAT_EVALUATED_MAPS  = 462954029643989003
+CAT_GROUP_MAP_TESTING     = [449352010072850443, 1118205044353941554]
+CAT_GROUP_WAITING_MAPPER  = [746076708196843530]
+CAT_GROUP_EVALUATED_MAPS  = [462954029643989003]
+CAT_GROUP_TESTING = itertools.chain(CAT_GROUP_MAP_TESTING, CAT_GROUP_WAITING_MAPPER, CAT_GROUP_EVALUATED_MAPS)
 CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_INFO           = 455392314173554688
 CHAN_SUBMIT_MAPS    = 455392372663123989
@@ -28,7 +30,7 @@ WH_MAP_RELEASES     = 345299155381649408
 
 
 def is_testing(channel: discord.TextChannel) -> bool:
-    return isinstance(channel, discord.TextChannel) and channel.category_id in (CAT_MAP_TESTING, CAT_WAITING_MAPPER, CAT_EVALUATED_MAPS)
+    return isinstance(channel, discord.TextChannel) and channel.category_id in CAT_GROUP_TESTING
 
 def is_staff(member: discord.Member) -> bool:
     return any(r.id in (ROLE_ADMIN, ROLE_TESTER) for r in member.roles)
@@ -66,7 +68,7 @@ class MapTesting(commands.Cog):
     async def load_map_channels(self):
         await self.bot.wait_until_ready()
 
-        for category_id in (CAT_MAP_TESTING, CAT_WAITING_MAPPER, CAT_EVALUATED_MAPS):
+        for category_id in CAT_GROUP_TESTING:
             category = self.bot.get_channel(category_id)
             for channel in category.text_channels:
                 if channel.id in (CHAN_INFO, CHAN_SUBMIT_MAPS):
@@ -372,7 +374,7 @@ class MapTesting(commands.Cog):
 
         query = 'SELECT channel_id FROM waiting_maps WHERE timestamp < CURRENT_TIMESTAMP - INTERVAL \'60 days\';'
         records = await self.bot.pool.fetch(query)
-        deleted_waiting_maps_ids = [r['channel_id'] for r in records] 
+        deleted_waiting_maps_ids = [r['channel_id'] for r in records]
 
         to_archive = []
         for map_channel in self.map_channels:
@@ -390,7 +392,7 @@ class MapTesting(commands.Cog):
                 continue
 
             to_archive.append(map_channel)
-        
+
         for map_channel in to_archive:
             testlog = await TestLog.from_map_channel(map_channel)
             archived = await self.archive_testlog(testlog)

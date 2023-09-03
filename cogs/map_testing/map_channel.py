@@ -1,16 +1,13 @@
 import enum
 import re
-from typing import List
+from typing import List, Optional
 
 import discord
 
 from cogs.map_testing.submission import InitialSubmission
 from utils.text import human_join, sanitize
 
-CAT_MAP_TESTING     = 449352010072850443
-CAT_WAITING_MAPPER  = 746076708196843530
-CAT_EVALUATED_MAPS  = 462954029643989003
-
+from . import CAT_GROUP_MAP_TESTING, CAT_GROUP_WAITING_MAPPER, CAT_GROUP_EVALUATED_MAPS
 
 class MapState(enum.Enum):
     TESTING     = ''
@@ -69,6 +66,18 @@ class MapChannel:
     def topic(self) -> str:
         return '\n'.join((self.details, self.preview_url, self.mapper_mentions))
 
+
+    async def get_category_with_free_slot(self, cat_group: list[int]) -> discord.CategoryChannel:
+        for c in cat_group:
+            category = self.guild.get_channel(c)
+            if not isinstance(category, discord.CategoryChannel):
+                continue # Perhaps log this as this should be impossible
+
+            if len(category.channels) < 50:
+                return category
+
+        raise RuntimeError("Testing category full")
+
     async def update(self, name: str=None, mappers: List[str]=None, server: str=None):
         prev_details = self.details
 
@@ -89,20 +98,22 @@ class MapChannel:
         if state == self.state:
             return
 
-        self.state = state
         if state is MapState.TESTING:
-            category_id = CAT_MAP_TESTING
+            cat_group_target = CAT_GROUP_MAP_TESTING
         elif state is MapState.WAITING:
-            category_id = CAT_WAITING_MAPPER
+            cat_group_target = CAT_GROUP_WAITING_MAPPER
         else:
-            category_id = CAT_EVALUATED_MAPS
+            cat_group_target = CAT_GROUP_EVALUATED_MAPS
 
         options = {'name': str(self)}
-        if category_id != self.category_id:
-            options['category'] = category = self.guild.get_channel(category_id)
+        if self.category_id not in cat_group_target:
+            options['category'] = category = await self.get_category_with_free_slot(cat_group_target)
             options['position'] = category.channels[-1].position + 1 if state is MapState.TESTING else 0
 
         await self.edit(**options)
+
+        # Only change the state if nothing fails
+        self.state = state
 
     @classmethod
     async def from_submission(cls, isubm: InitialSubmission, **options):
@@ -112,5 +123,6 @@ class MapChannel:
         self.server = isubm.server
         self.state = MapState.TESTING
         self.mapper_mentions = isubm.author.mention
-        self._channel = await isubm.channel.category.create_text_channel(str(self), topic=self.topic, **options)
+        category = self.get_category_with_free_slot(CAT_GROUP_MAP_TESTING)
+        self._channel = await category.create_text_channel(str(self), topic=self.topic, **options)
         return self
