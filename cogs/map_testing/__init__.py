@@ -18,7 +18,8 @@ CAT_MAP_TESTING     = 449352010072850443
 CAT_WAITING_MAPPER  = 746076708196843530
 CAT_EVALUATED_MAPS  = 462954029643989003
 CHAN_ANNOUNCEMENTS  = 420565311863914496
-CHAN_INFO           = 455392314173554688
+CHAN_INFO           = 1139589065759531038
+THREAD_INFO         = 1147560492043350087
 CHAN_SUBMIT_MAPS    = 455392372663123989
 ROLE_ADMIN          = 293495272892399616
 ROLE_TESTING_LEAD   = 746414504488861747
@@ -299,7 +300,7 @@ class MapTesting(commands.Cog):
             if member is None:
                 return
 
-        if channel.id == CHAN_INFO:
+        if channel.id == THREAD_INFO:
             testing_role = guild.get_role(ROLE_TESTING)
             if testing_role in member.roles:
                 if action == 'REACTION_REMOVE':
