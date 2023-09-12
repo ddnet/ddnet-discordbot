@@ -54,6 +54,9 @@ class ConfirmView(discord.ui.View):
 
     @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green, custom_id='confirm:close_ticket')
     async def confirm(self, interaction: discord.Interaction, button: Button):
+
+        await interaction.response.defer(ephemeral=True, thinking=True)  # noqa
+
         ticket_creator_id = int(interaction.channel.topic.split(": ")[1].strip("<@!>"))
 
         if not is_staff(interaction.user) and interaction.user.id != ticket_creator_id:
@@ -65,34 +68,41 @@ class ConfirmView(discord.ui.View):
         ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
 
         transcript_filename = f'data/ticket-system/transcripts-temp/{ticket_channel.name}-{ticket_channel.id}.txt'
-        await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
+        attachment_zip_filename = f'data/ticket-system/attachments-temp/attachments-{ticket_channel.name}-{ticket_channel.id}.zip'
+
+        await transcript(self.bot, ticket_channel.id, filename=transcript_filename,
+                         attachment_zip_filename=attachment_zip_filename)
 
         try:
             logs_channel = self.bot.get_channel(CHAN_LOGS)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-            message = (f'\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator})'
-                      f' and closed by <@{interaction.user.id}> (Global Name: {interaction.user})'
-                       f'\n Ticket Channel ID: {ticket_channel.id}')
+            message = (
+                f'\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator})'
+                f' and closed by <@{interaction.user.id}> (Global Name: {interaction.user})'
+                f'\n Ticket Channel ID: {ticket_channel.id}')
 
             if ticket_category in ('report', 'ban_appeal'):
                 transcript_file = discord.File(transcript_filename)
+                attachment = discord.File(attachment_zip_filename)
                 await logs_channel.send(
                     message,
-                    file=transcript_file,
+                    files=(transcript_file, attachment),
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
                 # have to do this twice because discord.File objects are single use only
                 transcript_file = discord.File(transcript_filename)
+                attachment = discord.File(attachment_zip_filename)
                 await transcript_channel.send(
                     message,
-                    file=transcript_file,
+                    files=(transcript_file, attachment),
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
             else:
                 transcript_file = discord.File(transcript_filename)
+                attachment = discord.File(attachment_zip_filename)
                 await transcript_channel.send(
                     message,
-                    file=transcript_file,
+                    files=(transcript_file, attachment),
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
         except FileNotFoundError:
@@ -118,7 +128,9 @@ class ConfirmView(discord.ui.View):
             pass
 
         try:
-            os.remove(transcript_filename)
+            file_paths = [transcript_filename, attachment_zip_filename]
+            for file_path in file_paths:
+                os.remove(file_path)
         except FileNotFoundError:
             pass
 
@@ -128,6 +140,9 @@ class ConfirmView(discord.ui.View):
             f"{interaction.user} (ID: {interaction.user.id}) closed {ticket_category.capitalize()} a ticket made by {ticket_creator} "
             f"(ID: {ticket_creator_id}). Removed Channel named {interaction.channel.name} (ID: {interaction.channel_id})"
         )
+
+        if interaction.response.is_done():  # noqa
+            return
 
     @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red, custom_id='cancel:close_ticket')
     async def cancel(self, interaction: discord.Interaction, button: Button):

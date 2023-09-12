@@ -224,7 +224,10 @@ class TicketSystem(commands.Cog):
         ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
 
         transcript_filename = f'data/ticket-system/transcripts-temp/{ticket_channel.name}-{ticket_channel.id}.txt'
-        await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
+        attachment_zip_filename = f'data/ticket-system/attachments-temp/attachments-{ticket_channel.name}-{ticket_channel.id}.zip'
+
+        await transcript(self.bot, ticket_channel.id, filename=transcript_filename,
+                         attachment_zip_filename=attachment_zip_filename)
 
         try:
             logs_channel = self.bot.get_channel(CHAN_LOGS)
@@ -237,23 +240,26 @@ class TicketSystem(commands.Cog):
             # have to do this twice, discord file objects are single use only
             if ticket_category in ('report', 'ban_appeal'):
                 transcript_file = discord.File(transcript_filename)
+                attachment = discord.File(attachment_zip_filename)
                 await logs_channel.send(
                     t_message,
-                    file=transcript_file,
+                    files=(transcript_file, attachment),
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
 
                 transcript_file = discord.File(transcript_filename)
+                attachment = discord.File(attachment_zip_filename)
                 await transcript_channel.send(
                     t_message,
-                    file=transcript_file,
+                    files=(transcript_file, attachment),
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
             else:
                 transcript_file = discord.File(transcript_filename)
+                attachment = discord.File(attachment_zip_filename)
                 await transcript_channel.send(
                     t_message,
-                    file=transcript_file,
+                    files=(transcript_file, attachment),
                     allowed_mentions=discord.AllowedMentions(users=False)
                 )
         except FileNotFoundError:
@@ -286,7 +292,9 @@ class TicketSystem(commands.Cog):
             pass
 
         try:
-            os.remove(transcript_filename)
+            file_paths = [transcript_filename, attachment_zip_filename]
+            for file_path in file_paths:
+                os.remove(file_path)
         except FileNotFoundError:
             pass
 
@@ -341,7 +349,10 @@ class TicketSystem(commands.Cog):
                     )
 
                     transcript_filename = f'data/ticket-system/transcripts-temp/{ticket_channel.name}-{ticket_channel.id}.txt'
-                    await transcript(self.bot, ticket_channel.id, filename=transcript_filename)
+                    attachment_zip_filename = f'data/ticket-system/attachments-temp/attachments-{ticket_channel.name}-{ticket_channel.id}.zip'
+
+                    await transcript(self.bot, ticket_channel.id, filename=transcript_filename,
+                                     attachment_zip_filename=attachment_zip_filename)
 
                     try:
                         logs_channel = self.bot.get_channel(CHAN_LOGS)
@@ -352,23 +363,26 @@ class TicketSystem(commands.Cog):
 
                         if ticket_category in ('report', 'ban_appeal'):
                             transcript_file = discord.File(transcript_filename)
+                            attachment = discord.File(attachment_zip_filename)
                             await logs_channel.send(
                                 message,
-                                file=transcript_file,
+                                files=(transcript_file, attachment),
                                 allowed_mentions=discord.AllowedMentions(users=False)
                             )
                             # have to do this twice because discord.File objects are single use only
                             transcript_file = discord.File(transcript_filename)
+                            attachment = discord.File(attachment_zip_filename)
                             await transcript_channel.send(
                                 message,
-                                file=transcript_file,
+                                files=(transcript_file, attachment),
                                 allowed_mentions=discord.AllowedMentions(users=False)
                             )
                         else:
                             transcript_file = discord.File(transcript_filename)
+                            attachment = discord.File(attachment_zip_filename)
                             await transcript_channel.send(
                                 message,
-                                file=transcript_file,
+                                files=(transcript_file, attachment),
                                 allowed_mentions=discord.AllowedMentions(users=False)
                             )
                     except FileNotFoundError:
@@ -388,7 +402,9 @@ class TicketSystem(commands.Cog):
                         pass
 
                     try:
-                        os.remove(transcript_filename)
+                        file_paths = [transcript_filename, attachment_zip_filename]
+                        for file_path in file_paths:
+                            os.remove(file_path)
                     except FileNotFoundError:
                         pass
 
