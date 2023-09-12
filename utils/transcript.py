@@ -2,7 +2,7 @@
 import zipfile
 
 
-async def transcript(bot, channel_id, filename, attachment_zip_filename):
+async def transcript(bot, channel_id, transcript_filename, attachment_zip_filename):
     messages = []
     attachments_zip = []
     attachments_names = set()
@@ -40,13 +40,13 @@ async def transcript(bot, channel_id, filename, attachment_zip_filename):
     if len(messages) < 2:
         return
 
-    transcript_file = "\n".join(messages)
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(transcript_file)
+    transcript = "\n".join(messages)
+    with open(transcript_filename, "w", encoding="utf-8") as f:
+        f.write(transcript)
 
     if attachments_zip:
         with zipfile.ZipFile(attachment_zip_filename, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             for attachment_name, file_data in attachments_zip:
                 zip_file.writestr(attachment_name, file_data)
 
-    return filename, attachment_zip_filename
+    return transcript_filename, attachment_zip_filename
