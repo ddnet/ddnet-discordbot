@@ -159,7 +159,8 @@ class ConfirmView(discord.ui.View):
         try:
             file_paths = [transcript_filename, attachment_zip_filename]
             for file_path in file_paths:
-                os.remove(file_path)
+                if file_path is not None:
+                    os.remove(file_path)
         except FileNotFoundError:
             pass
 

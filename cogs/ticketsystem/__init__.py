@@ -322,12 +322,10 @@ class TicketSystem(commands.Cog):
         try:
             file_paths = [transcript_filename, attachment_zip_filename]
             for file_path in file_paths:
-                try:
+                if file_path is not None:
                     os.remove(file_path)
-                except FileNotFoundError:
-                    pass
-        except Exception as e:
-            print(f"An error occurred while deleting files: {e}")
+        except FileNotFoundError:
+            pass
 
         await ctx.channel.delete()
 
@@ -465,7 +463,8 @@ class TicketSystem(commands.Cog):
                     try:
                         file_paths = [transcript_filename, attachment_zip_filename]
                         for file_path in file_paths:
-                            os.remove(file_path)
+                            if file_path is not None:
+                                os.remove(file_path)
                     except FileNotFoundError:
                         pass
 
