@@ -65,83 +65,64 @@ class ConfirmView(discord.ui.View):
         ticket_channel = interaction.client.get_channel(interaction.channel.id)
         ticket_creator = await interaction.client.fetch_user(ticket_creator_id)
 
+        transcript_file, zip_file = await transcript(self.bot, ticket_channel)
         ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
 
-        transcript_filename = f'data/ticket-system/transcripts-temp/{ticket_channel.name}-{ticket_channel.id}.txt'
-        attachment_zip_filename = f'data/ticket-system/attachments-temp/attachments-{ticket_channel.name}-{ticket_channel.id}.zip'
-
-        await transcript(self.bot, ticket_channel.id, transcript_filename=transcript_filename,
-                         attachment_zip_filename=attachment_zip_filename)
-
-        if os.path.exists(attachment_zip_filename):
-            pass
-        else:
-            attachment_zip_filename = None
-
-        try:
+        if transcript_file:
+            await ticket_channel.send(f'Uploading files...')
             logs_channel = self.bot.get_channel(CHAN_LOGS)
             transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
             t_message = (
-                f'\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> (Global Name: {ticket_creator})'
-                f' and closed by <@{interaction.user.id}> (Global Name: {interaction.user})'
-                f'\n Ticket Channel ID: {ticket_channel.id}')
+                f'**Ticket Channel ID: {ticket_channel.id}**'
+                f'\n\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> '
+                f'(Global Name: {ticket_creator}) and closed by <@{interaction.user.id}> '
+                f'(Global Name: {interaction.user})')
 
             # I don't know how else to do this, this is such ugly code :(
+            # what pains me the most is discord file objects are single use only
             if ticket_category in ('report', 'ban_appeal'):
-                if attachment_zip_filename is not None:
-                    transcript_file = discord.File(transcript_filename)
-                    attachment = discord.File(attachment_zip_filename)
+                if zip_file is not None:
+                    files_to_send = [discord.File(transcript_file)] + [discord.File(z) for z in zip_file]
                     await transcript_channel.send(
                         t_message,
-                        files=(transcript_file, attachment),
+                        files=files_to_send,
                         allowed_mentions=discord.AllowedMentions(users=False)
                     )
 
-                    transcript_file = discord.File(transcript_filename)
-                    attachment = discord.File(attachment_zip_filename)
+                    files_to_send = [discord.File(transcript_file)] + [discord.File(z) for z in zip_file]
                     await logs_channel.send(
                         t_message,
-                        files=(transcript_file, attachment),
+                        files=files_to_send,
                         allowed_mentions=discord.AllowedMentions(users=False)
                     )
                 else:
-                    transcript_file = discord.File(transcript_filename)
                     await transcript_channel.send(
                         t_message,
-                        file=transcript_file,
+                        file=discord.File(transcript_file),
                         allowed_mentions=discord.AllowedMentions(users=False)
                     )
 
-                    transcript_file = discord.File(transcript_filename)
                     await logs_channel.send(
                         t_message,
-                        file=transcript_file,
+                        file=discord.File(transcript_file),
                         allowed_mentions=discord.AllowedMentions(users=False)
                     )
             else:
-                if attachment_zip_filename is not None:
-                    transcript_file = discord.File(transcript_filename)
-                    attachment = discord.File(attachment_zip_filename)
+                if zip_file is not None:
+                    files_to_send = [discord.File(transcript_file)] + [discord.File(z) for z in zip_file]
                     await transcript_channel.send(
                         t_message,
-                        files=(transcript_file, attachment),
+                        files=files_to_send,
                         allowed_mentions=discord.AllowedMentions(users=False)
                     )
                 else:
-                    transcript_file = discord.File(transcript_filename)
                     await transcript_channel.send(
                         t_message,
-                        file=transcript_file,
+                        file=discord.File(transcript_file),
                         allowed_mentions=discord.AllowedMentions(users=False)
                     )
-        except FileNotFoundError:
+        else:
             pass
-
-        # another file object for message if transcript exists
-        try:
-            transcript_file = discord.File(transcript_filename)
-        except FileNotFoundError:
-            transcript_file = None
 
         default_message = f"Your ticket (category \"{ticket_category}\") has been closed by staff." \
             if is_staff(interaction.user) else None
@@ -151,19 +132,26 @@ class ConfirmView(discord.ui.View):
             default_message += "\n**Transcript:**" if transcript_file is not None else ""
 
         try:
-            if default_message:
-                await ticket_creator.send(default_message, file=transcript_file)
+            if default_message and transcript_file:
+                await ticket_creator.send(content=default_message, file=discord.File(transcript_file))
+            else:
+                await ticket_creator.send(content=default_message)
         except discord.Forbidden:
             pass
 
+        file_paths = []
+        if transcript_file is not None:
+            file_paths.append(transcript_file)
+        if zip_file is not None and isinstance(zip_file, list):
+            file_paths.extend(zip_file)
         try:
-            file_paths = [transcript_filename, attachment_zip_filename]
             for file_path in file_paths:
                 if file_path is not None:
                     os.remove(file_path)
         except FileNotFoundError:
             pass
 
+        await ticket_channel.send(f'Done! Closing Ticket...')
         await interaction.channel.delete()
 
         logging.info(

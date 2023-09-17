@@ -1,14 +1,19 @@
 # transcript.py: Collects all messages from a channel and writes them to a file.
 import zipfile
 
+MAX_ZIP_SIZE = 100 * 1024 * 1024
 
-async def transcript(bot, channel_id, transcript_filename, attachment_zip_filename):
+async def transcript(bot, ticket_channel):
     messages = []
-    attachments_zip = []
+    attachments = []
+    zipped_files = []
     attachments_names = set()
+    transcript_file = f'data/ticket-system/transcripts-temp/{ticket_channel.name}-{ticket_channel.id}.txt'
+    attachment_zip_base = f'data/ticket-system/attachments-temp/attachments-{ticket_channel.name}-{ticket_channel.id}'
 
-    channel = await bot.fetch_channel(channel_id)
+    channel = await bot.fetch_channel(ticket_channel.id)
 
+    await ticket_channel.send(f'Collecting messages...')
     async for message in channel.history(limit=None, oldest_first=True):
         if message.author.bot:
             continue
@@ -30,23 +35,45 @@ async def transcript(bot, channel_id, transcript_filename, attachment_zip_filena
                 attachments_names.add(attachment_name)
 
                 if attachment.filename.endswith(
-                        ('.jpg', '.jpeg', '.png', '.gif', '.mp4', '.avi', '.mkv', '.demo', '.txt', '.log', '.RTP')):
-                    attachments_zip.append((attachment_name, await attachment.read()))
+                        ('.jpg', '.jpeg', '.png', '.gif',
+                         '.mp4', '.avi', '.mkv', '.webm',
+                         '.demo', '.map' '.txt', '.log', '.RTP')):
+                    attachments.append((attachment_name, await attachment.read()))
 
                 content += f"\nAttachments:\n{attachment_name}"
 
         messages.append(content)
 
-    if len(messages) < 2:
-        return
+    if len(messages) > 2:
+        transcript_data = "\n".join(messages)
+        with open(transcript_file, "w", encoding="utf-8") as transcript:
+            transcript.write(transcript_data)
+    else:
+        await ticket_channel.send(f'No messages found...')
+        transcript_file = None
 
-    transcript = "\n".join(messages)
-    with open(transcript_filename, "w", encoding="utf-8") as f:
-        f.write(transcript)
+    if attachments:
+        await ticket_channel.send(f'Compressing files...')
+        zip_number = 1
+        current_zip_size = 0
+        current_zip = None
 
-    if attachments_zip:
-        with zipfile.ZipFile(attachment_zip_filename, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            for attachment_name, file_data in attachments_zip:
-                zip_file.writestr(attachment_name, file_data)
+        for attachment_name, file_data in attachments:
+            if current_zip is None or current_zip_size + len(file_data) > MAX_ZIP_SIZE:
+                if current_zip is not None:
+                    current_zip.close()
+                    zipped_files.append(f"{attachment_zip_base}_{zip_number}.zip")
+                    zip_number += 1
+                current_zip_size = 0
+                current_zip = zipfile.ZipFile(f"{attachment_zip_base}_{zip_number}.zip", 'w', zipfile.ZIP_STORED)
 
-    return transcript_filename, attachment_zip_filename
+            current_zip.writestr(attachment_name, file_data)
+            current_zip_size += len(file_data)
+
+        if current_zip is not None:
+            current_zip.close()
+            zipped_files.append(f"{attachment_zip_base}_{zip_number}.zip")
+    else:
+        zipped_files = None
+
+    return transcript_file, zipped_files
