@@ -287,17 +287,17 @@ class TicketSystem(commands.Cog):
         else:
             response = None
 
-        if response is None:
+        if response is None and transcript_file is not None:
             response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed."
-
-        if transcript_file is not None:
             response += "\n**Transcript:**"
 
         try:
             if response and transcript_file:
                 await ticket_creator.send(content=response, file=discord.File(transcript_file))
-            else:
+            elif response:
                 await ticket_creator.send(content=response)
+            else:
+                pass
         except discord.Forbidden:
             pass
 
@@ -417,11 +417,10 @@ class TicketSystem(commands.Cog):
                     else:
                         pass
 
-                    message = f"Your ticket (category \"{ticket_category}\") has been closed due to inactivity."
-                    if transcript is not None:
+                    message = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed due to inactivity."
+
+                    if transcript_file is not None:
                         message += "\n**Transcript:**"
-                    else:
-                        transcript_file = None
 
                     try:
                         if message and transcript_file:

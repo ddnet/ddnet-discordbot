@@ -124,18 +124,20 @@ class ConfirmView(discord.ui.View):
         else:
             pass
 
-        default_message = f"Your ticket (category \"{ticket_category}\") has been closed by staff." \
+        default_message = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed by staff." \
             if is_staff(interaction.user) else None
 
-        if transcript_file or default_message is not None:
-            default_message = default_message or f"Your ticket (category \"{ticket_category}\") has been closed."
-            default_message += "\n**Transcript:**" if transcript_file is not None else ""
+        if default_message is None and transcript_file is not None:
+            default_message = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed."
+            default_message += "\n**Transcript:**"
 
         try:
             if default_message and transcript_file:
                 await ticket_creator.send(content=default_message, file=discord.File(transcript_file))
-            else:
+            elif default_message:
                 await ticket_creator.send(content=default_message)
+            else:
+                pass
         except discord.Forbidden:
             pass
 
