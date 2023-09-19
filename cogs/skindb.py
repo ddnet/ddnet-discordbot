@@ -6,11 +6,11 @@ import asyncio
 from io import BytesIO
 from PIL import Image, ImageOps
 
-GUILD_DDNET       = 930664819303002123
-CHAN_SKIN_SUBMIT  = 986107035747766292
-ROLE_ADMIN        = 930665626370985994
-ROLE_DISCORD_MOD  = 934131865512730656
-ROLE_SKIN_DB_CREW = 930665730091929650
+GUILD_DDNET       = 252358080522747904
+CHAN_SKIN_SUBMIT  = 985717921600929872
+ROLE_ADMIN        = 293495272892399616
+ROLE_DISCORD_MOD  = 737776812234506270
+ROLE_SKIN_DB_CREW = 390516461741015040
 
 
 def is_staff(member: discord.Member) -> bool:
@@ -256,8 +256,8 @@ class SkinDB(commands.Cog):
             image_preview_message = await message.channel.send(file=file)
             self.original_message_id_and_preview_message_id[message.id] = image_preview_message.id
 
-            f3_emoji = self.bot.get_emoji(933103235651223632)
-            f4_emoji = self.bot.get_emoji(933102663841751061)
+            f3_emoji = self.bot.get_emoji(346683497701834762)
+            f4_emoji = self.bot.get_emoji(346683496476966913)
             await message.add_reaction(f3_emoji)
             await message.add_reaction(f4_emoji)
 
