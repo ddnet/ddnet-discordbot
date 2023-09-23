@@ -374,7 +374,7 @@ class MapTesting(commands.Cog):
 
         query = 'SELECT channel_id FROM waiting_maps WHERE timestamp < CURRENT_TIMESTAMP - INTERVAL \'60 days\';'
         records = await self.bot.pool.fetch(query)
-        deleted_waiting_maps_ids = [r['channel_id'] for r in records] 
+        deleted_waiting_maps_ids = [r['channel_id'] for r in records]
 
         to_archive = []
         for map_channel in self.map_channels:
@@ -392,7 +392,7 @@ class MapTesting(commands.Cog):
                 continue
 
             to_archive.append(map_channel)
-        
+
         for map_channel in to_archive:
             testlog = await TestLog.from_map_channel(map_channel)
             archived = await self.archive_testlog(testlog)

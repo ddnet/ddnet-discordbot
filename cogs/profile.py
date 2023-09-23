@@ -168,10 +168,10 @@ class Profile(commands.Cog):
 
         player = player or ctx.author.display_name
 
-        query = """SELECT * FROM stats_players 
+        query = """SELECT * FROM stats_players
                    INNER JOIN stats_birthdays ON stats_players.name = stats_birthdays.name
                    WHERE stats_players.name = $1;
-                """   
+                """
 
         record = await self.bot.pool.fetchrow(query, player)
         if not record:

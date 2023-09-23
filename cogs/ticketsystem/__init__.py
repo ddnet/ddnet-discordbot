@@ -282,7 +282,7 @@ class TicketSystem(commands.Cog):
         if is_staff(ctx.author):
             response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed by staff."
             response = (f"{response} "
-                        f"\nThis is the message that has been left for you by our team: " 
+                        f"\nThis is the message that has been left for you by our team: "
                         f"\n> {message}" if message else response)
         else:
             response = None
