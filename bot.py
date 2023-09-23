@@ -17,6 +17,7 @@ initial_extensions = (
     'cogs.github',
     'cogs.guild_log',
     'cogs.map_testing',
+    'cogs.ticketsystem',
     'cogs.meme',
     'cogs.misc',
     'cogs.moderator',
@@ -24,6 +25,7 @@ initial_extensions = (
     'cogs.records',
     'cogs.status',
     'cogs.votes',
+    'cogs.helpcmds',
 )
 
 
