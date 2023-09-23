@@ -25,21 +25,6 @@ class Misc(commands.Cog):
         self.process = psutil.Process()
         self.start_time = discord.utils.utcnow()
 
-    @commands.command(name='bot_invite')
-    async def invite(self, ctx: commands.Context):
-        perms = discord.Permissions.none()
-        perms.send_messages = True
-        perms.manage_messages = True
-        perms.embed_links = True
-        perms.read_messages = True
-        perms.attach_files = True
-        perms.read_message_history = True
-        perms.external_emojis = True
-        perms.add_reactions = True
-        perms.manage_webhooks = True
-        invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms)
-        await ctx.send(f'<{invite}>')
-
     async def get_latest_commits(self, num: int=3) -> str:
         fmt = fr'[\`%h\`]({GH_URL}/commit/%H) %s (%ar)'
         cmd = f'git log master -{num} --no-merges --format="{fmt}"'
@@ -52,7 +37,7 @@ class Misc(commands.Cog):
         title = 'Discord bot for DDraceNetwork'
         embed = discord.Embed(title=title, color=0xFEA500, url='https://ddnet.org')
 
-        embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar.replace(format='png'))
+        embed.set_author(name=self.bot.user, icon_url=self.bot.user.display_avatar.with_static_format('png'))
 
         channels = sum(len(g.voice_channels + g.text_channels) for g in self.bot.guilds)
         stats = f'{len(self.bot.guilds)} Guilds\n{channels} Channels\n{len(self.bot.users)} Users'
