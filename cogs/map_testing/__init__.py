@@ -407,11 +407,6 @@ class MapTesting(commands.Cog):
     async def _before_loop(self):
         await self.bot.wait_until_ready()
 
-    @commands.command(hidden=True)
-    async def tdebug(self, ctx):
-        for map_channel in self.map_channels:
-            logging.info(f"Channel ID: {map_channel.id}, State: {map_channel.state}")
-
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         try:
