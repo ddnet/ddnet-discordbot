@@ -1,6 +1,13 @@
 __pycache__/
+*.pyc
 .venv/
 config.ini
 *.log
+
+
 blocked_players.cfg
 data/assets/map_backgrounds/*.png
+data/map-testing/
+data/ticket-system/
+!data/ticket-system/*.json.schema
+find_players.json
