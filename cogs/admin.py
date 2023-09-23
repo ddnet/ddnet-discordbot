@@ -3,16 +3,10 @@
 
 import logging
 import textwrap
-import time
 import traceback
 from contextlib import redirect_stdout
 from io import StringIO
-
-import asyncpg
 from discord.ext import commands
-
-from utils.misc import run_process_shell
-from utils.text import plural, render_table
 
 log = logging.getLogger(__name__)
 
@@ -110,47 +104,6 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
             return await ctx.message.add_reaction(CONFIRM)
 
         await self.send_or_paste(ctx, f'```py\n{content}\n```', content)
-
-    @commands.command()
-    async def sh(self, ctx: commands.Context, *, cmd: str):
-        await ctx.trigger_typing()
-
-        content = []
-        try:
-            stdout, stderr = await run_process_shell(cmd)
-        except RuntimeError as exc:
-            content.append(str(exc))
-        else:
-            if stdout:
-                content.append(stdout)
-            if stderr:
-                content.append(f'stderr:\n{stderr}')
-
-        if not content:
-            return await ctx.message.add_reaction(CONFIRM)
-
-        content = '\n'.join([f'$ {cmd}'] + content)
-        await self.send_or_paste(ctx, f'```sh\n{content}\n```', content)
-
-    @commands.command()
-    async def sql(self, ctx: commands.Context, *, query: str):
-        try:
-            start = time.perf_counter()
-            records = await self.bot.pool.fetch(query)
-            duration = (time.perf_counter() - start) * 1000.0
-        except asyncpg.PostgresError as exc:
-            return await ctx.send(f'``{exc}``')
-
-        if not records:
-            return await ctx.message.add_reaction(CONFIRM)
-
-        header = list(records[0].keys())
-        rows = [['' if v is None else str(v) for v in r.values()] for r in records]
-        table = render_table(header, rows)
-        num = len(records)
-        footer = f'{num} {plural(num, "row")} in {duration:.2f}ms'
-
-        await self.send_or_paste(ctx, f'```\n{table}\n```\n*{footer}*', f'{table}\n{footer}')
 
     @commands.command()
     async def shutdown(self, ctx: commands.Context):
