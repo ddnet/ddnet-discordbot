@@ -454,6 +454,7 @@ class Profile(commands.Cog):
             'Oldschool':    (6, 0),
             'Solo':         (4, 0),
             'Race':         (2, 0),
+            'Fun':          (2, 0),
         }
 
         mult, offset = servers[server]
