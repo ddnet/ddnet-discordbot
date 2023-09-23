@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 CHAN_DEVELOPER = 293493549758939136
 
-_ISSUE_RE = r'(?:(?P<owner>\w+)/)?(?P<repo>[\w-]*)#(?P<id>[1-9]\d*)\b'
+_ISSUE_RE = r'(?:(?P<owner>\w+)/)?(?P<repo>[\w-]*)#(?P<id>[5-9]\d|\d{3,})\b'
 _REF_RE = r'[-\w]+'
 
 def filter_empty(obj: dict) -> dict:
