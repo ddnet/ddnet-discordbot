@@ -49,11 +49,15 @@ class GuildLog(commands.Cog):
         await chan.send(msg)
 
     async def log_message(self, message: discord.Message):
-        if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() \
-                or message.channel.id in (CHAN_LOGS, CHAN_PLAYERFINDER) or message.channel.category.id == CAT_INTERNAL:
+        if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() or message.channel.id in (
+        CHAN_LOGS, CHAN_PLAYERFINDER) or message.channel.category.id == CAT_INTERNAL or message.channel.name.startswith(
+                ('complaint-', 'other-', 'rename-')):
             return
 
-        embed = discord.Embed(title='Message deleted', description=message.content, color=0xDD2E44, timestamp=datetime.utcnow())
+        embed = discord.Embed(title='Message deleted',
+                              description=message.content,
+                              color=0xDD2E44,
+                              timestamp=datetime.utcnow())
 
         file = None
         if message.attachments:
@@ -116,8 +120,9 @@ class GuildLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        if not before.guild or before.guild.id != GUILD_DDNET or before.is_system() \
-                or before.channel.id == CHAN_LOGS or before.channel.category.id == CAT_INTERNAL or before.author.bot:
+        if not before.guild or before.guild.id != GUILD_DDNET or before.is_system() or before.channel.id == CHAN_LOGS or \
+                before.channel.category.id == CAT_INTERNAL or before.author.bot or before.channel.name.startswith(
+            ('complaint-', 'other-', 'rename-')):
             return
 
         if before.content == after.content:
