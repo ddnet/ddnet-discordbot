@@ -175,6 +175,7 @@ class ServerInfo:
         'RUS': '🇷🇺',
         'CHL': '🇨🇱',
         'MEX': '🇲🇽',
+        'PER': '🇵🇪',
         'USA': '🇺🇸',
         'ZAF': '🇿🇦',
         'CHN': '🇨🇳',
