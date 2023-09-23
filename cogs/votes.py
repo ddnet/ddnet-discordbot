@@ -107,5 +107,5 @@ class Votes(commands.Cog):
             await ctx.send('I can\'t kick members')
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Votes())
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Votes())

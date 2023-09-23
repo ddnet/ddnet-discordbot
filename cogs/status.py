@@ -175,7 +175,6 @@ class ServerInfo:
         'RUS': '🇷🇺',
         'CHL': '🇨🇱',
         'MEX': '🇲🇽',
-        'PER': '🇵🇪',
         'USA': '🇺🇸',
         'ZAF': '🇿🇦',
         'CHN': '🇨🇳',
@@ -258,6 +257,17 @@ class Status(commands.Cog, name='DDNet Status'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    async def fetch_servers(self) -> List[Server]:
+        url = 'https://master1./ddnet/15/servers.json'
+        async with self.bot.session.get(url) as resp:
+            if resp.status != 200:
+                log.error('Failed to fetch DDNet server data (status code: %d %s)', resp.status, resp.reason)
+                raise RuntimeError('Could not fetch DDNet servers')
+
+            js = await resp.json()
+
+            return [Server(**s) for s in js]
+
     async def fetch_status(self) -> ServerStatus:
         url = f'{BASE_URL}/status/json/stats.json'
         async with self.bot.session.get(url) as resp:
@@ -280,5 +290,5 @@ class Status(commands.Cog, name='DDNet Status'):
             await ctx.send(embed=status.embed)
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Status(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Status(bot))

@@ -128,19 +128,18 @@ class TestLog:
             }
         }
 
-    def _handle_user(self, user: Union[discord.User, discord.Member]) -> Dict:
+    def _handle_user(self, user: discord.User) -> Dict:
         if user.avatar is not None:
-            self._avatars[f'{user.avatar}.png'] = str(user.avatar_url_as(format='png'))
-
+            self._avatars[f'{user.avatar.key}.png'] = str(user.avatar.with_format("png").url)
+        print(self._handle_user)
         roles = ['generic']
         if isinstance(user, discord.Member):
             roles += [r.name for r in user.roles if not r.is_default()]
-
         return {
             'name': user.name,
             'discriminator': user.discriminator,
             'avatar': {
-                'id': user.avatar or str(user.default_avatar.value)
+                'id': user.avatar.key if user.avatar else str(user.default_avatar)
             },
             'roles': roles[::-1]
         }
@@ -219,12 +218,15 @@ class TestLog:
         for reaction in reactions:
             emoji = reaction.emoji
             chunk = {'count': reaction.count}
-            if reaction.custom_emoji:
-                self._emojis[f'{emoji.id}.png'] = str(emoji.url)
-                chunk.update({
-                    'name': emoji.name,
-                    'id': emoji.id
-                })
+            if reaction.is_custom_emoji:
+                if isinstance(emoji, str):
+                    continue
+                else:
+                    self._emojis[f'{emoji.id}.png'] = str(emoji.url)
+                    chunk.update({
+                        'name': emoji.name,
+                        'id': emoji.id
+                    })
             else:
                 chunk['emoji'] = emoji
 
@@ -239,7 +241,6 @@ class TestLog:
                 (self._handle_attachments, message.attachments),
                 (self._handle_reactions, message.reactions)
             )
-
             self._messages.append({
                 'author': self._handle_user(message.author),
                 'timestamp': message.created_at.isoformat(),

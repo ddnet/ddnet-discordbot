@@ -2,6 +2,7 @@ from datetime import datetime
 from io import BytesIO
 from typing import Dict, List
 
+import logging
 import asyncpg
 import discord
 from discord.ext import commands
@@ -164,7 +165,6 @@ class Profile(commands.Cog):
 
     @commands.command()
     async def profile(self, ctx: commands.Context, *, player: clean_content=None):
-        await ctx.trigger_typing()
 
         player = player or ctx.author.display_name
 
@@ -354,7 +354,6 @@ class Profile(commands.Cog):
 
     @commands.command()
     async def points(self, ctx: commands.Context, *players: clean_content):
-        await ctx.trigger_typing()
 
         players = [p for p in players if p] or [ctx.author.display_name]
         if len(players) > 10:
@@ -371,7 +370,6 @@ class Profile(commands.Cog):
                 return await ctx.send(f'Could not find player ``{escape_backticks(player)}``')
 
             data[player] = records
-
         buf = await self.generate_points_image(data)
         file = discord.File(buf, filename=f'points_{"_".join(players)}.png')
         await ctx.send(file=file)
@@ -454,7 +452,6 @@ class Profile(commands.Cog):
             'Oldschool':    (6, 0),
             'Solo':         (4, 0),
             'Race':         (2, 0),
-            'Fun':          (2, 0),
         }
 
         mult, offset = servers[server]
@@ -536,7 +533,6 @@ class Profile(commands.Cog):
 
     @commands.command()
     async def map(self, ctx: commands.Context, *, name: clean_content):
-        await ctx.trigger_typing()
 
         query = """SELECT * FROM stats_maps_static
                    INNER JOIN stats_maps ON stats_maps_static.name = stats_maps.name
@@ -659,7 +655,6 @@ class Profile(commands.Cog):
         """Show DDNet activity of up to 10 players based on finishes per hour.
            Hours are in UTC +0. Green indicates the current hour. Stats are updated daily.
         """
-        await ctx.trigger_typing()
 
         players = [p for p in players if p] or [ctx.author.display_name]
         if len(players) > 10:
@@ -699,5 +694,5 @@ class Profile(commands.Cog):
         await ctx.send(f'Total time for ``{escape_backticks(player)}``: **{human_timedelta(time)}**')
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Profile(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Profile(bot))

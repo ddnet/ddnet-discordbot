@@ -17,8 +17,8 @@ CHAN_WELCOME        = 1125706766999629854
 CHAN_JOIN_LEAVE     = 255191476315750401
 CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_MAP_RELEASES   = 392853737099624449
-CHAN_LOGS           = 933330279496572998
-CHAN_PLAYERFINDER   = 968485530230743050
+CHAN_LOGS           = 968485530230743050
+CHAN_PLAYERFINDER   = 1078979471761211462
 CAT_INTERNAL        = 360793439123537920
 
 VALID_IMAGE_FORMATS = ('.webp', '.jpeg', '.jpg', '.png', '.gif')
@@ -49,9 +49,8 @@ class GuildLog(commands.Cog):
         await chan.send(msg)
 
     async def log_message(self, message: discord.Message):
-        if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() or message.channel.id in (
-        CHAN_LOGS) or message.channel.category.id == CAT_INTERNAL or message.channel.name.startswith(
-                ('complaint-', 'other-', 'rename-')):
+        if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() \
+                or message.channel.id in (CHAN_LOGS, CHAN_PLAYERFINDER) or message.channel.category.id == CAT_INTERNAL:
             return
 
         embed = discord.Embed(title='Message deleted', description=message.content, color=0xDD2E44, timestamp=datetime.utcnow())
@@ -72,7 +71,7 @@ class GuildLog(commands.Cog):
                     embed.set_image(url=f'attachment://{attachment.filename}')
 
         author = message.author
-        embed.set_author(name=f'{author} → #{message.channel}', icon_url=author.avatar_url_as(format='png'))
+        embed.set_author(name=f'{author} → #{message.channel}', icon_url=author.display_avatar.with_static_format('png'))
         embed.set_footer(text=f'Author ID: {author.id} | Message ID: {message.id}')
 
         chan = self.bot.get_channel(CHAN_LOGS)
@@ -117,9 +116,8 @@ class GuildLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        if not before.guild or before.guild.id != GUILD_DDNET or before.is_system() or before.channel.id == CHAN_LOGS or \
-                before.channel.category.id == CAT_INTERNAL or before.author.bot or before.channel.name.startswith(
-            ('complaint-', 'other-', 'rename-')):
+        if not before.guild or before.guild.id != GUILD_DDNET or before.is_system() \
+                or before.channel.id == CHAN_LOGS or before.channel.category.id == CAT_INTERNAL or before.author.bot:
             return
 
         if before.content == after.content:
@@ -133,7 +131,7 @@ class GuildLog(commands.Cog):
         embed.add_field(name='After', value=after_content or '\u200b', inline=False)
 
         author = before.author
-        embed.set_author(name=f'{author} → #{before.channel}', icon_url=author.avatar_url_as(format='png'))
+        embed.set_author(name=f'{author} → #{before.channel}', icon_url=author.display_avatar.with_static_format('png'))
         embed.set_footer(text=f'Author ID: {author.id} | Message ID: {before.id}')
 
         chan = self.bot.get_channel(CHAN_LOGS)
@@ -145,5 +143,5 @@ class GuildLog(commands.Cog):
             await message.publish()
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(GuildLog(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(GuildLog(bot))

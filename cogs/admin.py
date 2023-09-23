@@ -44,7 +44,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     @commands.command()
     async def load(self, ctx: commands.Context, *, extension: str):
         try:
-            self.bot.load_extension(extension)
+            await self.bot.load_extension(extension)
         except Exception:
             trace = traceback.format_exc()
             await self.send_or_paste(ctx, f'```py\n{trace}\n```', trace)
@@ -54,7 +54,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     @commands.command()
     async def unload(self, ctx: commands.Context, *, extension: str):
         try:
-            self.bot.unload_extension(extension)
+            await self.bot.unload_extension(extension)
         except Exception:
             trace = traceback.format_exc()
             await self.send_or_paste(ctx, f'```py\n{trace}\n```', trace)
@@ -64,7 +64,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     @commands.command()
     async def reload(self, ctx: commands.Context, *, extension: str):
         try:
-            self.bot.reload_extension(extension)
+            await self.bot.reload_extension(extension)
         except Exception:
             trace = traceback.format_exc()
             await self.send_or_paste(ctx, f'```py\n{trace}\n```', trace)
@@ -157,5 +157,5 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         await self.bot.close()
 
 
-def setup(bot: commands.Bot) -> None:
-    bot.add_cog(Admin(bot))
+async def setup(bot: commands.Bot) -> None:
+    await bot.add_cog(Admin(bot))

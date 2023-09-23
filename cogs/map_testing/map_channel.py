@@ -3,9 +3,12 @@ import re
 from typing import List
 
 import discord
+import asyncio
 
 from cogs.map_testing.submission import InitialSubmission
 from utils.text import human_join, sanitize
+
+import logging
 
 CAT_MAP_TESTING     = 449352010072850443
 CAT_WAITING_MAPPER  = 746076708196843530
@@ -112,5 +115,10 @@ class MapChannel:
         self.server = isubm.server
         self.state = MapState.TESTING
         self.mapper_mentions = isubm.author.mention
+        logging.info(f"Topic: {self.topic}")
         self._channel = await isubm.channel.category.create_text_channel(str(self), topic=self.topic, **options)
+
+        # Workaround for Discord API issue
+        await asyncio.sleep(2)
+        await self._channel.edit(topic=self.topic)
         return self

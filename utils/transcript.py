@@ -1,7 +1,7 @@
 # transcript.py: Collects all messages from a channel and writes them to a file.
 import zipfile
 
-MAX_ZIP_SIZE = 100 * 1024 * 1024
+MAX_ZIP_SIZE = 80 * 1024 * 1024
 
 async def transcript(bot, ticket_channel):
     messages = []
@@ -44,7 +44,7 @@ async def transcript(bot, ticket_channel):
 
         messages.append(content)
 
-    if len(messages) > 2:
+    if len(messages) >= 2:
         transcript_data = "\n".join(messages)
         with open(transcript_file, "w", encoding="utf-8") as transcript:
             transcript.write(transcript_data)

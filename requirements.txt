@@ -1,8 +1,12 @@
+aiohttp==3.7.4.post0
 Pillow
 asyncpg
 colorthief
-discord.py
+discord.py==2.2.2
+discord-ext-menus
 msgpack-python
 psutil
 requests
 uvloop
+requests_futures
+pip

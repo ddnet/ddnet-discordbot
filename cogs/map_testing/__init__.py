@@ -368,7 +368,8 @@ class MapTesting(commands.Cog):
         now = datetime.utcnow()
 
         ann_channel = self.bot.get_channel(CHAN_ANNOUNCEMENTS)
-        ann_history = await ann_channel.history(after=now - timedelta(days=3)).filter(by_releases_webhook).flatten()
+        ann_history = [msg async for msg in ann_channel.history(after=now - timedelta(days=3)) if
+                       by_releases_webhook(msg)]
         recent_releases = {self.get_map_channel_from_ann(m.content) for m in ann_history}
 
         query = 'SELECT channel_id FROM waiting_maps WHERE timestamp < CURRENT_TIMESTAMP - INTERVAL \'60 days\';'
@@ -386,7 +387,7 @@ class MapTesting(commands.Cog):
                 continue
 
             # make sure there is no active discussion going on
-            recent_message = await map_channel.history(limit=1, after=now - timedelta(days=5)).flatten()
+            recent_message = [msg async for msg in map_channel.history(limit=1, after=now - timedelta(days=5))]
             if recent_message:
                 continue
 
@@ -405,6 +406,11 @@ class MapTesting(commands.Cog):
     @auto_archive.before_loop
     async def _before_loop(self):
         await self.bot.wait_until_ready()
+
+    @commands.command(hidden=True)
+    async def tdebug(self, ctx):
+        for map_channel in self.map_channels:
+            logging.info(f"Channel ID: {map_channel.id}, State: {map_channel.state}")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
@@ -561,6 +567,23 @@ class MapTesting(commands.Cog):
 
         await user.remove_roles(tester_role)
 
+    @commands.command()
+    @tester_check()
+    async def archive_imm(self, ctx: commands.Context):
+        """Archive map channel immediately"""
+        map_channel = self.get_map_channel(ctx.channel.id)
+        await ctx.message.add_reaction(':mmm:395753965410582538')
+
+        tlog = await TestLog.from_map_channel(map_channel)
+        arch = await self.archive_testlog(tlog)
+        if arch:
+            await map_channel.delete()
+            log.info('Successfully archived channel #%s', map_channel)
+        else:
+            await ctx.message.clear_reactions()
+            await ctx.message.add_reaction(':oop:395753983379243028')
+            log.error('Failed archiving channel #%s', map_channel)
+
     @add_tester.error
     @remove_tester.error
     async def manage_tester_error(self, ctx: commands.Context, error: commands.CommandError):
@@ -568,5 +591,5 @@ class MapTesting(commands.Cog):
             await ctx.send('Could not find that user')
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(MapTesting(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(MapTesting(bot))

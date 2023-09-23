@@ -1,10 +1,7 @@
-import re
 from io import BytesIO
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, List, Tuple, Union
 
 from PIL import Image, ImageDraw, ImageFont
-
-SPACING = 4  # internal line spacing
 
 
 def save(img: Image.Image) -> BytesIO:
@@ -46,47 +43,34 @@ def auto_font(font: Union[ImageFont.FreeTypeFont, Tuple[str, int]], text: str, m
 
     return font
 
-def wrap_text(font: ImageFont.FreeTypeFont, text: str, max_width: int, max_height: int) -> Optional[str]:
-    line_height = font.size
-    lines = ['']
-    first_word = True
+def wrap_new(canv: ImageDraw.Draw, box: Tuple[Tuple[int, int], Tuple[int, int]], text: str, *, font: ImageFont.FreeTypeFont):
+    _, h = font.getsize('yA')
 
-    words = re.split(r'(\s+)', text)
-    for word in words:
-        if first_word:
-            word_width = font.getlength(word)
+    max_width = box[1][0] - box[0][0]
+    max_height = box[1][1]
 
-            if word_width > max_width:
-                # word is too long
-                return None
+    def write(x: int, y: int, line: List[str]):
+        text_ = ' '.join(line)
+        font_ = auto_font(font, text_, max_width)
+        w, h = font_.getsize(text_)
+        xy = (x + center(w, max_width), y)
+        canv.text(xy, text_, fill='black', font=font_)
 
-            lines[-1] = word
-            first_word = False
+    x, y = box[0]
+    line = []
+    for word in text.split():
+        w, _ = font.getsize(' '.join(line + [word]))
+
+        if w > max_width:
+            write(x, y, line)
+
+            y += h
+            if y > max_height:
+                return
+
+            line = [word]
         else:
-            line_width = font.getlength(lines[-1] + word)
+            line.append(word)
 
-            if line_width > max_width:
-                word_width = font.getlength(word)
-                num_lines = len(lines) + 1
-                text_height = (num_lines * line_height) + (num_lines * SPACING)
-
-                if word_width > max_width or text_height > max_height:
-                    # word is too long or adding a new line exceeds max height
-                    return None
-
-                lines.append(word) # add word on the next line
-                lines[-1] = lines[-1].strip()
-            else:
-                lines[-1] = lines[-1] + word # add word on the current line
-
-    return '\n'.join(lines).strip()
-
-def auto_wrap_text(font: ImageFont.FreeTypeFont, text: str, max_width: int, max_height: int, min_font_size: int=16) -> Tuple[ImageFont.FreeTypeFont, str]:
-    while font.size >= min_font_size:
-        wrapped_text = wrap_text(font, text, max_width, max_height)
-        if wrapped_text is not None:
-            return font, wrapped_text
-        
-        font = font.font_variant(size=font.size - 1)
-
-    raise ValueError("Text doesn't fit")
+    if line:
+        write(x, y, line)

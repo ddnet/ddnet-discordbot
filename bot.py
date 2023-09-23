@@ -3,9 +3,10 @@
 
 import logging
 import traceback
-from datetime import datetime
+import datetime
 from typing import Optional
 
+from discord import Intents
 import aiohttp
 import discord
 from discord.ext import commands
@@ -25,7 +26,10 @@ initial_extensions = (
     'cogs.records',
     'cogs.status',
     'cogs.votes',
+    'cogs.skindb',
     'cogs.helpcmds',
+    'cogs.playerfinder',
+    'cogs.wiki',
 )
 
 
@@ -35,22 +39,22 @@ def get_traceback(error: Exception) -> str:
 
 class DDNet(commands.Bot):
     def __init__(self, **kwargs):
-        intents = discord.Intents(guilds=True, members=True, emojis=True, messages=True, reactions=True)
-        super().__init__(command_prefix='$', fetch_offline_members=True, help_command=commands.MinimalHelpCommand(), intents=intents)
+        super().__init__(command_prefix='$', fetch_offline_members=True, help_command=commands.MinimalHelpCommand(), intents=Intents().all())
 
         self.config = kwargs.pop('config')
         self.pool = kwargs.pop('pool')
         self.session = kwargs.pop('session')
 
+    async def setup_hook(self):
         for extension in initial_extensions:
             try:
-                self.load_extension(extension)
+                await self.load_extension(extension)
             except Exception:
                 log.exception('Failed to load extension %r', extension)
             else:
                 log.info('Successfully loaded extension %r', extension)
 
-        self.start_time = datetime.utcnow()
+        self.start_time = discord.utils.utcnow()
 
         self.add_check(self.global_check)
 
@@ -90,7 +94,7 @@ class DDNet(commands.Bot):
             guild_id,
             ctx.channel.id,
             ctx.author.id,
-            ctx.message.created_at,
+            datetime.datetime.fromisoformat(ctx.message.created_at.replace(tzinfo=None).isoformat()),
             ctx.command.qualified_name
         )
 

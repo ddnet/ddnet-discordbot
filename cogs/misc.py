@@ -23,8 +23,9 @@ class Misc(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.process = psutil.Process()
+        self.start_time = discord.utils.utcnow()
 
-    @commands.command()
+    @commands.command(name='bot_invite')
     async def invite(self, ctx: commands.Context):
         perms = discord.Permissions.none()
         perms.send_messages = True
@@ -51,7 +52,7 @@ class Misc(commands.Cog):
         title = 'Discord bot for DDraceNetwork'
         embed = discord.Embed(title=title, color=0xFEA500, url='https://ddnet.org')
 
-        embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url_as(format='png'))
+        embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar.replace(format='png'))
 
         channels = sum(len(g.voice_channels + g.text_channels) for g in self.bot.guilds)
         stats = f'{len(self.bot.guilds)} Guilds\n{channels} Channels\n{len(self.bot.users)} Users'
@@ -62,7 +63,7 @@ class Misc(commands.Cog):
         threads = self.process.num_threads()
         embed.add_field(name='Process', value=f'{memory:.2f} MiB\n{cpu:.2f}% CPU\n{threads} Threads')
 
-        delta = datetime.utcnow() - self.bot.start_time
+        delta = discord.utils.utcnow() - self.start_time
         uptime = human_timedelta(delta.total_seconds(), brief=True)
         latency = self.bot.latency * 1000
         embed.add_field(name='Bot', value=f'{uptime} Uptime\n{latency:.2f}ms Latency')
@@ -92,19 +93,18 @@ class Misc(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def avatar(self, ctx: commands.Context, *, user: discord.User=None):
+    async def avatar(self, ctx: commands.Context, *, user: discord.User = None):
         """Shows the avatar of a user"""
-        await ctx.trigger_typing()
 
         user = user or ctx.author
-        avatar = user.avatar_url_as(static_format='png')
+        avatar = user.avatar.replace(static_format='png')
         buf = BytesIO()
         try:
             await avatar.save(buf)
         except discord.NotFound:
             return await ctx.send('Could not get that user\'s avatar')
 
-        ext = 'gif' if user.is_avatar_animated() else 'png'
+        ext = 'gif' if user.avatar.is_animated() else 'png'
         file = discord.File(buf, filename=f'avatar_{user.name}.{ext}')
         await ctx.send(file=file)
 
@@ -210,7 +210,7 @@ class Misc(commands.Cog):
             for emoji in guild.emojis:
                 count[emoji.animated] += 1
                 ext = 'gif' if emoji.animated else 'png'
-                data = await emoji.url.read()
+                data = await emoji.read()
                 emojis.append((f'{emoji.name}.{ext}', data))
 
             limit = guild.emoji_limit
@@ -227,5 +227,5 @@ class Misc(commands.Cog):
             await ctx.send(msg, file=file)
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Misc(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Misc(bot))

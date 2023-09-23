@@ -3,3 +3,4 @@ __pycache__/
 config.ini
 *.log
 blocked_players.cfg
+data/assets/map_backgrounds/*.png

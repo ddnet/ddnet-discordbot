@@ -4,13 +4,11 @@
 import discord
 from discord.ext import commands
 
-
 WH_RECORDS = 338945741714227201
 
 class Records(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.adapter = discord.AsyncWebhookAdapter(self.bot.session)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -22,7 +20,7 @@ class Records(commands.Cog):
 
         for id_, token in webhooks:
             try:
-                webhook = discord.Webhook.partial(id=id_, token=token, adapter=self.adapter)
+                webhook = discord.Webhook.partial(id=id_, token=token, session=self.bot.session)
                 await webhook.send(content=message.content)
             except discord.NotFound:
                 query = 'DELETE FROM records_webhooks WHERE id = $1;'
@@ -47,7 +45,7 @@ class Records(commands.Cog):
             if exists:
                 return await ctx.send('This channel is already registered as a records channel')
 
-        avatar = self.bot.user.avatar_url_as(format='png')
+        avatar = self.bot.user.avatar.replace(format='png')
         webhook = await channel.create_webhook(name='DDNet', avatar=await avatar.read())
 
         query = 'INSERT INTO records_webhooks (id, token) VALUES ($1, $2);'
@@ -75,5 +73,5 @@ class Records(commands.Cog):
         await ctx.send(f'Unregistered {channel.mention} as a records channel')
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Records(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Records(bot))

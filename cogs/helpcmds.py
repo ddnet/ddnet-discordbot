@@ -152,18 +152,49 @@ class HelpCommands(commands.Cog, name='Help Commands'):
 
         embed = discord.Embed(
             title="KoG Login and Account Migration",
-            description="**If you already had an account on KoG, watch the following video.**"
-                        "\n\n**URL:**"
-                        "\n[www.youtube.com](https://www.youtube.com/watch?v=d1kbt-srlac)",
+            description="",
             colour=discord.Colour.random())
         embed.add_field(
+            name='',
+            value='If you already had an account on KoG, watch the following video: [www.youtube.com](https://www.youtube.com/watch?v=d1kbt-srlac)',
+            inline=False
+        )
+        embed.add_field(
             name=f'For new Players:',
-            value=f'Creating an ingame login is simple:'
-                  f'\n1. Login into your [kog.tw](https://kog.tw/) account ( old account )'
-                  f'\n2. Click on your username at the top right.'
-                  f'\n3. Click on In-game login.'
-                  f'\n4. Generate an In-game login.'
-                  f'\n5. Join any KoG server and paste the /login command')
+            value=f'First create an Account:'
+                  f'\n1. Click on the following link: [kog.tw](https://kog.tw/register.php)'
+                  f'\n2. Enter your in-game name, your e-mail address and a password'
+                  f'\n3. If the name is not already registered, you should now receive a message that the "name has been pre-claimed"'
+                  f'\n4. Join the KoG discord server: [KoG Discord](https://discord.kog.tw)'
+                  f'\n5. Create a ticket in KoG\'s discord by clicking on the registration button in #create-a-ticket channel, so a moderator can confirm you.'
+                  f'\n6. Now go to the login page: [kog.tw](https://kog.tw/login.php) and login with the credentials you have used to register.'
+                  f'\n7. Click on your name in the top right-hand corner of the website and select "Dashboard"'
+                  f'\n8. Scroll down to accept the ToS (Terms of Service)'
+        )
+        embed.add_field(
+            name='Migration Guide:',
+            value='1. Click on the following link: [kog.tw](https://auth.kog.tw/)'
+                  '\n2. Click the register button and fill in all your information (Note: You can put anything in First name and Surname. Does not need to be your real information)'
+                  '\n3. After clicking the next button you should receive an e-mail with a code.'
+                  '\n4. Open the e-mail and click the blue button or copy the code'
+                  '\n5. You should now see "User activated" - click next and login'
+                  '\n6. Now you can choose if you want to use two factor authentication (Optional, but recommended)'
+                  '\n7. Navigate back to this link [kog.tw](https://kog.tw/) login and click the start migration button'
+                  '\n8. Now there should be a blue "next" button - click that button then click the blue start migration button.'
+                  '\n9. You should now receive an e-mail from KoG - click on the "migrate now" button.'
+                  '\n10. Now click the blue "login to kog one" button and then login with your zitadel account.'
+                  '\n11. It should now say: "Account successfully queued for migration."'
+                  '\n12. You\'re done.',
+            inline=True
+        )
+        embed.add_field(
+            name='How to Login:',
+            value='1. Click on the following link: [kog.tw](https://kog.tw/login.php) and log in.'
+                  '\n2. Click on your name in the top right-hand corner and select "Ingame login".'
+                  '\n3. Click on the yellow button saying "generate a login".'
+                  '\n4. Join any KoG server and paste the /login command',
+            inline=False
+        )
         embed.add_field(
             name=f'This is not required on DDNet.',
             value=f'',

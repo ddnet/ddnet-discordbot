@@ -205,7 +205,7 @@ class InitialSubmission(Submission):
         perms = discord.PermissionOverwrite(read_messages=True)
         users = [self.message.author]
         for reaction in self.message.reactions:
-            users += await reaction.users().flatten()
+            users += [u async for u in reaction.users()]
         overwrites = {u: perms for u in users}
         # category permissions:
         # - @everyone:  read_messages=False

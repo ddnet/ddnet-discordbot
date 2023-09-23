@@ -27,7 +27,7 @@ class PlayerFinder(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.servers_url = "https://master1.ddnet.tw/ddnet/15/servers.json"
-        self.servers_info_url = 'https://info2.ddnet.tw/info'
+        self.servers_info_url = 'https://info.ddnet.org/info'
         self.player_file = "find_players.json"
         self.players_online_filtered = {}
         self.sent_messages = []
@@ -40,7 +40,7 @@ class PlayerFinder(commands.Cog):
 
     async def get(self, url, **kwargs):
         with FuturesSession() as s:
-            return await asyncio.wrap_future(s.get(url, **kwargs))
+            return await asyncio.wrap_future(s.get(url, timeout=1, **kwargs))
 
     @commands.command(name='list')
     @commands.has_any_role(ROLE_ADMIN, ROLE_MODERATOR)
@@ -70,20 +70,20 @@ class PlayerFinder(commands.Cog):
     async def add_player_to_list(self, ctx: commands.Context, *, players: str):
         new_players = {}
         with open(self.player_file, 'r', encoding='utf-8') as f:
-            players_list = json.load(f)
+            player_list = json.load(f)
 
         player_info = players.split("\n")
         for i in range(0, len(player_info), 2):
             player_name = player_info[i].strip()
             reason = player_info[i + 1].strip() if i + 1 < len(player_info) else "No reason provided"
-            if player_name in players_list:
+            if player_name in player_list:
                 await ctx.send(f'Player {player_name} is already in the search list')
             else:
                 new_players[player_name] = reason
-                players_list[player_name] = reason
+                player_list[player_name] = reason
 
         with open(self.player_file, 'w', encoding='utf-8') as f:
-            json.dump(players_list, f)
+            json.dump(player_list, f)
 
         if new_players:
             message = "Added players:"
@@ -114,20 +114,27 @@ class PlayerFinder(commands.Cog):
     @commands.command(name='info')
     @commands.has_any_role(ROLE_ADMIN, ROLE_MODERATOR)
     @in_channel(CHAN_BOT_SPAM)
-    async def send_info(self, ctx: commands.Context, player_name: str):
+    async def send_info(self, ctx: commands.Context, *, player_name: str):
         with open(self.player_file, 'r', encoding='utf-8') as f:
             players = json.load(f)
 
-        if player_name not in players:
+        matched_players = [name for name in players.keys() if name.strip() == player_name.strip()]
+
+        if not matched_players:
             await ctx.send(f'Player not in watchlist.')
         else:
+            player_name = matched_players[0]
             reason = players.get(player_name, "No reason provided")
             await ctx.send(f"{player_name} was added with Reason: {reason}")
 
-    @commands.command(name='edit')
+    @commands.command()
     @commands.has_any_role(ROLE_ADMIN, ROLE_MODERATOR)
     @in_channel(CHAN_BOT_SPAM)
-    async def edit_info(self, ctx: commands.Context, player_name: str, *, reason: str):
+    async def edit_info(self, ctx: commands.Context, *, player_reason: str):
+        lines = player_reason.strip().split('\n')
+        player_name = lines[0].strip()
+        reason = '\n'.join(lines[1:]).strip()
+
         with open(self.player_file, 'r', encoding='utf-8') as f:
             player_list = json.load(f)
 
@@ -135,6 +142,7 @@ class PlayerFinder(commands.Cog):
             await ctx.send(f'Player {player_name} not found.')
         else:
             player_list[player_name] = reason
+
             with open(self.player_file, 'w', encoding='utf-8') as f:
                 json.dump(player_list, f)
 
@@ -154,9 +162,7 @@ class PlayerFinder(commands.Cog):
         return players
 
     async def server_filter(self):
-        gamemodes = ['DDNet', 'Test', 'Tutorial', 'Block', 'Infection',
-                     'iCTF', 'gCTF', 'Vanilla', 'zCatch', 'TeeWare',
-                     'TeeSmash', 'Foot', 'xPanic', 'Monster']
+        gamemodes = ['DDNet', 'Test', 'Tutorial', 'Block']
         resp = await self.get(self.servers_info_url)
         servers = resp.json()
         data = servers.get('servers')
@@ -240,32 +246,52 @@ class PlayerFinder(commands.Cog):
                 except Exception as error:
                     print(f"Error deleting message: {error}")
 
-    @tasks.loop(seconds=10)
+    @tasks.loop(seconds=30)
     async def find_players(self):
         players = self.load_players()
         server_filter_list = await self.server_filter()
         players_online = await self.players()
 
-        self.players_online_filtered = {player_name: players_online[player_name] for player_name in players
-                                        if players_online[player_name] and players_online[player_name][0][
-                                            1] in server_filter_list}
+        self.players_online_filtered = {
+            player_name: [
+                server for i, server in enumerate(players_online[player_name])
+                if server[1] in server_filter_list and i < 3
+            ]
+            for player_name in players
+            if players_online[player_name] and any(
+                server[1] in server_filter_list for server in players_online[player_name]
+            )
+        }
 
         player_embed = discord.Embed(color=0x00ff00)
         if self.players_online_filtered:
-            player_embed.title = "Found players"
-            for player_name, servers in self.players_online_filtered.items():
-                server_name, address = servers[0]
-                reason = players.get(player_name, "No reason provided")
+            player_embed.title = 'Found players'
+            for i, player_name in enumerate(self.players_online_filtered.keys(), start=1):
+                servers = self.players_online_filtered[player_name]
+                server_field_value = ""
+                reason = players.get(player_name, 'No reason provided')
+                server_field_value += f'Reason: {reason}\n'
 
-                player_embed.add_field(name=f"Player: {player_name}",
-                                       value=f"Server: {server_name}"
-                                             f"\nReason: {reason}"
-                                             f"\nSteam <steam://run/412220//{address}/>",
-                                       inline=False)
+                for server in servers:
+                    server_name, address = server
+                    server_field_value += (
+                        f"* Server: {server_name}"
+                        f"\n * <steam://run/412220//{address}/>\n"
+                    )
+
+                player_embed.add_field(
+                    name=f"{i}. Player: {player_name}",
+                    value=server_field_value,
+                    inline=False
+                )
         else:
-            player_embed.title = "No players found in current iteration."
+            player_embed.title = 'No players found in the current iteration.'
 
         await self.send_message(player_embed)
+
+    @find_players.before_loop
+    async def before_find_players(self):
+        await self.bot.wait_until_ready()
 
     @commands.command(name="stop_search")
     @commands.has_any_role(ROLE_ADMIN, ROLE_MODERATOR)
@@ -278,7 +304,7 @@ class PlayerFinder(commands.Cog):
                 last_message = self.sent_messages[-1]
                 await last_message.delete()
                 self.sent_messages.clear()
-            self.find_players.stop()
+            self.find_players.cancel()
             self.players_online_filtered.clear()
             await ctx.send("Process stopped.")
 
@@ -303,12 +329,6 @@ class PlayerFinder(commands.Cog):
         else:
             raise error
 
-    @find_players.before_loop
-    async def before_find_players(self):
-        await self.bot.wait_until_ready()
-
-    def cog_unload(self):
-        self.search_player.stop()
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(PlayerFinder(bot))
