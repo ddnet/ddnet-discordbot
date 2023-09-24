@@ -1,5 +1,5 @@
 aiohttp==3.8.5
-Pillow
+Pillow==9.5.0
 asyncpg
 colorthief
 discord.py==2.2.2
