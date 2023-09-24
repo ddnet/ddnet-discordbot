@@ -144,9 +144,12 @@ class Github(commands.Cog):
 		or message.author.bot or self.ratelimited():
             return
 
-        codeblocks = re.findall(r"```(?:\w+\n)?(.+?)```", message.content, flags=re.DOTALL)
-        for codeblock in codeblocks:
-            message.content = message.content.replace(f"```{codeblock}```", '')
+        codeblocks = re.findall(r"```(?:\w+\n)?([\s\S]+?)```|`(?:\w+)?(.+?)`", message.content, flags=re.DOTALL)
+        for triple_backtick, single_backtick in codeblocks:
+            if triple_backtick:
+                message.content = message.content.replace(f"{triple_backtick}", '')
+            elif single_backtick:
+                message.content = message.content.replace(f"{single_backtick}", '')
 
         matches = re.finditer(_ISSUE_RE, message.content)
         links = []

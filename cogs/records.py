@@ -45,7 +45,7 @@ class Records(commands.Cog):
             if exists:
                 return await ctx.send('This channel is already registered as a records channel')
 
-        avatar = self.bot.user.avatar.replace(format='png')
+        avatar = self.bot.user.display_avatar.with_static_format('png')
         webhook = await channel.create_webhook(name='DDNet', avatar=await avatar.read())
 
         query = 'INSERT INTO records_webhooks (id, token) VALUES ($1, $2);'
