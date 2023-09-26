@@ -18,12 +18,15 @@ GUILD_DDNET            = 252358080522747904
 CAT_TICKETS            = 1124657181363556403
 CAT_MODERATION         = 968484659950403585
 CHAN_MODERATOR         = 345588928482508801
-CHAN_T_TRANSCRIPTS     = 1124657432816267394
-CHAN_LOGS              = 1147408275374100520
-CHAN_INFO              = 1124657351442579486
 ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
 ROLE_MODERATOR         = 252523225810993153
+
+TH_REPORTS             = 1156218166914060288
+TH_BAN_APPEALS         = 1156218327564300289
+TH_RENAMES             = 1156218426633769032
+TH_COMPLAINTS          = 1156218705701785660
+TH_OTHER               = 1156218815164723261
 
 
 def is_staff(member: discord.Member) -> bool:
@@ -226,78 +229,55 @@ class TicketSystem(commands.Cog):
 
         if transcript_file:
             await ticket_channel.send(f'Uploading files...')
-            logs_channel = self.bot.get_channel(CHAN_LOGS)
-            transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-            t_message = (
-                f'**Ticket Channel ID: {ticket_channel.id}**'
-                f'\n\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> '
-                f'(Global Name: {ticket_creator}) and closed by <@{ctx.author.id}> (Global Name: {ctx.author})')
+            targets = {
+                'report': TH_REPORTS,
+                'ban_appeal': TH_BAN_APPEALS,
+                'rename': TH_RENAMES,
+                'complaint': TH_COMPLAINTS,
+                'other': TH_OTHER,
+            }
 
-            # I don't know how else to do this, this is such ugly code :(
-            # what pains me the most is discord file objects are single use only
-            if ticket_category in ('report', 'ban_appeal'):
-                if zip_file is not None:
-                    files_to_send = [discord.File(transcript_file)] + [discord.File(z) for z in zip_file]
-                    await transcript_channel.send(
-                        t_message,
-                        files=files_to_send,
-                        allowed_mentions=discord.AllowedMentions(users=False)
-                        )
-
-                    files_to_send = [discord.File(transcript_file)] + [discord.File(z) for z in zip_file]
-                    await logs_channel.send(
-                        t_message,
-                        files=files_to_send,
-                        allowed_mentions=discord.AllowedMentions(users=False)
-                )
-                else:
-                    await transcript_channel.send(
-                        t_message,
-                        file=discord.File(transcript_file),
-                        allowed_mentions=discord.AllowedMentions(users=False)
-                    )
-
-                    await logs_channel.send(
-                        t_message,
-                        file=discord.File(transcript_file),
-                        allowed_mentions=discord.AllowedMentions(users=False)
-                    )
+            if ticket_category in targets:
+                target_channel = self.bot.get_channel(targets[ticket_category])
             else:
+                await ticket_channel.send("Something went horribly wrong. Target Channel doesn't exist.")
+                return
+
+            if target_channel:
+                t_message = (
+                    f'**Ticket Channel ID: {ticket_channel.id}**'
+                    f'\n\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> '
+                    f'(Global Name: {ticket_creator}) and closed by <@{ctx.author.id}> (Global Name: {ctx.author})')
+
+                await target_channel.send(
+                    t_message,
+                    files=[discord.File(transcript_file)],
+                    allowed_mentions=discord.AllowedMentions(users=False)
+                )
+
                 if zip_file is not None:
-                    files_to_send = [discord.File(transcript_file)] + [discord.File(z) for z in zip_file]
-                    await transcript_channel.send(
-                        t_message,
-                        files=files_to_send,
-                        allowed_mentions=discord.AllowedMentions(users=False)
-                    )
-                else:
-                    await transcript_channel.send(
-                        t_message,
-                        file=discord.File(transcript_file),
-                        allowed_mentions=discord.AllowedMentions(users=False)
-                    )
-        else:
-            pass
+                    for z in zip_file:
+                        await target_channel.send(
+                            files=[discord.File(z)],
+                            allowed_mentions=discord.AllowedMentions(users=False)
+                        )
+            else:
+                await ticket_channel.send("Something went horribly wrong. Invalid ticket category.")
 
         if is_staff(ctx.author):
             response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed by staff."
-            response = (f"{response} "
-                        f"\nThis is the message that has been left for you by our team: "
-                        f"\n> {message}" if message else response)
+            if message:
+                response += f"\nThis is the message that has been left for you by our team:\n> {message}"
         else:
-            response = None
-
-        if response is None and transcript_file is not None:
             response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed."
+
+        if transcript_file is not None:
             response += "\n**Transcript:**"
 
         try:
-            if response and transcript_file:
-                await ticket_creator.send(content=response, file=discord.File(transcript_file))
-            elif response:
-                await ticket_creator.send(content=response)
-            else:
-                pass
+            if response:
+                await ticket_creator.send(content=response,
+                                          file=discord.File(transcript_file) if transcript_file else None)
         except discord.Forbidden:
             pass
 
@@ -365,57 +345,39 @@ class TicketSystem(commands.Cog):
 
                     if transcript_file:
                         await ticket_channel.send(f'Uploading files...')
-                        logs_channel = self.bot.get_channel(CHAN_LOGS)
-                        transcript_channel = self.bot.get_channel(CHAN_T_TRANSCRIPTS)
-                        t_message = (f'\"{ticket_category.capitalize()}\"Ticket created by: <@{ticket_creator.id}> '
-                                   f'(Global Name: {ticket_creator}), closed due to inactivity.'
-                                   f'\n Ticket Channel ID: {ticket_channel.id}')
+                        targets = {
+                            'report': TH_REPORTS,
+                            'ban_appeal': TH_BAN_APPEALS,
+                            'rename': TH_RENAMES,
+                            'complaint': TH_COMPLAINTS,
+                            'other': TH_OTHER,
+                        }
 
-                        # I don't know how else to do this, this is such ugly code :(
-                        # what pains me the most is discord file objects are single use only
-                        if ticket_category in ('report', 'ban_appeal'):
-                            if zip_file is not None:
-                                files_to_send = [discord.File(transcript_file)] + [discord.File(z) for z in zip_file]
-                                await transcript_channel.send(
-                                    t_message,
-                                    files=files_to_send,
-                                    allowed_mentions=discord.AllowedMentions(users=False)
-                                )
-
-                                files_to_send = [discord.File(transcript_file)] + [discord.File(z) for z in zip_file]
-                                await logs_channel.send(
-                                    t_message,
-                                    files=files_to_send,
-                                    allowed_mentions=discord.AllowedMentions(users=False)
-                                )
-                            else:
-                                await transcript_channel.send(
-                                    t_message,
-                                    file=discord.File(transcript_file),
-                                    allowed_mentions=discord.AllowedMentions(users=False)
-                                )
-
-                                await logs_channel.send(
-                                    t_message,
-                                    file=discord.File(transcript_file),
-                                    allowed_mentions=discord.AllowedMentions(users=False)
-                                )
+                        if ticket_category in targets:
+                            target_channel = self.bot.get_channel(targets[ticket_category])
                         else:
+                            await ticket_channel.send("Something went horribly wrong. Target Channel doesn't exist.")
+                            return
+
+                        if target_channel:
+                            t_message = (f'\"{ticket_category.capitalize()}\"Ticket created by: <@{ticket_creator.id}> '
+                                         f'(Global Name: {ticket_creator}), closed due to inactivity.'
+                                         f'\nTicket Channel ID: {ticket_channel.id}')
+
+                            await target_channel.send(
+                                t_message,
+                                files=[discord.File(transcript_file)],
+                                allowed_mentions=discord.AllowedMentions(users=False)
+                            )
+
                             if zip_file is not None:
-                                files_to_send = [discord.File(transcript_file)] + [discord.File(z) for z in zip_file]
-                                await transcript_channel.send(
-                                    t_message,
-                                    files=files_to_send,
-                                    allowed_mentions=discord.AllowedMentions(users=False)
-                                )
-                            else:
-                                await transcript_channel.send(
-                                    t_message,
-                                    file=discord.File(transcript_file),
-                                    allowed_mentions=discord.AllowedMentions(users=False)
-                                )
-                    else:
-                        pass
+                                for z in zip_file:
+                                    await target_channel.send(
+                                        files=[discord.File(z)],
+                                        allowed_mentions=discord.AllowedMentions(users=False)
+                                    )
+                        else:
+                            await ticket_channel.send("Something went horribly wrong. Invalid ticket category.")
 
                     message = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed due to inactivity."
 
@@ -423,10 +385,9 @@ class TicketSystem(commands.Cog):
                         message += "\n**Transcript:**"
 
                     try:
-                        if message and transcript_file:
-                            await ticket_creator.send(content=message, file=discord.File(transcript_file))
-                        else:
-                            await ticket_creator.send(content=message)
+                        if message:
+                            await ticket_creator.send(content=message,
+                                                      file=discord.File(transcript_file) if transcript_file else None)
                     except discord.Forbidden:
                         pass
 
