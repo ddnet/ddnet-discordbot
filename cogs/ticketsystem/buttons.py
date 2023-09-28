@@ -40,6 +40,22 @@ class MainMenu(discord.ui.View):
 
         return mention_message
 
+    async def ticket_num(self, category) -> int:
+        ticket_num = self.ticket_data["ticket_count"]["categories"][category]
+
+        if ticket_num:
+            ticket_num = int(ticket_num) + 1
+        else:
+            ticket_num = 1
+
+        ticket_num = int(ticket_num)
+        self.ticket_data["ticket_count"]["categories"][category] = int(ticket_num)
+
+        with open(self.ticket_data_file, 'w') as file:
+            json.dump(self.ticket_data, file, indent=4)
+
+        return ticket_num
+
     async def check_for_open_ticket(self, interaction, ticket_category) -> bool:
         """Limits tickets per person to one"""
         user_id = str(interaction.user.id)
@@ -66,8 +82,6 @@ class MainMenu(discord.ui.View):
 
         await interaction.response.defer(ephemeral=True, thinking=True)  # noqa
 
-        ticket_name = f"report-{interaction.user.name}"
-
         overwrites = {
             interaction.guild.default_role: discord.PermissionOverwrite(
                 read_messages=False),
@@ -85,6 +99,7 @@ class MainMenu(discord.ui.View):
                 send_messages=True)
         }
 
+        ticket_name = f"report-{await self.ticket_num(category='report')}"
         category = interaction.guild.get_channel(CAT_TICKETS)
         channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
@@ -160,8 +175,6 @@ class MainMenu(discord.ui.View):
 
         await interaction.response.defer(ephemeral=True, thinking=True)  # noqa
 
-        ticket_name = f"rename-{interaction.user.name}"
-
         overwrites = {
             interaction.guild.default_role: discord.PermissionOverwrite(
                 read_messages=False),
@@ -176,6 +189,7 @@ class MainMenu(discord.ui.View):
                 send_messages=True)
         }
 
+        ticket_name = f"rename-{await self.ticket_num(category='rename')}"
         category = interaction.guild.get_channel(CAT_TICKETS)
         channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
@@ -243,8 +257,6 @@ class MainMenu(discord.ui.View):
 
         await interaction.response.defer(ephemeral=True, thinking=True)  # noqa
 
-        ticket_name = f"ban-appeal-{interaction.user.name}"
-
         overwrites = {
             interaction.guild.default_role: discord.PermissionOverwrite(
                 read_messages=False),
@@ -262,6 +274,7 @@ class MainMenu(discord.ui.View):
                 send_messages=True)
         }
 
+        ticket_name = f"ban-appeal-{await self.ticket_num(category='ban_appeal')}"
         category = interaction.guild.get_channel(CAT_TICKETS)
         channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
@@ -331,7 +344,6 @@ class MainMenu(discord.ui.View):
 
         await interaction.response.defer(ephemeral=True, thinking=True)  # noqa
 
-        ticket_name = f"complaint-{interaction.user.name}"
         overwrites = {
             interaction.guild.default_role: discord.PermissionOverwrite(
                 read_messages=False),
@@ -346,6 +358,7 @@ class MainMenu(discord.ui.View):
                 send_messages=True)
         }
 
+        ticket_name = f"complaint-{await self.ticket_num(category='complaint')}"
         category = interaction.guild.get_channel(CAT_TICKETS)
         channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
@@ -410,7 +423,6 @@ class MainMenu(discord.ui.View):
 
         await interaction.response.defer(ephemeral=True, thinking=True)  # noqa
 
-        ticket_name = f"other-{interaction.user.name}"
         overwrites = {
             interaction.guild.default_role: discord.PermissionOverwrite(
                 read_messages=False),
@@ -425,6 +437,7 @@ class MainMenu(discord.ui.View):
                 send_messages=True)
         }
 
+        ticket_name = f"other-{await self.ticket_num(category='other')}"
         category = interaction.guild.get_channel(CAT_TICKETS)
         channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
