@@ -19,51 +19,72 @@ def is_staff(member: discord.Member) -> bool:
 
 def check_if_staff(message: discord.Message):
     author = message.author
-    return message.guild is None or message.guild.id != GUILD_DDNET or message.channel.id != CHAN_SKIN_SUBMIT or is_staff(author)
+    return (message.guild is None or message.guild.id != GUILD_DDNET or message.channel.id != CHAN_SKIN_SUBMIT
+            or is_staff(author))
 
 
 def check_if_has_attachments(message: discord.Message):
     if len(message.attachments) == 0:
         return (False, f'- Your submission is missing attachments. Attach all skins to your submission message.',
                 'Missing attachments')
-    return (True, None, None)
+    return True, None, None
 
 
 def check_image_format(message: discord.Message):
     for attachment_type in message.attachments:
         if attachment_type.content_type != 'image/png':
-            return (False, f'- Wrong image format. Only PNGs are allowed.', 'Incorrect image format')
-    return (True, None, None)
+            return (
+                False,
+                f'- Wrong image format. Only PNGs are allowed.',
+                'Incorrect image format'
+            )
+    return True, None, None
 
 
 def check_image_resolution(message: discord.Message):
     has_256x128 = False
     for attachment in message.attachments:
-        if (attachment.height == 256 and attachment.width == 128) or (attachment.height == 128 and attachment.width == 256):
+        if ((attachment.height == 256 and attachment.width == 128) or
+                (attachment.height == 128 and attachment.width == 256)):
             has_256x128 = True
-        if (attachment.height != 128 or attachment.width != 256) and (attachment.height != 256 or attachment.width != 512):
-            return (False, (f'- One of the attached skins does not have the correct image resolution. Resolution must be '
-                           '256x128, and if possible provide a 512x256 along with the 256x128'), 'Bad image resolution')
+
+        if ((attachment.height != 128 or attachment.width != 256) and
+                (attachment.height != 256 or attachment.width != 512)):
+            return (
+                False,
+                (f'- One of the attached skins does not have the correct image resolution. Resolution must be 256x128, '
+                 'and if possible provide a 512x256 along with the 256x128'),
+                'Bad image resolution'
+            )
     if not has_256x128:
-        return (False, f'- At least one of the attached skins must have a resolution of 256x128', 'Missing 256x128px skin')
-    return (True, None, None)
+        return (
+            False,
+            f'- At least one of the attached skins must have a resolution of 256x128',
+            'Missing 256x128px skin'
+        )
+    return True, None, None
 
 def check_attachment_amount(message: discord.Message):
     if len(message.attachments) > 2:
-        return (False, f'- Only 2 attachments per submission. Don\'t attach any additional images or gifs, please.',
-                'Exceeded upload limit')
-    return (True, None, None)
+        return (
+            False,
+            f'- Only 2 attachments per submission. Don\'t attach any additional images or gifs, please.',
+            'Exceeded upload limit'
+        )
+    return True, None, None
 
 def check_message_structure(message: discord.Message):
     # Regex to make licenses optional:
     # "^(?P<skin_name>['\"].+['\"]) by (?P<creator_name>.+?)( (\((?P<license>CC0|CC-BY|CC-BY-SA)\)))?$"gm
-    regex = re.compile(r"^\"(?P<skin_name>.+)\" by (?P<user_name>.+) (\((?P<license>.{3,8})\))$")
+    regex = re.compile(r"^\"(?P<skin_name>.+)\" by (?P<user_name>.+) (\((?P<license>.{3,8})\))$", re.IGNORECASE)
     re_match = regex.match(message.content)
     if not re_match:
-        return (False,
-                (f'- Your message isn\'t properly formatted. Follow the message structure written in <#986941590780149780>. '
-                'Also keep in mind licenses are now required for every submission and proper uppercase and lowercase formatting is important as well.'),
-                'Bad message structure')
+        return (
+            False,
+            ('- Your message isn\'t properly formatted. Follow the message structure written in <#986941590780149780>. '
+            'Also keep in mind licenses are now required for every submission.'),
+            'Bad message structure'
+        )
 
     licenses = ["CC0", "CC BY", "CC BY-SA"]
     if re_match.group('license'):
@@ -80,7 +101,14 @@ def check_message_structure(message: discord.Message):
                 'License Missing or invalid'
             )
 
-    return (True, None, None)
+    if len(re_match.group('skin_name')) >= 24:
+        return (
+            False,
+            'The skin name should not exceed 23 characters in length. Spaces count as characters too.',
+            'Skin name too long, 23 characters max.'
+        )
+
+    return True, None, None
 
 
 def crop_and_generate_image(img):
