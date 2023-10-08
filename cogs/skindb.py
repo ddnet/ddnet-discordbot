@@ -80,7 +80,14 @@ def check_message_structure(message: discord.Message):
                 'License Missing or invalid'
             )
 
-    return (True, None, None)
+    if len(re_match.group('skin_name')) >= 24:
+        return (
+            False,
+            'The skin name should not exceed 23 characters in length. Spaces count as characters too.',
+            'Skin name too long, 23 characters max.'
+        )
+
+    return True, None, None
 
 
 def crop_and_generate_image(img):
