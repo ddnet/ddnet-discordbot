@@ -76,14 +76,13 @@ def check_attachment_amount(message: discord.Message):
 def check_message_structure(message: discord.Message):
     # Regex to make licenses optional:
     # "^(?P<skin_name>['\"].+['\"]) by (?P<creator_name>.+?)( (\((?P<license>CC0|CC-BY|CC-BY-SA)\)))?$"gm
-    regex = re.compile(r"^\"(?P<skin_name>.+)\" by (?P<user_name>.+) (\((?P<license>.{3,8})\))$")
+    regex = re.compile(r"^\"(?P<skin_name>.+)\" by (?P<user_name>.+) (\((?P<license>.{3,8})\))$", re.IGNORECASE)
     re_match = regex.match(message.content)
     if not re_match:
         return (
             False,
-            (f'- Your message isn\'t properly formatted. Follow the message structure written in <#986941590780149780>. '
-            'Also keep in mind licenses are now required for every submission and proper uppercase and lowercase '
-            'formatting is important as well.'),
+            ('- Your message isn\'t properly formatted. Follow the message structure written in <#986941590780149780>. '
+            'Also keep in mind licenses are now required for every submission.'),
             'Bad message structure'
         )
 
