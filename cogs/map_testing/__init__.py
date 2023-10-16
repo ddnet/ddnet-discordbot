@@ -190,7 +190,8 @@ class MapTesting(commands.Cog):
                         await message.reply("Error log in the attached file", file=file, mention_author=False)
                 else:
                     await subm.message.add_reaction("👌")
-
+            else:
+                await map_channel.send('Map filename must match channel name.')
 
     @commands.Cog.listener('on_raw_message_edit')
     async def handle_submission_edit(self, payload: discord.RawMessageUpdateEvent):
@@ -431,6 +432,13 @@ class MapTesting(commands.Cog):
         if map_channel is None:
             return
 
+        info = (f'{map_channel.mapper_mentions} your map has just been released, and you now have a 2-week grace period '
+                'to identify and resolve any unnoticed bugs or skips. After these two weeks, only design '
+                'and quality of life (QoL) fixes will be allowed, provided they don\'t impact the leaderboard rankings. '
+                'Be aware that significant gameplay changes may impact and lead to the removal of ranks. '
+                'Good luck with your map!')
+
+        await map_channel.send(info)
         await map_channel.set_state(state=MapState.RELEASED)
 
     @commands.command()
@@ -471,6 +479,14 @@ class MapTesting(commands.Cog):
     async def released(self, ctx: commands.Context):
         """Mark a map as released"""
         map_channel = self.get_map_channel(ctx.channel.id)
+
+        info = (f'{map_channel.mapper_mentions} your map has just been released, and you now have a 2-week grace period '
+                'to identify and resolve any unnoticed bugs or skips. After these two weeks, only design '
+                'and quality of life (QoL) fixes will be allowed, provided they don\'t impact the leaderboard rankings. '
+                'Be aware that significant gameplay changes may impact and lead to the removal of ranks. '
+                'Good luck with your map!')
+
+        await map_channel.send(info)
         await map_channel.set_state(state=MapState.RELEASED)
 
     @commands.command()
