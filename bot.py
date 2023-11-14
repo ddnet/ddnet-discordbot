@@ -30,6 +30,7 @@ initial_extensions = (
     'cogs.helpcmds',
     'cogs.playerfinder',
     'cogs.wiki',
+    'cogs.voice'
 )
 
 
