@@ -62,6 +62,7 @@ class ConfirmView(discord.ui.View):
         ticket_creator_id = int(interaction.channel.topic.split(": ")[1].strip("<@!>"))
 
         if not is_staff(interaction.user) and interaction.user.id != ticket_creator_id:
+            await interaction.channel.send('This ticket does not belong to you.')
             return
 
         ticket_channel = interaction.client.get_channel(interaction.channel.id)

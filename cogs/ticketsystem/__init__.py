@@ -216,6 +216,7 @@ class TicketSystem(commands.Cog):
         ticket_creator_id = int(ctx.channel.topic.split(": ")[1].strip("<@!>"))
 
         if not is_staff(ctx.author) and ctx.author.id != ticket_creator_id:
+            await ctx.channel.send('This ticket does not belong to you.')
             return
 
         ticket_channel = self.bot.get_channel(ctx.channel.id)
