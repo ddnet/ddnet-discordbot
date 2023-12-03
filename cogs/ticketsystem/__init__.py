@@ -302,17 +302,12 @@ class TicketSystem(commands.Cog):
     # TODO: Notify a ticket creator that no one is available to assist them with their issue. (Late at night)
     @tasks.loop(hours=1)
     async def check_inactive_tickets(self):
-        ticket_data_copy = self.ticket_data.get("tickets", {}).copy()
-        for user_id, ticket_data in ticket_data_copy.items():
+        for ticket_user_id, ticket_data in list(self.ticket_data.get("tickets", {}).items()):
             channel_ids = ticket_data.get("channel_ids", [])
             inactivity_count = ticket_data.get("inactivity_count", {})
 
             for channel_id, ticket_category in channel_ids:
                 ticket_channel = self.bot.get_channel(channel_id)
-
-                topic = ticket_channel.topic
-                ticket_creator_id = int(topic.split(": ")[1].strip("<@!>"))
-                ticket_creator = await self.bot.fetch_user(ticket_creator_id)
 
                 now = datetime.utcnow().replace(tzinfo=timezone.utc)
 
@@ -329,7 +324,7 @@ class TicketSystem(commands.Cog):
 
                 if inactivity_count[str(channel_id)] == 2:
                     await ticket_channel.send(
-                        f'<@{ticket_creator.id}>, this ticket is about to be closed due to inactivity.'
+                        f'<@{ticket_user_id}>, this ticket is about to be closed due to inactivity.'
                         f'\nIf your report or question has been resolved, consider closing '
                         f'this ticket yourself by typing $close.'
                         f'\n**To keep this ticket active, please reply to this message.**'
@@ -338,8 +333,9 @@ class TicketSystem(commands.Cog):
 
                 if inactivity_count[str(channel_id)] >= 6:
                     transcript_file, zip_file = await transcript(self.bot, ticket_channel)
+                    ticket_creator = await self.bot.fetch_user(ticket_user_id)
                     ticket_category = process_ticket_closure(self, ticket_channel.id,
-                                                             ticket_creator_id=ticket_creator_id)
+                                                             ticket_creator_id=ticket_user_id)
 
                     if transcript_file:
                         await ticket_channel.send(f'Uploading files...')
@@ -407,9 +403,6 @@ class TicketSystem(commands.Cog):
                     logging.info(
                         f" Removed channel named {ticket_channel.name} (ID: {ticket_channel.id}), due to inactivity."
                     )
-
-        with open(self.ticket_data_file, "w") as f:
-            json.dump(self.ticket_data, f, indent=4)
 
     @check_inactive_tickets.before_loop
     async def before_check_inactive_tickets(self):
