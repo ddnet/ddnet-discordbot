@@ -15,8 +15,6 @@ from cogs.ticketsystem.subscribe import SubscribeMenu
 from utils.transcript import transcript
 
 GUILD_DDNET            = 252358080522747904
-CAT_TICKETS            = 1124657181363556403
-CAT_MODERATION         = 968484659950403585
 CHAN_MODERATOR         = 345588928482508801
 ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
@@ -32,25 +30,24 @@ TH_OTHER               = 1156218815164723261
 def is_staff(member: discord.Member) -> bool:
     return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
 
+def extract_servers(json, tags, network):
+    server_list = None
+    if network == "ddnet":
+        server_list = json.get('servers')
+    elif network == "kog":
+        server_list = json.get('servers-kog')
+
+    all_servers = []
+    for address in server_list:
+        server = address.get('servers')
+        for tag in tags:
+            server_lists = server.get(tag)
+            if server_lists is not None:
+                all_servers += server_lists
+    return all_servers
 
 def server_link(addr):
     jsondata = requests.get("https://info.ddnet.org/info", timeout=1).json()
-
-    def extract_servers(json, tags, network):
-        server_list = None
-        if network == "ddnet":
-            server_list = json.get('servers')
-        elif network == "kog":
-            server_list = json.get('servers-kog')
-
-        all_servers = []
-        for address in server_list:
-            server = address.get('servers')
-            for tag in tags:
-                server_lists = server.get(tag)
-                if server_lists is not None:
-                    all_servers += server_lists
-        return all_servers
 
     ddnet = extract_servers(jsondata, ['DDNet', 'Test', 'Tutorial'], "ddnet")
     ddnetpvp = extract_servers(jsondata, ['Block', 'Infection', 'iCTF', 'gCTF', 'Vanilla', 'zCatch',
