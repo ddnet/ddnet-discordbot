@@ -8,6 +8,7 @@ import logging
 
 from discord.ext import commands, tasks
 from datetime import datetime, timedelta, timezone
+from typing import Union
 
 from cogs.ticketsystem.buttons import MainMenu
 from cogs.ticketsystem.close import CloseButton, process_ticket_closure
@@ -60,10 +61,10 @@ def server_link(addr):
 
     if re_match[0] in ddnet:
         message_text = f'{re_match[0]} is an official DDNet server. ' \
-                       f'\n<steam://run/412220//{re_match[0]}>/'
+                       f'\n<https://ddnet.org/connect-to/?addr={re_match[0]}/>'
     elif re_match[0] in ddnetpvp:
         message_text = f'{re_match[0]} is an official DDNet PvP server. ' \
-                       f'\n<steam://run/412220//{re_match[0]}>/'
+                       f'\n<https://ddnet.org/connect-to/?addr={re_match[0]}/>'
     elif re_match[0] in kog:
         message_text = f'{re_match[0]} appears to be a KoG server. DDNet and KoG aren\'t affiliated. ' \
                        f'\nJoin their discord and ask for help there instead. <https://discord.kog.tw/>'
@@ -299,7 +300,6 @@ class TicketSystem(commands.Cog):
             f"(ID: {ticket_creator_id}). Removed Channel named {ctx.channel.name} (ID: {ctx.channel.id})"
         )
 
-    # TODO: Notify a ticket creator that no one is available to assist them with their issue. (Late at night)
     @tasks.loop(hours=1)
     async def check_inactive_tickets(self):
         for ticket_user_id, ticket_data in list(self.ticket_data.get("tickets", {}).items()):
