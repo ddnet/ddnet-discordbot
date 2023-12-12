@@ -302,12 +302,11 @@ class TicketSystem(commands.Cog):
 
     @tasks.loop(hours=1)
     async def check_inactive_tickets(self):
-        for ticket_user_id, ticket_data in list(self.ticket_data.get("tickets", {}).items()):
-            channel_ids = ticket_data.get("channel_ids", [])
-            inactivity_count = ticket_data.get("inactivity_count", {})
-
-            for channel_id, ticket_category in channel_ids:
+        channels_to_remove = []
+        for ticket_user_id, ticket_data in self.ticket_data.get("tickets", {}).items():
+            for channel_id, ticket_category in ticket_data.get("channel_ids", []):
                 ticket_channel = self.bot.get_channel(channel_id)
+                inactivity_count = ticket_data.get("inactivity_count", {})
 
                 now = datetime.utcnow().replace(tzinfo=timezone.utc)
 
@@ -332,77 +331,85 @@ class TicketSystem(commands.Cog):
                     pass
 
                 if inactivity_count[str(channel_id)] >= 6:
-                    transcript_file, zip_file = await transcript(self.bot, ticket_channel)
-                    ticket_creator = await self.bot.fetch_user(ticket_user_id)
-                    ticket_category = process_ticket_closure(self, ticket_channel.id,
-                                                             ticket_creator_id=ticket_user_id)
+                    channels_to_remove.append((ticket_channel.id, ticket_user_id))
 
-                    if transcript_file:
-                        await ticket_channel.send(f'Uploading files...')
-                        targets = {
-                            'report': TH_REPORTS,
-                            'ban_appeal': TH_BAN_APPEALS,
-                            'rename': TH_RENAMES,
-                            'complaint': TH_COMPLAINTS,
-                            'other': TH_OTHER,
-                        }
+        with open(self.ticket_data_file, "w") as f:
+            json.dump(self.ticket_data, f, indent=4)
 
-                        if ticket_category in targets:
-                            target_channel = self.bot.get_channel(targets[ticket_category])
-                        else:
-                            await ticket_channel.send("Something went horribly wrong. Target Channel doesn't exist.")
-                            return
+        if channels_to_remove:
+            for channel_id, ticket_creator_id in channels_to_remove:
+                ticket_channel = self.bot.get_channel(channel_id)
+                transcript_file, zip_file = await transcript(self.bot, ticket_channel)
+                ticket_creator = await self.bot.fetch_user(ticket_creator_id)
+                ticket_category = process_ticket_closure(self, ticket_channel.id,
+                                                         ticket_creator_id=ticket_creator_id)
 
-                        if target_channel:
-                            t_message = (f'\"{ticket_category.capitalize()}\"Ticket created by: <@{ticket_creator.id}> '
-                                         f'(Global Name: {ticket_creator}), closed due to inactivity.'
-                                         f'\nTicket Channel ID: {ticket_channel.id}')
+                if transcript_file:
+                    await ticket_channel.send(f'Uploading files...')
+                    targets = {
+                        'report': TH_REPORTS,
+                        'ban_appeal': TH_BAN_APPEALS,
+                        'rename': TH_RENAMES,
+                        'complaint': TH_COMPLAINTS,
+                        'other': TH_OTHER,
+                    }
 
-                            await target_channel.send(
-                                t_message,
-                                files=[discord.File(transcript_file)],
-                                allowed_mentions=discord.AllowedMentions(users=False)
-                            )
+                    if ticket_category in targets:
+                        target_channel = self.bot.get_channel(targets[ticket_category])
+                    else:
+                        await ticket_channel.send("Something went horribly wrong. Target Channel doesn't exist.")
+                        return
 
-                            if zip_file is not None:
-                                for z in zip_file:
-                                    await target_channel.send(
-                                        files=[discord.File(z)],
-                                        allowed_mentions=discord.AllowedMentions(users=False)
-                                    )
-                        else:
-                            await ticket_channel.send("Something went horribly wrong. Invalid ticket category.")
+                    if target_channel:
+                        t_message = (f'\"{ticket_category.capitalize()}\"Ticket created by: <@{ticket_creator.id}> '
+                                     f'(Global Name: {ticket_creator}), closed due to inactivity.'
+                                     f'\nTicket Channel ID: {ticket_channel.id}')
 
-                    message = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed due to inactivity."
+                        await target_channel.send(
+                            t_message,
+                            files=[discord.File(transcript_file)],
+                            allowed_mentions=discord.AllowedMentions(users=False)
+                        )
 
-                    if transcript_file is not None:
-                        message += "\n**Transcript:**"
+                        if zip_file is not None:
+                            for z in zip_file:
+                                await target_channel.send(
+                                    files=[discord.File(z)],
+                                    allowed_mentions=discord.AllowedMentions(users=False)
+                                )
+                    else:
+                        await ticket_channel.send("Something went horribly wrong. Invalid ticket category.")
 
-                    try:
-                        if message:
-                            await ticket_creator.send(content=message,
-                                                      file=discord.File(transcript_file) if transcript_file else None)
-                    except discord.Forbidden:
-                        pass
+                message = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed due to inactivity."
 
-                    file_paths = []
-                    if transcript_file is not None:
-                        file_paths.append(transcript_file)
-                    if zip_file is not None and isinstance(zip_file, list):
-                        file_paths.extend(zip_file)
-                    try:
-                        for file_path in file_paths:
-                            if file_path is not None:
-                                os.remove(file_path)
-                    except FileNotFoundError:
-                        pass
+                if transcript_file is not None:
+                    message += "\n**Transcript:**"
 
-                    await ticket_channel.send(f'Done! Closing Ticket...')
-                    await ticket_channel.delete()
+                try:
+                    if message:
+                        await ticket_creator.send(content=message,
+                                                  file=discord.File(transcript_file) if transcript_file else None)
+                except discord.Forbidden:
+                    pass
 
-                    logging.info(
-                        f" Removed channel named {ticket_channel.name} (ID: {ticket_channel.id}), due to inactivity."
-                    )
+                file_paths = []
+                if transcript_file is not None:
+                    file_paths.append(transcript_file)
+                if zip_file is not None and isinstance(zip_file, list):
+                    file_paths.extend(zip_file)
+                try:
+                    for file_path in file_paths:
+                        if file_path is not None:
+                            os.remove(file_path)
+                except FileNotFoundError:
+                    pass
+
+                await ticket_channel.send(f'Done! Closing Ticket...')
+                await ticket_channel.delete()
+
+                logging.info(
+                    f" Removed channel named {ticket_channel.name} (ID: {ticket_channel.id}), due to inactivity."
+                )
 
     @check_inactive_tickets.before_loop
     async def before_check_inactive_tickets(self):
