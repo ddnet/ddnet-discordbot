@@ -7,7 +7,6 @@ import logging
 from discord.ui import Button, button, View
 from utils.transcript import transcript
 
-CAT_TICKETS            = 1124657181363556403
 ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
 ROLE_MODERATOR         = 252523225810993153
@@ -17,6 +16,7 @@ TH_BAN_APPEALS         = 1156218327564300289
 TH_RENAMES             = 1156218426633769032
 TH_COMPLAINTS          = 1156218705701785660
 TH_OTHER               = 1156218815164723261
+
 
 def is_staff(member: discord.Member) -> bool:
     return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
@@ -28,13 +28,20 @@ def process_ticket_closure(self, ticket_channel_id, ticket_creator_id):
 
     category = None
 
-    for channel_id, category in channel_ids:
-        if channel_id == ticket_channel_id:
-            channel_ids.remove([channel_id, category])
-            break
+    try:
+        for channel_id, category in channel_ids:
+            if channel_id == ticket_channel_id:
+                channel_ids.remove([channel_id, category])
+                break
+    except KeyError:
+        logging.info(f'Ticket data for {ticket_channel_id} does not exist')
 
-    del ticket_data["inactivity_count"][str(ticket_channel_id)]
-    ticket_data["ticket_num"] -= 1
+    try:
+        del ticket_data["inactivity_count"][str(ticket_channel_id)]
+        ticket_data["ticket_num"] -= 1
+    except KeyError:
+        ticket_data.setdefault('channel_ids', []).append([int(ticket_channel_id), category])
+        logging.info(f'Ticket data for {ticket_channel_id} does not exist')
 
     if ticket_data["ticket_num"] < 1:
         self.ticket_data["tickets"].pop(str(ticket_creator_id), None)
@@ -62,6 +69,7 @@ class ConfirmView(discord.ui.View):
         ticket_creator_id = int(interaction.channel.topic.split(": ")[1].strip("<@!>"))
 
         if not is_staff(interaction.user) and interaction.user.id != ticket_creator_id:
+            await interaction.channel.send('This ticket does not belong to you.')
             return
 
         ticket_channel = interaction.client.get_channel(interaction.channel.id)

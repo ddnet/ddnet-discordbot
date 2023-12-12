@@ -85,24 +85,6 @@ class HelpCommands(commands.Cog, name='Help Commands'):
         await ctx.send(file=file, embed=embed)
 
     @commands.command()
-    async def kog(self, ctx: commands.Context):
-        file = discord.File('data/avatar.png', filename='avatar.png')
-
-        embed = discord.Embed(
-            title="King of Gores / KoG",
-            description="DDNet and KoG aren't affiliated."
-                        "\n\nIf you require assistance on a server within the KoG tab, "
-                        "join their Discord server by clicking on the link below.",
-            colour=discord.Colour.random())
-        embed.add_field(
-            name="URL:",
-            value="https://discord.kog.tw/")
-
-        embed.set_thumbnail(url='attachment://avatar.png')
-
-        await ctx.send(file=file, embed=embed)
-
-    @commands.command()
     async def binds(self, ctx: commands.Context):
         file = discord.File('data/avatar.png', filename='avatar.png')
 
@@ -146,58 +128,41 @@ class HelpCommands(commands.Cog, name='Help Commands'):
 
         await ctx.send(file=file, embed=embed)
 
-    @commands.command(name='login')
+    @commands.command(aliases=['kog', 'login', 'registration'])
     async def kog_login(self, ctx: commands.Context):
         file = discord.File('data/avatar.png', filename='avatar.png')
 
         embed = discord.Embed(
-            title="KoG Login and Account Migration",
-            description="",
+            title="KoG registration and login",
+            description="First and foremost: DDNet and KoG aren't affiliated.\n"
+                        "You are not required to log-in on a DDNet server.\n\n"
+                        "If you need help on a server related to KoG, "
+                        "join their Discord server by clicking on the link below.",
             colour=discord.Colour.random())
+
         embed.add_field(
-            name='',
-            value='If you already had an account on KoG, watch the following video: [www.youtube.com](https://www.youtube.com/watch?v=d1kbt-srlac)',
-            inline=False
-        )
+            name="URL:",
+            value="https://discord.kog.tw/",
+            inline=False)
+
         embed.add_field(
-            name=f'For new Players:',
-            value=f'First create an Account:'
-                  f'\n1. Click on the following link: [kog.tw](https://kog.tw/register.php)'
-                  f'\n2. Enter your in-game name, your e-mail address and a password'
-                  f'\n3. If the name is not already registered, you should now receive a message that the "name has been pre-claimed"'
-                  f'\n4. Join the KoG discord server: [KoG Discord](https://discord.kog.tw)'
-                  f'\n5. Create a ticket in KoG\'s discord by clicking on the registration button in #create-a-ticket channel, so a moderator can confirm you.'
-                  f'\n6. Now go to the login page: [kog.tw](https://kog.tw/login.php) and login with the credentials you have used to register.'
-                  f'\n7. Click on your name in the top right-hand corner of the website and select "Dashboard"'
-                  f'\n8. Scroll down to accept the ToS (Terms of Service)'
-        )
+            name="Registration process:",
+            value="https://discord.com/channels/342003344476471296/941355528242749440/1129043200527569018",
+            inline=True)
+
         embed.add_field(
-            name='Migration Guide:',
-            value='1. Click on the following link: [kog.tw](https://auth.kog.tw/)'
-                  '\n2. Click the register button and fill in all your information (Note: You can put anything in First name and Surname. Does not need to be your real information)'
-                  '\n3. After clicking the next button you should receive an e-mail with a code.'
-                  '\n4. Open the e-mail and click the blue button or copy the code'
-                  '\n5. You should now see "User activated" - click next and login'
-                  '\n6. Now you can choose if you want to use two factor authentication (Optional, but recommended)'
-                  '\n7. Navigate back to this link [kog.tw](https://kog.tw/) login and click the start migration button'
-                  '\n8. Now there should be a blue "next" button - click that button then click the blue start migration button.'
-                  '\n9. You should now receive an e-mail from KoG - click on the "migrate now" button.'
-                  '\n10. Now click the blue "login to kog one" button and then login with your zitadel account.'
-                  '\n11. It should now say: "Account successfully queued for migration."'
-                  '\n12. You\'re done.',
-            inline=True
-        )
+            name="Migration process:",
+            value="https://discord.com/channels/342003344476471296/941355528242749440/1129043332211945492",
+            inline=True)
+
         embed.add_field(
-            name='How to Login:',
-            value='1. Click on the following link: [kog.tw](https://kog.tw/login.php) and log in.'
-                  '\n2. Click on your name in the top right-hand corner and select "Ingame login".'
-                  '\n3. Click on the yellow button saying "generate a login".'
-                  '\n4. Join any KoG server and paste the /login command',
-            inline=False
-        )
+            name="How to login on KoG servers:",
+            value="https://discord.com/channels/342003344476471296/941355528242749440/1129043447517564978",
+            inline=True)
+
         embed.add_field(
-            name=f'This is not required on DDNet.',
-            value=f'',
+            name="Video Guide:",
+            value="https://www.youtube.com/watch?v=d1kbt-srlac",
             inline=False)
         embed.set_thumbnail(url='attachment://avatar.png')
 

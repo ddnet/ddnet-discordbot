@@ -8,6 +8,7 @@ import logging
 
 from discord.ext import commands, tasks
 from datetime import datetime, timedelta, timezone
+from typing import Union
 
 from cogs.ticketsystem.buttons import MainMenu
 from cogs.ticketsystem.close import CloseButton, process_ticket_closure
@@ -15,8 +16,6 @@ from cogs.ticketsystem.subscribe import SubscribeMenu
 from utils.transcript import transcript
 
 GUILD_DDNET            = 252358080522747904
-CAT_TICKETS            = 1124657181363556403
-CAT_MODERATION         = 968484659950403585
 CHAN_MODERATOR         = 345588928482508801
 ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
@@ -32,25 +31,24 @@ TH_OTHER               = 1156218815164723261
 def is_staff(member: discord.Member) -> bool:
     return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
 
+def extract_servers(json, tags, network):
+    server_list = None
+    if network == "ddnet":
+        server_list = json.get('servers')
+    elif network == "kog":
+        server_list = json.get('servers-kog')
+
+    all_servers = []
+    for address in server_list:
+        server = address.get('servers')
+        for tag in tags:
+            server_lists = server.get(tag)
+            if server_lists is not None:
+                all_servers += server_lists
+    return all_servers
 
 def server_link(addr):
     jsondata = requests.get("https://info.ddnet.org/info", timeout=1).json()
-
-    def extract_servers(json, tags, network):
-        server_list = None
-        if network == "ddnet":
-            server_list = json.get('servers')
-        elif network == "kog":
-            server_list = json.get('servers-kog')
-
-        all_servers = []
-        for address in server_list:
-            server = address.get('servers')
-            for tag in tags:
-                server_lists = server.get(tag)
-                if server_lists is not None:
-                    all_servers += server_lists
-        return all_servers
 
     ddnet = extract_servers(jsondata, ['DDNet', 'Test', 'Tutorial'], "ddnet")
     ddnetpvp = extract_servers(jsondata, ['Block', 'Infection', 'iCTF', 'gCTF', 'Vanilla', 'zCatch',
@@ -63,10 +61,10 @@ def server_link(addr):
 
     if re_match[0] in ddnet:
         message_text = f'{re_match[0]} is an official DDNet server. ' \
-                       f'\n<steam://run/412220//{re_match[0]}>/'
+                       f'\n<https://ddnet.org/connect-to/?addr={re_match[0]}/>'
     elif re_match[0] in ddnetpvp:
         message_text = f'{re_match[0]} is an official DDNet PvP server. ' \
-                       f'\n<steam://run/412220//{re_match[0]}>/'
+                       f'\n<https://ddnet.org/connect-to/?addr={re_match[0]}/>'
     elif re_match[0] in kog:
         message_text = f'{re_match[0]} appears to be a KoG server. DDNet and KoG aren\'t affiliated. ' \
                        f'\nJoin their discord and ask for help there instead. <https://discord.kog.tw/>'
@@ -219,6 +217,7 @@ class TicketSystem(commands.Cog):
         ticket_creator_id = int(ctx.channel.topic.split(": ")[1].strip("<@!>"))
 
         if not is_staff(ctx.author) and ctx.author.id != ticket_creator_id:
+            await ctx.channel.send('This ticket does not belong to you.')
             return
 
         ticket_channel = self.bot.get_channel(ctx.channel.id)
@@ -301,20 +300,14 @@ class TicketSystem(commands.Cog):
             f"(ID: {ticket_creator_id}). Removed Channel named {ctx.channel.name} (ID: {ctx.channel.id})"
         )
 
-    # TODO: Notify a ticket creator that no one is available to assist them with their issue. (Late at night)
     @tasks.loop(hours=1)
     async def check_inactive_tickets(self):
-        ticket_data_copy = self.ticket_data.get("tickets", {}).copy()
-        for user_id, ticket_data in ticket_data_copy.items():
+        for ticket_user_id, ticket_data in list(self.ticket_data.get("tickets", {}).items()):
             channel_ids = ticket_data.get("channel_ids", [])
             inactivity_count = ticket_data.get("inactivity_count", {})
 
             for channel_id, ticket_category in channel_ids:
                 ticket_channel = self.bot.get_channel(channel_id)
-
-                topic = ticket_channel.topic
-                ticket_creator_id = int(topic.split(": ")[1].strip("<@!>"))
-                ticket_creator = await self.bot.fetch_user(ticket_creator_id)
 
                 now = datetime.utcnow().replace(tzinfo=timezone.utc)
 
@@ -331,7 +324,7 @@ class TicketSystem(commands.Cog):
 
                 if inactivity_count[str(channel_id)] == 2:
                     await ticket_channel.send(
-                        f'<@{ticket_creator.id}>, this ticket is about to be closed due to inactivity.'
+                        f'<@{ticket_user_id}>, this ticket is about to be closed due to inactivity.'
                         f'\nIf your report or question has been resolved, consider closing '
                         f'this ticket yourself by typing $close.'
                         f'\n**To keep this ticket active, please reply to this message.**'
@@ -340,8 +333,9 @@ class TicketSystem(commands.Cog):
 
                 if inactivity_count[str(channel_id)] >= 6:
                     transcript_file, zip_file = await transcript(self.bot, ticket_channel)
+                    ticket_creator = await self.bot.fetch_user(ticket_user_id)
                     ticket_category = process_ticket_closure(self, ticket_channel.id,
-                                                             ticket_creator_id=ticket_creator_id)
+                                                             ticket_creator_id=ticket_user_id)
 
                     if transcript_file:
                         await ticket_channel.send(f'Uploading files...')
@@ -409,9 +403,6 @@ class TicketSystem(commands.Cog):
                     logging.info(
                         f" Removed channel named {ticket_channel.name} (ID: {ticket_channel.id}), due to inactivity."
                     )
-
-        with open(self.ticket_data_file, "w") as f:
-            json.dump(self.ticket_data, f, indent=4)
 
     @check_inactive_tickets.before_loop
     async def before_check_inactive_tickets(self):
