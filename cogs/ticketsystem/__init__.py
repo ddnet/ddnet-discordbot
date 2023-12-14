@@ -424,7 +424,7 @@ class TicketSystem(commands.Cog):
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
         topic = "Issues Resolved:"
-        for user_id, score in sorted_scores:
+        for user_id, score in sorted_scores[:30]:
             topic += f" <@{user_id}> = {score} |"
 
         topic = topic.rstrip("|")
