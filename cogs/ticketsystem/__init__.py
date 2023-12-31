@@ -32,12 +32,14 @@ log = logging.getLogger('tickets')
 def is_staff(member: discord.Member) -> bool:
     return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
 
-def extract_servers(json, tags, network):
+def extract_servers(tags, network):
+    jsondata = requests.get("https://info.ddnet.org/info", timeout=1).json()
+
     server_list = None
     if network == "ddnet":
-        server_list = json.get('servers')
+        server_list = jsondata.get('servers')
     elif network == "kog":
-        server_list = json.get('servers-kog')
+        server_list = jsondata.get('servers-kog')
 
     all_servers = []
     for address in server_list:
@@ -49,13 +51,11 @@ def extract_servers(json, tags, network):
     return all_servers
 
 def server_link(addr):
-    jsondata = requests.get("https://info.ddnet.org/info", timeout=1).json()
-
-    ddnet = extract_servers(jsondata, ['DDNet', 'Test', 'Tutorial'], "ddnet")
-    ddnetpvp = extract_servers(jsondata, ['Block', 'Infection', 'iCTF', 'gCTF', 'Vanilla', 'zCatch',
-                                          'TeeWare', 'TeeSmash', 'Foot', 'xPanic', 'Monster'], "ddnet")
-    nobyfng = extract_servers(jsondata, ['FNG'], "ddnet")
-    kog = extract_servers(jsondata, ['Gores', 'TestGores'], "kog")
+    ddnet = extract_servers(('DDNet', 'Test', 'Tutorial'), "ddnet")
+    ddnetpvp = extract_servers(('Block', 'Infection', 'iCTF', 'gCTF', 'Vanilla', 'zCatch',
+                                          'TeeWare', 'TeeSmash', 'Foot', 'xPanic', 'Monster'), "ddnet")
+    nobyfng = extract_servers(('FNG'), "ddnet")
+    kog = extract_servers(('Gores', 'TestGores'), "kog")
 
     ipv4_addr = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,4}')
     re_match = ipv4_addr.findall(addr)
