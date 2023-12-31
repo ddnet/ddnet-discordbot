@@ -12,17 +12,6 @@ GUILD_DDNET     = 252358080522747904
 CHAN_ANSWERS    = 1190971438988001340
 TH_QUIZ         = 1190971707058561054
 
-class MemberOrNone(commands.Converter):
-    async def convert(self, ctx, argument):
-        if argument.lower() == 'none':
-            return None
-
-        try:
-            member = await commands.MemberConverter().convert(ctx, argument)
-            return member
-        except commands.MemberNotFound:
-            return None
-
 
 class Teeguesser(commands.Cog):
     def __init__(self, bot):
