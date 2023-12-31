@@ -6,7 +6,7 @@
             "rename": 0,
             "ban_appeal": 0,
             "complaint": 0,
-            "other": 0
+            "admin-mail": 0
         }
     },
     "subscriptions": {
@@ -15,7 +15,7 @@
             "rename": [],
             "ban_appeal": [],
             "complaint": [],
-            "other": []
+            "admin-mail": []
         }
     }
 }

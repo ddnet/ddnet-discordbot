@@ -415,10 +415,10 @@ class MainMenu(discord.ui.View):
         if interaction.response.is_done():  # noqa
             return
 
-    @discord.ui.button(label='Other', style=discord.ButtonStyle.blurple, custom_id='MainMenu:other')
-    async def t_other(self, interaction: discord.Interaction, button: Button):  # noqa
+    @discord.ui.button(label='Admin-Mail', style=discord.ButtonStyle.blurple, custom_id='MainMenu:admin-mail')
+    async def t_admin_mail(self, interaction: discord.Interaction, button: Button):  # noqa
         """Limits tickets per person to one"""
-        has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="other")
+        has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="admin-mail")
         if has_open_ticket:
             return
 
@@ -438,7 +438,7 @@ class MainMenu(discord.ui.View):
                 send_messages=True)
         }
 
-        ticket_name = f"other-{await self.ticket_num(category='other')}"
+        ticket_name = f"admin-mail-{await self.ticket_num(category='admin-mail')}"
         category = interaction.guild.get_channel(CAT_TICKETS)
         channel_position = category.channels[-1].position + 0
         ticket_creator_id = interaction.user.id
@@ -451,9 +451,9 @@ class MainMenu(discord.ui.View):
             topic=f"Ticket author: <@{ticket_creator_id}>"
         )
 
-        mention_message = self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "other")
+        mention_message = self.process_ticket_data(interaction, ticket_channel, ticket_creator_id, "admin-mail")
 
-        embed = discord.Embed(title="Other", colour=2210995)
+        embed = discord.Embed(title="Admin-Mail", colour=2210995)
         embed.add_field(
             name=f'',
             value=f'Hello {interaction.user.mention},'
@@ -485,7 +485,7 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-        log.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Other" ticket.')
+        log.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Admin-Mail" ticket.')
 
         if interaction.response.is_done():  # noqa
             return

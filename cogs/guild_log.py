@@ -51,7 +51,7 @@ class GuildLog(commands.Cog):
     async def log_message(self, message: discord.Message):
         if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() or message.channel.id in (
         CHAN_LOGS, CHAN_PLAYERFINDER) or message.channel.category.id == CAT_INTERNAL or message.channel.name.startswith(
-                ('complaint-', 'other-', 'rename-')):
+                ('complaint-', 'admin-mail-', 'rename-')):
             return
 
         embed = discord.Embed(title='Message deleted',

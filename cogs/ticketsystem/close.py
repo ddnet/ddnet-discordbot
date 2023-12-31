@@ -15,7 +15,7 @@ TH_REPORTS             = 1156218166914060288
 TH_BAN_APPEALS         = 1156218327564300289
 TH_RENAMES             = 1156218426633769032
 TH_COMPLAINTS          = 1156218705701785660
-TH_OTHER               = 1156218815164723261
+TH_ADMIN_MAIL          = 1156218815164723261
 
 log = logging.getLogger('tickets')
 
@@ -86,7 +86,7 @@ class ConfirmView(discord.ui.View):
                 'ban_appeal': TH_BAN_APPEALS,
                 'rename': TH_RENAMES,
                 'complaint': TH_COMPLAINTS,
-                'other': TH_OTHER,
+                'admin-mail': TH_ADMIN_MAIL,
             }
 
             if ticket_category in targets:
@@ -98,7 +98,7 @@ class ConfirmView(discord.ui.View):
             if target_channel:
                 t_message = (
                     f'**Ticket Channel ID: {ticket_channel.id}**'
-                    f'\n\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> '
+                    f'\n\"{ticket_category.title()}\" Ticket created by: <@{ticket_creator.id}> '
                     f'(Global Name: {ticket_creator}) and closed by <@{interaction.user.id}> (Global Name: {interaction.user})')
 
                 await target_channel.send(

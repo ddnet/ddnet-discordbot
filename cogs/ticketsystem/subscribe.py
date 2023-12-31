@@ -17,7 +17,7 @@ class SubscribeMenu(discord.ui.View):
             discord.SelectOption(label='Rename', value='rename'),
             discord.SelectOption(label='Ban Appeal', value='ban_appeal'),
             discord.SelectOption(label='Complaint', value='complaint'),
-            discord.SelectOption(label='Other', value='other')
+            discord.SelectOption(label='Admin-Mail', value='admin-mail')
         ],
         max_values=5, custom_id='Subscribe:Menu'
     )
