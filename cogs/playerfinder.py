@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands, tasks
-from discord.ext.commands import MissingAnyRole
 from collections import defaultdict
 from requests_futures.sessions import FuturesSession
 
@@ -39,7 +38,8 @@ class PlayerFinder(commands.Cog):
     def cog_load(self) -> None:
         self.find_players.start()
 
-    async def get(self, url, **kwargs):
+    @staticmethod
+    async def get(url, **kwargs):
         with FuturesSession() as s:
             return await asyncio.wrap_future(s.get(url, timeout=1, **kwargs))
 
@@ -64,7 +64,8 @@ class PlayerFinder(commands.Cog):
                     ddnet_ips += server_lists
         return ddnet_ips
 
-    def format_address(self, address):
+    @staticmethod
+    def format_address(address):
         address_match = re.match(r"tw-0.6\+udp://([\d\.]+):(\d+)", address)
         if address_match:
             ip, port = address_match.groups()
@@ -114,7 +115,9 @@ class PlayerFinder(commands.Cog):
 
     @commands.command(name='list', hidden=True)
     async def send_player_list(self, ctx: commands.Context):
-        """Uploads a text file containing all players currently in the search list."""
+        """
+        Uploads a text file containing all players currently in the search list.
+        """
         if check_conditions(ctx):
             return
 
@@ -138,7 +141,8 @@ class PlayerFinder(commands.Cog):
 
     @commands.command(name='add', hidden=True)
     async def add_player_to_list(self, ctx: commands.Context, *, players: str):
-        """Adds a player to the search list. Example:
+        """
+        Adds a player to the search list. Example:
         $add
         nameless tee
         blocker
@@ -171,7 +175,8 @@ class PlayerFinder(commands.Cog):
 
     @commands.command(name='rm', hidden=True)
     async def remove_player_from_list(self, ctx: commands.Context, *, player_names: str):
-        """Removes a player from the watch list. Example:
+        """
+        Removes a player from the watch list. Example:
         $rm
         player1
         player2
@@ -198,7 +203,8 @@ class PlayerFinder(commands.Cog):
 
     @commands.command(name='info', hidden=True)
     async def send_info(self, ctx: commands.Context, *, player_name: str):
-        """Sends the info field of the provided player. Example:
+        """
+        Sends the info field of the provided player. Example:
         $info
         player1
         """
@@ -219,7 +225,8 @@ class PlayerFinder(commands.Cog):
 
     @commands.command(hidden=True)
     async def edit_info(self, ctx: commands.Context, *, player_reason: str):
-        """Edits the info field of the given player. Example:
+        """
+        Edits the info field of the given player. Example:
         $edit_info
         player1
         <new reason>
@@ -245,7 +252,8 @@ class PlayerFinder(commands.Cog):
 
     @commands.command(name='clear', hidden=True)
     async def clear_entire_players_list(self, ctx: commands.Context):
-        """This command will clear the entire watch list. Careful!
+        """
+        This command will clear the entire watch list. Careful!
         """
         if check_conditions(ctx):
             return
@@ -262,7 +270,7 @@ class PlayerFinder(commands.Cog):
             message = f"Found {len(player_info)} server(s) with \"{player_name}\" currently playing:\n"
             for i, server in enumerate(player_info, 1):
                 server_name, server_address = server
-                message += f"{i}. Server: {server_name} — Link: <ddnet://{server_address}/>\n"
+                message += f"{i}. Server: {server_name} — Link: <https://ddnet.org/connect-to/?addr={server_address}/>\n"
             await ctx.send(message)
         else:
             await ctx.send(f"There is currently no player online with the name \"{player_name}\"")
@@ -307,7 +315,7 @@ class PlayerFinder(commands.Cog):
                     server_name, address = server
                     server_field_value += (
                         f"* Server: {server_name}"
-                        f"\n * <steam://run/412220//{address}/>\n"
+                        f"\n * <https://ddnet.org/connect-to/?addr={address}/>\n"
                     )
 
                 player_embed.add_field(
@@ -326,7 +334,8 @@ class PlayerFinder(commands.Cog):
 
     @commands.command(name="stop_search", hidden=True)
     async def stop_player_search(self, ctx: commands.Context):
-        """This command stops the player finder task.
+        """
+        This command stops the player finder task.
         """
         if check_conditions(ctx):
             return
@@ -344,7 +353,8 @@ class PlayerFinder(commands.Cog):
 
     @commands.command(name='start_search', hidden=True)
     async def start_player_search(self, ctx: commands.Context):
-        """This command starts the player finder task.
+        """
+        This command starts the player finder task.
         """
         if check_conditions(ctx):
             return
@@ -354,6 +364,7 @@ class PlayerFinder(commands.Cog):
         else:
             self.find_players.start()
             await ctx.send("Initializing search...")
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(PlayerFinder(bot))
