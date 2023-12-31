@@ -27,6 +27,7 @@ TH_RENAMES             = 1156218426633769032
 TH_COMPLAINTS          = 1156218705701785660
 TH_OTHER               = 1156218815164723261
 
+log = logging.getLogger('tickets')
 
 def is_staff(member: discord.Member) -> bool:
     return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
@@ -295,7 +296,7 @@ class TicketSystem(commands.Cog):
         await ticket_channel.send(f'Done! Closing Ticket...')
         await ctx.channel.delete()
 
-        logging.info(
+        log.info(
             f"{ctx.author} (ID: {ctx.author.id}) closed a ticket made by {ticket_creator} "
             f"(ID: {ticket_creator_id}). Removed Channel named {ctx.channel.name} (ID: {ctx.channel.id})"
         )
@@ -407,7 +408,7 @@ class TicketSystem(commands.Cog):
                 await ticket_channel.send(f'Done! Closing Ticket...')
                 await ticket_channel.delete()
 
-                logging.info(
+                log.info(
                     f" Removed channel named {ticket_channel.name} (ID: {ticket_channel.id}), due to inactivity."
                 )
 

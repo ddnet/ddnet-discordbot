@@ -17,6 +17,7 @@ TH_RENAMES             = 1156218426633769032
 TH_COMPLAINTS          = 1156218705701785660
 TH_OTHER               = 1156218815164723261
 
+log = logging.getLogger('tickets')
 
 def is_staff(member: discord.Member) -> bool:
     return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
@@ -34,14 +35,14 @@ def process_ticket_closure(self, ticket_channel_id, ticket_creator_id):
                 channel_ids.remove([channel_id, category])
                 break
     except KeyError:
-        logging.info(f'Ticket data for {ticket_channel_id} does not exist')
+        log.info(f'Ticket data for {ticket_channel_id} does not exist')
 
     try:
         del ticket_data["inactivity_count"][str(ticket_channel_id)]
         ticket_data["ticket_num"] -= 1
     except KeyError:
         ticket_data.setdefault('channel_ids', []).append([int(ticket_channel_id), category])
-        logging.info(f'Ticket data for {ticket_channel_id} does not exist')
+        log.info(f'Ticket data for {ticket_channel_id} does not exist')
 
     if ticket_data["ticket_num"] < 1:
         self.ticket_data["tickets"].pop(str(ticket_creator_id), None)
@@ -145,7 +146,7 @@ class ConfirmView(discord.ui.View):
         await ticket_channel.send(f'Done! Closing Ticket...')
         await interaction.channel.delete()
 
-        logging.info(
+        log.info(
             f"{interaction.user} (ID: {interaction.user.id}) closed {ticket_category.capitalize()} a ticket made by {ticket_creator} "
             f"(ID: {ticket_creator_id}). Removed Channel named {interaction.channel.name} (ID: {interaction.channel_id})"
         )

@@ -10,6 +10,7 @@ ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
 ROLE_MODERATOR         = 252523225810993153
 
+log = logging.getLogger('tickets')
 
 class MainMenu(discord.ui.View):
     def __init__(self, ticket_data):
@@ -161,7 +162,7 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-        logging.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Report" ticket.')
+        log.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Report" ticket.')
 
         if interaction.response.is_done():  # noqa
             return
@@ -243,7 +244,7 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-        logging.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Rename" ticket.')
+        log.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Rename" ticket.')
 
         if interaction.response.is_done():  # noqa
             return
@@ -330,7 +331,7 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-        logging.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Ban Appeal" ticket.')
+        log.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Ban Appeal" ticket.')
 
         if interaction.response.is_done():  # noqa
             return
@@ -409,7 +410,7 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-        logging.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Complaint" ticket.')
+        log.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Complaint" ticket.')
 
         if interaction.response.is_done():  # noqa
             return
@@ -484,7 +485,7 @@ class MainMenu(discord.ui.View):
 
         await interaction.followup.send(  # noqa
             f"<@{interaction.user.id}> your ticket has been created: {message.jump_url}", ephemeral=True)
-        logging.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Other" ticket.')
+        log.info(f'{interaction.user} (ID: {interaction.user.id}) created a "Other" ticket.')
 
         if interaction.response.is_done():  # noqa
             return
