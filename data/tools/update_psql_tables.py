@@ -1,6 +1,6 @@
 """
 This script updates the record_maps and record_rename tables in psql
-(Required to run the "best map of the year poll" script in /cogs/best_maps_poll.py)
+(Required to run the "best map of the year poll" script in /cogs/ddnet_map_awards.py)
 
 Run convert_race_db.sh if you want to update the record_race table in psql (not needed for the mentioned script above)
 """

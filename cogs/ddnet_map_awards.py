@@ -8,7 +8,7 @@ This script is used to create a poll with the best maps in a given year.
 4. Use the `$export_maps command to export all maps in given self.year to a file
 5. Use the `$poll` command to generate the selects for the poll
 6. Wait 1 week
-7. Use the `$poll_results` to generate the results of the poll, preferably in a new channel labeled 'ddnet-map-awards-<year>
+7. Use the `$results` to generate the results of the poll, preferably in a new channel labeled 'ddnet-map-awards-<year>
 8. Remove this script from initial_extensions in bot.py, the selects menu (or the channel with the poll) and the generated data/user_selections.json
 """
 
@@ -50,14 +50,14 @@ class DDNetMapAwards(commands.Cog):
         self.user_selections = {}
         self.year = datetime.now().year - 1
 
-    @commands.command(name='set_year')
+    @commands.command(name='set_year', hidden=True)
     async def set_year(self, ctx, year):
         try:
             self.year = int(year)
         except ValueError:
             await ctx.send("Invalid year format. Please provide a valid integer.")
 
-    @commands.command(name='export_maps')
+    @commands.command(name='export_maps', hidden=True)
     async def export_maps(self, ctx):
         if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
             return
@@ -104,7 +104,8 @@ class DDNetMapAwards(commands.Cog):
         for server in order:
             if server in all_maps_data:
                 maps = all_maps_data[server]
-                create_selects = CreateSelects(self.bot, server, maps)
+                mapper = maps[0]['mapper']
+                create_selects = CreateSelects(self.bot, server, maps, mapper)
                 view = await create_selects.create_view()
                 views.append(view)
 
@@ -114,7 +115,7 @@ class DDNetMapAwards(commands.Cog):
 
         await ctx.send(f'# Which map did you enjoy the most in {self.year}? \n Make your selections down below! '
                        f'Only **one map per server difficulty can be selected**, so choose wisely. \n'
-                       f'The poll will run for **1 weeks** and will end on **<t:{unix_timestamp}:F>**')
+                       f' The poll will run for **1 weeks** and will end on **<t:{unix_timestamp}:F>**')
 
         for view, server in zip(views, order):
             await ctx.send(content=f'## {server}:', view=view)
@@ -173,7 +174,8 @@ class DDNetMapAwards(commands.Cog):
 
         views = []
         for server, maps in all_maps_data.items():
-            create_selects = CreateSelects(self.bot, server, maps)
+            mapper = maps[0]['mapper']
+            create_selects = CreateSelects(self.bot, server, maps, mapper)
             view = await create_selects.create_view()
             views.append(view)
 
@@ -182,11 +184,12 @@ class DDNetMapAwards(commands.Cog):
 
 
 class CreateSelects(discord.ui.View):
-    def __init__(self, bot, server, maps):
+    def __init__(self, bot, server, maps, mapper):
         self.bot = bot
         self.server = server
         self.maps = maps
         self.user_selections = {}
+        self.mapper = mapper
         super().__init__(timeout=None)
 
     async def interaction_callback(self, interaction: discord.Interaction):
@@ -199,13 +202,11 @@ class CreateSelects(discord.ui.View):
             self.user_selections[user_id] = {}
 
         custom_id = interaction.data['custom_id']
-        print(custom_id)
         custom_id_parts = custom_id.split('_')
-        print(custom_id_parts)
         server = custom_id_parts[1]
-        print(server)
 
-        selected_map = interaction.data['values'][0]
+        selected_map_label = interaction.data['values'][0]
+        selected_map = selected_map_label.split(' by ')[0]
 
         if server not in self.user_selections[user_id]:
             self.user_selections[user_id][server] = []
@@ -236,8 +237,9 @@ class CreateSelects(discord.ui.View):
 
     async def create_view(self):
         options = sorted([discord.SelectOption(
-            label=map_data['map'],
-            value=map_data['map']) for map_data in self.maps], key=lambda x: x.label)
+            label=f"{map_data['map']} by {map_data['mapper']}",
+            value=map_data['map']
+        ) for map_data in self.maps], key=lambda x: x.label)
 
         options = [options[i:i + 25] for i in range(0, len(options), 25)]
 
