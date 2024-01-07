@@ -22,8 +22,8 @@ CHAN_INFO           = 1139589065759531038
 THREAD_INFO         = 1147560492043350087
 CHAN_SUBMIT_MAPS    = 455392372663123989
 ROLE_ADMIN          = 293495272892399616
-ROLE_TESTING_LEAD   = 746414504488861747
 ROLE_TESTER         = 293543421426008064
+ROLE_TRIAL_TESTER   = 1193593067744284744
 ROLE_TESTING        = 455814387169755176
 WH_MAP_RELEASES     = 345299155381649408
 
@@ -43,11 +43,6 @@ def has_map(message: discord.Message) -> bool:
 def tester_check():
     def predicate(ctx: commands.Context) -> bool:
         return ctx.channel.id in ctx.cog._map_channels and is_staff(ctx.author)
-    return commands.check(predicate)
-
-def testing_lead_check():
-    def predicate(ctx: commands.Context) -> bool:
-        return ctx.guild is not None and any(r.id == ROLE_TESTING_LEAD for r in ctx.author.roles)
     return commands.check(predicate)
 
 
@@ -558,25 +553,37 @@ class MapTesting(commands.Cog):
         except ValueError as exc:
             await ctx.send(exc)
 
-    @commands.command()
-    @testing_lead_check()
-    async def add_tester(self, ctx: commands.Context, user: discord.Member):
-        """Add Tester role to a user"""
+    @commands.command(aliases=['add_tester', 'remove_tester'])
+    @commands.has_role(ROLE_ADMIN)
+    async def tester(self, ctx: commands.Context, user: discord.Member):
+        """Assign or remove the Tester role to a user"""
         tester_role = ctx.guild.get_role(ROLE_TESTER)
+
         if tester_role in user.roles:
-            return await ctx.send(f'{user.mention} is already a Tester')
+            await user.remove_roles(tester_role)
+            await ctx.send(f'Removed Tester role from {user.mention}')
+        else:
+            await user.add_roles(tester_role)
+            await ctx.send(f'Added Tester role to {user.mention}')
 
-        await user.add_roles(tester_role)
+    @commands.command(aliases=['add_trial_tester', 'remove_trial_tester'])
+    @commands.has_any_role(ROLE_ADMIN, ROLE_TESTER)
+    async def trial_tester(self, ctx, user: discord.Member):
+        """Assign or remove the Trial Tester role to a user"""
+        trial_tester_role = ctx.guild.get_role(ROLE_TRIAL_TESTER)
 
-    @commands.command()
-    @testing_lead_check()
-    async def remove_tester(self, ctx: commands.Context, user: discord.Member):
-        """Remove Tester role from a user"""
-        tester_role = ctx.guild.get_role(ROLE_TESTER)
-        if tester_role not in user.roles:
-            return await ctx.send(f'{user.mention} isn\'t a Tester')
+        if trial_tester_role in user.roles:
+            await user.remove_roles(trial_tester_role)
+            await ctx.send(f'Removed Trial Tester role from {user.mention}')
+        else:
+            await user.add_roles(trial_tester_role)
+            await ctx.send(f'Added Trial Tester role to {user.mention}')
 
-        await user.remove_roles(tester_role)
+    @tester.error
+    @trial_tester.error
+    async def manage_tester_error(self, ctx: commands.Context, error: commands.CommandError):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Could not find that user')
 
     @commands.command()
     @tester_check()
@@ -594,12 +601,6 @@ class MapTesting(commands.Cog):
             await ctx.message.clear_reactions()
             await ctx.message.add_reaction(':oop:395753983379243028')
             log.error('Failed archiving channel #%s', map_channel)
-
-    @add_tester.error
-    @remove_tester.error
-    async def manage_tester_error(self, ctx: commands.Context, error: commands.CommandError):
-        if isinstance(error, commands.BadArgument):
-            await ctx.send('Could not find that user')
 
 
 async def setup(bot: commands.Bot):
