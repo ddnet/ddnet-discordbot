@@ -1,7 +1,6 @@
 import discord
 import json
 import os
-from typing import Union
 import re
 import requests
 import logging
@@ -17,6 +16,8 @@ from utils.transcript import transcript
 
 GUILD_DDNET            = 252358080522747904
 CHAN_MODERATOR         = 345588928482508801
+CHAN_QUESTIONS         = 745926398140612678
+CHAN_BUGS              = 757720336274948198
 ROLE_ADMIN             = 293495272892399616
 ROLE_DISCORD_MODERATOR = 737776812234506270
 ROLE_MODERATOR         = 252523225810993153
@@ -27,16 +28,19 @@ TH_RENAMES             = 1156218426633769032
 TH_COMPLAINTS          = 1156218705701785660
 TH_OTHER               = 1156218815164723261
 
+log = logging.getLogger('tickets')
 
 def is_staff(member: discord.Member) -> bool:
     return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
 
-def extract_servers(json, tags, network):
+def extract_servers(tags, network):
+    jsondata = requests.get("https://info.ddnet.org/info", timeout=1).json()
+
     server_list = None
     if network == "ddnet":
-        server_list = json.get('servers')
+        server_list = jsondata.get('servers')
     elif network == "kog":
-        server_list = json.get('servers-kog')
+        server_list = jsondata.get('servers-kog')
 
     all_servers = []
     for address in server_list:
@@ -48,13 +52,11 @@ def extract_servers(json, tags, network):
     return all_servers
 
 def server_link(addr):
-    jsondata = requests.get("https://info.ddnet.org/info", timeout=1).json()
-
-    ddnet = extract_servers(jsondata, ['DDNet', 'Test', 'Tutorial'], "ddnet")
-    ddnetpvp = extract_servers(jsondata, ['Block', 'Infection', 'iCTF', 'gCTF', 'Vanilla', 'zCatch',
-                                          'TeeWare', 'TeeSmash', 'Foot', 'xPanic', 'Monster'], "ddnet")
-    nobyfng = extract_servers(jsondata, ['FNG'], "ddnet")
-    kog = extract_servers(jsondata, ['Gores', 'TestGores'], "kog")
+    ddnet = extract_servers(['DDNet', 'Test', 'Tutorial'], "ddnet")
+    ddnetpvp = extract_servers(['Block', 'Infection', 'iCTF', 'gCTF', 'Vanilla', 'zCatch',
+                                'TeeWare', 'Foot', 'xPanic', 'Monster'], "ddnet")
+    nobyfng = extract_servers(['FNG'], "ddnet")
+    kog = extract_servers(['Gores', 'TestGores'], "kog")
 
     ipv4_addr = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,4}')
     re_match = ipv4_addr.findall(addr)
@@ -92,34 +94,33 @@ class TicketSystem(commands.Cog):
         self.verify_message = {}
 
     @commands.command(hidden=True)
-    async def button(self, ctx):
+    async def ticket_menu(self, ctx):
         if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
             return
 
         embed = discord.Embed(
             title="🎫  Welcome to our ticket system!",
             description="If you've been banned and want to appeal the decision, need to request a "
-                        "rename, or have a complaint about the behavior of other users or moderators,"
-                        " you can create a ticket using the buttons below.",
+                        "rename, or have a complaint about the behavior of other users or moderators, "
+                        "you can create a ticket using the buttons below.",
             colour=34483
         )
         embed.add_field(
             name="Report",
             value=f"If you encounter any behavior within the game that violates our rules, such as "
                   f"**blocking, fun-voting, cheating, or any other form of misconduct**, you can open a "
-                  f"ticket in this given category to address the problem."
-                  f"\n\nNote:\nPlease refrain from creating a support ticket for technical issues "
-                  f"like DoS attacks or in-game lags",
+                  f"ticket in this given category to address the problem. \n\n"
+                  f"Note:\nRefrain from creating a ticket for server issues like DoS attacks or in-game lags",
             inline=False
         )
         embed.add_field(
             name="Rename Request",
-            value=f"The rules for rename requests are:"
-                  f"\n- The original name should have 3k or more points on it"
-                  f"\n- Your last rename should be __at least one year ago__"
-                  f"\n- You must be able to provide proof of owning the points being moved"
-                  f"\n- The names shouldn't be banned"
-                  f"\n- If you request a rename and then later change your mind, know that it won't be reverted until at"
+            value=f"The rules for rename requests are: \n"
+                  f"- The original name should have 3k or more points on it \n"
+                  f"- Your last rename should be __at least one year ago__ \n"
+                  f"- You must be able to provide proof of owning the points being moved \n"
+                  f"- The names shouldn't be banned \n"
+                  f"- If you request a rename and then later change your mind, know that it won't be reverted until at"
                   f" least one year has passed. Think carefully.",
             inline=False
         )
@@ -127,8 +128,8 @@ class TicketSystem(commands.Cog):
             name="Ban Appeal",
             value=f"If you've been banned unfairly from our in-game servers, you are eligible to appeal the"
                   f" decision. Please note that ban appeals are not guaranteed to be successful, and our "
-                  f"team reserves the right to deny any appeal at their discretion."
-                  f"\n\nNote: Only file a ticket if you've been banned across all servers or from one of "
+                  f"team reserves the right to deny any appeal at their discretion. \n\n"
+                  f"Note: Only file a ticket if you've been banned across all servers or from one of "
                   f"our moderators.",
             inline=False
         )
@@ -140,17 +141,15 @@ class TicketSystem(commands.Cog):
             inline=False
         )
         embed.add_field(
-            name="Other",
-            value=f"If you have an issue or request that doesn't fit into any of the specific categories "
-                  f"provided, you can still use our ticket system by selecting the \"Other\" option. "
-                  f"This will allow you to explain your issue or request in detail, and we "
-                  f"will review it and assist you accordingly."
-                  f"\n\n**Note: No technical support.**",
+            name="Admin-Mail (No technical support)",
+            value=f"If you have an issue or request related to administrative matters, you can use this option. "
+                  f"Explain your issue or request in detail and we will review it and assist you accordingly. \n\n"
+                  f"**Note: For technical issues or bugs, use <#{CHAN_QUESTIONS}> or <#{CHAN_BUGS}> instead.**",
             inline=False
         )
         embed_warning = discord.Embed(
             title="If you create tickets with no valid reason or solely to troll, "
-                        "you will be given a timeout.",
+                  "you will be given a timeout.",
             description="",
             colour=16776960
         )
@@ -233,19 +232,19 @@ class TicketSystem(commands.Cog):
                 'ban_appeal': TH_BAN_APPEALS,
                 'rename': TH_RENAMES,
                 'complaint': TH_COMPLAINTS,
-                'other': TH_OTHER,
+                'admin-mail': TH_ADMIN_MAIL,
             }
 
             if ticket_category in targets:
                 target_channel = self.bot.get_channel(targets[ticket_category])
             else:
-                await ticket_channel.send("Something went horribly wrong. Target Channel doesn't exist.")
+                await ticket_channel.send("Something went horribly wrong. Target Channel doesn't exist or is locked.")
                 return
 
             if target_channel:
                 t_message = (
                     f'**Ticket Channel ID: {ticket_channel.id}**'
-                    f'\n\"{ticket_category.capitalize()}\" Ticket created by: <@{ticket_creator.id}> '
+                    f'\n\"{ticket_category.title()}\" Ticket created by: <@{ticket_creator.id}> '
                     f'(Global Name: {ticket_creator}) and closed by <@{ctx.author.id}> (Global Name: {ctx.author})')
 
                 await target_channel.send(
@@ -295,7 +294,7 @@ class TicketSystem(commands.Cog):
         await ticket_channel.send(f'Done! Closing Ticket...')
         await ctx.channel.delete()
 
-        logging.info(
+        log.info(
             f"{ctx.author} (ID: {ctx.author.id}) closed a ticket made by {ticket_creator} "
             f"(ID: {ticket_creator_id}). Removed Channel named {ctx.channel.name} (ID: {ctx.channel.id})"
         )
@@ -306,6 +305,10 @@ class TicketSystem(commands.Cog):
         for ticket_user_id, ticket_data in self.ticket_data.get("tickets", {}).items():
             for channel_id, ticket_category in ticket_data.get("channel_ids", []):
                 ticket_channel = self.bot.get_channel(channel_id)
+
+                if ticket_category in ['admin-mail', 'complaint']:
+                    continue
+
                 inactivity_count = ticket_data.get("inactivity_count", {})
 
                 now = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -351,7 +354,7 @@ class TicketSystem(commands.Cog):
                         'ban_appeal': TH_BAN_APPEALS,
                         'rename': TH_RENAMES,
                         'complaint': TH_COMPLAINTS,
-                        'other': TH_OTHER,
+                        'admin-mail': TH_ADMIN_MAIL,
                     }
 
                     if ticket_category in targets:
@@ -361,7 +364,7 @@ class TicketSystem(commands.Cog):
                         return
 
                     if target_channel:
-                        t_message = (f'\"{ticket_category.capitalize()}\"Ticket created by: <@{ticket_creator.id}> '
+                        t_message = (f'\"{ticket_category.title()}\"Ticket created by: <@{ticket_creator.id}> '
                                      f'(Global Name: {ticket_creator}), closed due to inactivity.'
                                      f'\nTicket Channel ID: {ticket_channel.id}')
 
@@ -407,7 +410,7 @@ class TicketSystem(commands.Cog):
                 await ticket_channel.send(f'Done! Closing Ticket...')
                 await ticket_channel.delete()
 
-                logging.info(
+                log.info(
                     f" Removed channel named {ticket_channel.name} (ID: {ticket_channel.id}), due to inactivity."
                 )
 

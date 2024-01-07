@@ -14,15 +14,26 @@ from bot import DDNet
 uvloop.install()
 loop = asyncio.get_event_loop()
 
+
+def setup_logger(name, level, filename, propagate):
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.propagate = propagate
+
+    handler = logging.FileHandler(filename, 'a', encoding='utf-8')
+    formatter = logging.Formatter('[%(asctime)s][%(levelname)s][%(name)s]: %(message)s', '%Y-%m-%d %H:%M:%S')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    return logger
+
 logging.getLogger('discord').setLevel(logging.INFO)
 logging.getLogger('discord.http').setLevel(logging.WARNING)
 
-log = logging.getLogger()
-log.setLevel(logging.INFO)
-handler = logging.FileHandler('logs/bot.log', 'a', encoding='utf-8')
-fmt = logging.Formatter('[%(asctime)s][%(levelname)s][%(name)s]: %(message)s', '%Y-%m-%d %H:%M:%S')
-handler.setFormatter(fmt)
-log.addHandler(handler)
+# root logger
+setup_logger(None, logging.INFO, 'logs/bot.log', propagate=True)
+
+# tickets logger
+setup_logger('tickets', logging.INFO, 'logs/tickets.log', propagate=False)
 
 async def main():
     config = ConfigParser()
