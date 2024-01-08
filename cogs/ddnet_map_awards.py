@@ -4,7 +4,7 @@ This script is used to create a poll with the best maps in a given year.
 1. (Python2) Run `update_psql_tables.py` in data/tools to update the postgres record_maps database
 2. Add this script to the initial_extensions tuple in bot.py
 3. Use the `$load cogs.ddnet_map_awards` to load this script
-3.5. Optional: Use the `$set_year <year> command to set the year manually, otherwise it'll just run last year's releases.
+3.5. Optional: Use the `$set_year <year>` command to set the year manually, otherwise it'll just run last year's releases.
 4. Use the `$export_maps` command to export all maps in given self.year to a file
 5. Use the `$poll` command to generate the selects for the poll
 6. Wait 1 week
