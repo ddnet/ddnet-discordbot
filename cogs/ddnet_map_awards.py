@@ -3,9 +3,9 @@ This script is used to create a poll with the best maps in a given year.
 
 1. (Python2) Run `update_psql_tables.py` in data/tools to update the postgres record_maps database
 2. Add this script to the initial_extensions tuple in bot.py
-3. Use the `$load cogs.map_poll` to load this script
+3. Use the `$load cogs.ddnet_map_awards` to load this script
 3.5. Optional: Use the `$set_year <year> command to set the year manually, otherwise it'll just run last year's releases.
-4. Use the `$export_maps command to export all maps in given self.year to a file
+4. Use the `$export_maps` command to export all maps in given self.year to a file
 5. Use the `$poll` command to generate the selects for the poll
 6. Wait 1 week
 7. Use the `$results` to generate the results of the poll, preferably in a new channel labeled 'ddnet-map-awards-<year>
@@ -115,7 +115,7 @@ class DDNetMapAwards(commands.Cog):
 
         await ctx.send(f'# Which map did you enjoy the most in {self.year}? \n Make your selections down below! '
                        f'Only **one map per server difficulty can be selected**, so choose wisely. \n'
-                       f' The poll will run for **1 weeks** and will end on **<t:{unix_timestamp}:F>**')
+                       f' The poll will run for **1 week** and will end on **<t:{unix_timestamp}:F>**')
 
         for view, server in zip(views, order):
             await ctx.send(content=f'## {server}:', view=view)
