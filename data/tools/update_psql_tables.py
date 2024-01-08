@@ -8,15 +8,15 @@ Run convert_race_db.sh if you want to update the record_race table in psql (not 
 import psycopg2
 import mysql.connector
 
-maria_host =
-maria_user =
-maria_password =
-maria_database =
-maria_table_rename =
-maria_table_maps =
+maria_host = ""
+maria_user = ""
+maria_password = ""
+maria_database = ""
+maria_table_rename = "record_rename"
+maria_table_maps = "record_maps"
 
-pg_host =
-pg_password =
+pg_host = ""
+pg_password = ""
 
 maria_connection = mysql.connector.connect(
     host=maria_host,
