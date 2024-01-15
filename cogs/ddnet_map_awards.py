@@ -154,7 +154,7 @@ class DDNetMapAwards(commands.Cog):
                 for map_name, votes in group:
                     mappers = get_mapper_urls(all_maps[category], map_name)
                     ranks.append(
-                        f"**[{map_name}](https://ddnet.org/maps/?map={slugify2(map_name)})** "
+                        f"**[{map_name}](https://ddnet.org/maps/{slugify2(map_name)})** "
                         f"— Mapper(s): {', '.join(mappers)}"
                     )
 
