@@ -32,7 +32,7 @@ def is_testing(channel: discord.TextChannel) -> bool:
     return isinstance(channel, discord.TextChannel) and channel.category_id in (CAT_MAP_TESTING, CAT_WAITING_MAPPER, CAT_EVALUATED_MAPS)
 
 def is_staff(member: discord.Member) -> bool:
-    return any(r.id in (ROLE_ADMIN, ROLE_TESTER) for r in member.roles)
+    return any(r.id in (ROLE_ADMIN, ROLE_TESTER, ROLE_TRIAL_TESTER) for r in member.roles)
 
 def by_releases_webhook(message: discord.Message) -> bool:
     return message.webhook_id == WH_MAP_RELEASES
@@ -460,7 +460,13 @@ class MapTesting(commands.Cog):
     async def ready(self, ctx: commands.Context):
         """Ready a map"""
         map_channel = self.get_map_channel(ctx.channel.id)
-        await map_channel.set_state(state=MapState.READY)
+
+        if map_channel.state == MapState.RC:
+            await map_channel.set_state(state=MapState.READY)
+            await ctx.reply('The map is now ready to be released!')
+        else:
+            await ctx.reply('First ready set. It needs to be tested again by a different tester before fully evaluated.')
+            await map_channel.set_state(state=MapState.RC)
 
     @commands.command()
     @tester_check()

@@ -17,6 +17,7 @@ CAT_EVALUATED_MAPS  = 462954029643989003
 
 class MapState(enum.Enum):
     TESTING     = ''
+    RC          = '☑️'
     WAITING     = '💤'
     READY       = '✅'
     DECLINED    = '❌'
@@ -95,6 +96,8 @@ class MapChannel:
         self.state = state
         if state is MapState.TESTING:
             category_id = CAT_MAP_TESTING
+        elif state is MapState.RC:
+            category_id = CAT_MAP_TESTING
         elif state is MapState.WAITING:
             category_id = CAT_WAITING_MAPPER
         else:
@@ -115,10 +118,9 @@ class MapChannel:
         self.server = isubm.server
         self.state = MapState.TESTING
         self.mapper_mentions = isubm.author.mention
-        logging.info(f"Topic: {self.topic}")
         self._channel = await isubm.channel.category.create_text_channel(str(self), topic=self.topic, **options)
 
         # Workaround for Discord API issue
-        await asyncio.sleep(2)
+        # await asyncio.sleep(2)
         await self._channel.edit(topic=self.topic)
         return self
