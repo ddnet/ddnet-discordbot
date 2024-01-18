@@ -10,4 +10,6 @@ data/assets/map_backgrounds/*.png
 data/map-testing/
 data/ticket-system/
 !data/ticket-system/*.json.schema
+data/teeguesser/
+!data/teeguesser/scores.json.schema
 find_players.json
