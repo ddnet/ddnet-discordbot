@@ -8,6 +8,7 @@ from PIL import Image, ImageOps
 
 GUILD_DDNET       = 252358080522747904
 CHAN_SKIN_SUBMIT  = 985717921600929872
+CHAN_SKIN_INFO    = 985554143525601350
 ROLE_ADMIN        = 293495272892399616
 ROLE_DISCORD_MOD  = 737776812234506270
 ROLE_SKIN_DB_CREW = 390516461741015040
@@ -81,7 +82,7 @@ def check_message_structure(message: discord.Message):
     if not re_match:
         return (
             False,
-            ('- Your message isn\'t properly formatted. Follow the message structure written in <#986941590780149780>. '
+            (f'- Your message isn\'t properly formatted. Follow the message structure written in <#{CHAN_SKIN_INFO}>. '
             'Also keep in mind licenses are now required for every submission.'),
             'Bad message structure'
         )
