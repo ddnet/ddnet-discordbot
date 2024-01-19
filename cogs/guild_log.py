@@ -144,6 +144,10 @@ class GuildLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        # Can't publish message replies
+        if message.reference:
+            return
+        
         if message.channel.id in (CHAN_ANNOUNCEMENTS, CHAN_MAP_RELEASES):
             await message.publish()
 
