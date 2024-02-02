@@ -185,5 +185,5 @@ testing_channel_access = f"""
 - To see all channels, add a ✅ reaction to this message
 - To see individual testing channels, add a ✅ reaction to the submission message in <#{TESTING_SUBM}> of the map's channel you want to see,
   removing the reaction reverts it
-- Find archived channels at https://ddnet.tw/testlogs/ 
+- Find archived channels at https://ddnet.org/testlogs/ 
 """
