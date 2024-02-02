@@ -177,6 +177,7 @@ The message has to contain the map's details as follows: "<map_name>" by <mapper
 🏁 Race
 🎉 Fun
 ```
+`[Credits: Cøke, Jao, Ravie, Lady Saavik, Pipou, Patiga, Learath, RayB, Soreu, hi_leute_gll, Knight, Oblique. & Index]`
 """
 
 testing_channel_access = f"""
