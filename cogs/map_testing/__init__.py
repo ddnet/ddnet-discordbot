@@ -19,7 +19,7 @@ CAT_WAITING_MAPPER  = 746076708196843530
 CAT_EVALUATED_MAPS  = 462954029643989003
 CHAN_ANNOUNCEMENTS  = 420565311863914496
 CHAN_INFO           = 1139589065759531038
-THREAD_INFO         = 1147560492043350087
+CHAN_TESTER         = 1203008423726157845
 CHAN_SUBMIT_MAPS    = 455392372663123989
 ROLE_ADMIN          = 293495272892399616
 ROLE_TESTER         = 293543421426008064
@@ -65,7 +65,7 @@ class MapTesting(commands.Cog):
         for category_id in (CAT_MAP_TESTING, CAT_WAITING_MAPPER, CAT_EVALUATED_MAPS):
             category = self.bot.get_channel(category_id)
             for channel in category.text_channels:
-                if channel.id in (CHAN_INFO, CHAN_SUBMIT_MAPS):
+                if channel.id in (CHAN_INFO, CHAN_SUBMIT_MAPS, CHAN_TESTER):
                     continue
 
                 try:
@@ -296,7 +296,7 @@ class MapTesting(commands.Cog):
             if member is None:
                 return
 
-        if channel.id == THREAD_INFO:
+        if channel.id == CHAN_INFO:
             testing_role = guild.get_role(ROLE_TESTING)
             if testing_role in member.roles:
                 if action == 'REACTION_REMOVE':
@@ -460,13 +460,24 @@ class MapTesting(commands.Cog):
     async def ready(self, ctx: commands.Context):
         """Ready a map"""
         map_channel = self.get_map_channel(ctx.channel.id)
-
-        if map_channel.state == MapState.RC:
-            await map_channel.set_state(state=MapState.READY)
-            await ctx.reply('The map is now ready to be released!')
-        else:
-            await ctx.reply('First ready set. It needs to be tested again by a different tester before fully evaluated.')
-            await map_channel.set_state(state=MapState.RC)
+        try:
+            if map_channel.state == MapState.TESTING and is_staff(ctx.author):
+                print(ctx.author.roles)
+                if ROLE_TRIAL_TESTER in [role.id for role in ctx.author.roles]:
+                    msg = 'First ready set by Trial Tester. It needs to be tested again by an official tester before fully evaluated.'
+                else:
+                    msg = 'First ready set. It needs to be tested again by a different tester before fully evaluated.'
+                await ctx.reply(msg)
+                await map_channel.set_state(state=MapState.RC, ready_state_set_by=ctx.author.mention)
+            elif map_channel.state == MapState.RC and any(
+                    role_id in [role.id for role in ctx.author.roles] for role_id in [ROLE_ADMIN, ROLE_TESTER]):
+                await ctx.reply('The map is now ready to be released!')
+                await map_channel.set_state(state=MapState.READY, ready_state_set_by=ctx.author.mention)
+            else:
+                if map_channel.state == MapState.WAITING and is_staff(ctx.author):
+                    await ctx.reply('Unable to ready a map in `WAITING`. Reset the map first, then try again.')
+        except ValueError as error:
+            await ctx.reply(f"{error}")
 
     @commands.command()
     @tester_check()
