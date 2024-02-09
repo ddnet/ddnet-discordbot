@@ -76,7 +76,9 @@ class MapChannel:
 
     @property
     def topic(self) -> str:
-        return '\n'.join((self.details, self.preview_url, self.mapper_mentions, self._initial_ready))
+        topic = [i for i in (self.details, self.preview_url, self.mapper_mentions, self._initial_ready) if
+                 i is not None]
+        return '\n'.join(topic)
 
     async def update(self, name: str=None, mappers: List[str]=None, server: str=None):
         prev_details = self.details
@@ -95,10 +97,8 @@ class MapChannel:
             await self.edit(name=str(self), topic=self.topic)
 
     async def set_state(self, *, state: MapState, ready_state_set_by: str = None):
-        if ready_state_set_by is not None and ready_state_set_by == self.initial_ready:
-            raise ValueError('You cannot ready the map again. It needs to be tested again by a different tester.')
-
         self.state = state
+
         if state is MapState.TESTING:
             category_id = CAT_MAP_TESTING
         elif state is MapState.RC:
@@ -110,10 +110,10 @@ class MapChannel:
 
         options = {'name': str(self)}
 
-        if ready_state_set_by is None:
-            self.initial_ready = ''
-        else:
+        if ready_state_set_by is not None:
             self.initial_ready = ready_state_set_by
+        else:
+            self.initial_ready = None
 
         if category_id != self.category_id:
             options['category'] = category = self.guild.get_channel(category_id)
@@ -131,7 +131,7 @@ class MapChannel:
         self.server = isubm.server
         self.state = MapState.TESTING
         self.mapper_mentions = isubm.author.mention
-        self.initial_ready = str()
+        self.initial_ready = None
         self._channel = await isubm.channel.category.create_text_channel(str(self), topic=self.topic, **options)
 
         # Workaround for Discord API issue

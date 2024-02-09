@@ -40,7 +40,7 @@ def by_releases_webhook(message: discord.Message) -> bool:
 def has_map(message: discord.Message) -> bool:
     return message.attachments and message.attachments[0].filename.endswith('.map')
 
-def tester_check():
+def staff_check():
     def predicate(ctx: commands.Context) -> bool:
         return ctx.channel.id in ctx.cog._map_channels and is_staff(ctx.author)
     return commands.check(predicate)
@@ -437,14 +437,14 @@ class MapTesting(commands.Cog):
         await map_channel.set_state(state=MapState.RELEASED)
 
     @commands.command()
-    @tester_check()
+    @staff_check()
     async def reset(self, ctx: commands.Context):
         """Reset a map"""
         map_channel = self.get_map_channel(ctx.channel.id)
         await map_channel.set_state(state=MapState.TESTING)
 
     @commands.command()
-    @tester_check()
+    @staff_check()
     async def waiting(self, ctx: commands.Context):
         """Set a map to waiting"""
         map_channel = self.get_map_channel(ctx.channel.id)
@@ -456,38 +456,60 @@ class MapTesting(commands.Cog):
         await self.bot.pool.execute(query, map_channel.id)
 
     @commands.command()
-    @tester_check()
+    @staff_check()
     async def ready(self, ctx: commands.Context):
         """Ready a map"""
         map_channel = self.get_map_channel(ctx.channel.id)
-        try:
-            if map_channel.state == MapState.TESTING and is_staff(ctx.author):
-                print(ctx.author.roles)
-                if ROLE_TRIAL_TESTER in [role.id for role in ctx.author.roles]:
-                    msg = 'First ready set by Trial Tester. It needs to be tested again by an official tester before fully evaluated.'
-                else:
-                    msg = 'First ready set. It needs to be tested again by a different tester before fully evaluated.'
-                await ctx.reply(msg)
-                await map_channel.set_state(state=MapState.RC, ready_state_set_by=ctx.author.mention)
-            elif map_channel.state == MapState.RC and any(
-                    role_id in [role.id for role in ctx.author.roles] for role_id in [ROLE_ADMIN, ROLE_TESTER]):
+
+        if map_channel.state == MapState.READY:
+            await ctx.reply('Map is already set to Ready. If the channel name hasn\'t been updated yet, wait a couple of minutes.')
+            return
+
+        if map_channel.initial_ready == ctx.author.mention:
+            await ctx.reply('You cannot ready the map again. It needs to be tested again by a different tester.')
+            return
+
+        if map_channel.state == MapState.TESTING:
+            if ROLE_ADMIN in [role.id for role in ctx.author.roles]:
                 await ctx.reply('The map is now ready to be released!')
                 await map_channel.set_state(state=MapState.READY, ready_state_set_by=ctx.author.mention)
+            elif ROLE_TRIAL_TESTER in [role.id for role in ctx.author.roles]:
+                msg = 'First ready set by Trial Tester. It needs to be tested again by an official tester before fully evaluated.'
+                await ctx.reply(msg)
+                await map_channel.set_state(state=MapState.RC, ready_state_set_by=ctx.author.mention)
             else:
-                if map_channel.state == MapState.WAITING and is_staff(ctx.author):
-                    await ctx.reply('Unable to ready a map in `WAITING`. Reset the map first, then try again.')
-        except ValueError as error:
-            await ctx.reply(f"{error}")
+                msg = 'First ready set. It needs to be tested again by a different tester before fully evaluated.'
+                await ctx.reply(msg)
+                await map_channel.set_state(state=MapState.RC, ready_state_set_by=ctx.author.mention)
+        elif map_channel.state == MapState.RC and any(
+                role_id in [role.id for role in ctx.author.roles] for role_id in [ROLE_ADMIN, ROLE_TESTER]):
+            await ctx.reply('The map is now ready to be released!')
+            await map_channel.set_state(state=MapState.READY, ready_state_set_by=ctx.author.mention)
+        else:
+            if map_channel.state == MapState.WAITING and is_staff(ctx.author):
+                await ctx.reply('Unable to ready a map in `WAITING`. Reset the map first, then try again.')
 
     @commands.command()
-    @tester_check()
+    @staff_check()
+    async def mapstate(self, ctx: commands.Context):
+        """Print the current MapState of the channel."""
+        map_channel = self.get_map_channel(ctx.channel.id)
+
+        if map_channel:
+            await ctx.send(f"The current MapState of this channel is: {map_channel.state} \n"
+                           f"The user who has ready'ed the map is: {map_channel.initial_ready}")
+        else:
+            await ctx.send("This channel is not a map channel.")
+
+    @commands.command()
+    @staff_check()
     async def decline(self, ctx: commands.Context):
         """Decline a map"""
         map_channel = self.get_map_channel(ctx.channel.id)
         await map_channel.set_state(state=MapState.DECLINED)
 
     @commands.command()
-    @tester_check()
+    @staff_check()
     async def released(self, ctx: commands.Context):
         """Mark a map as released"""
         map_channel = self.get_map_channel(ctx.channel.id)
@@ -502,7 +524,7 @@ class MapTesting(commands.Cog):
         await map_channel.set_state(state=MapState.RELEASED)
 
     @commands.command()
-    @tester_check()
+    @staff_check()
     async def edit(self, ctx: commands.Context, *args: str):
         """Edits a map according to the passed arguments"""
         subm = None
@@ -532,13 +554,13 @@ class MapTesting(commands.Cog):
         await ctx.channel.send(stdout, file=file)
 
     @commands.command()
-    @tester_check()
+    @staff_check()
     async def optimize(self, ctx: commands.Context):
         """Shortcut for the `edit` command, passes the arguments `--remove-everything-unused` and `--shrink-layers`"""
         await self.edit(ctx, "--remove-everything-unused", "--shrink-tiles-layers")
 
     @commands.group()
-    @tester_check()
+    @staff_check()
     async def change(self, ctx: commands.Context):
         """Change details of a map"""
         pass
@@ -603,7 +625,7 @@ class MapTesting(commands.Cog):
             await ctx.send('Could not find that user')
 
     @commands.command()
-    @tester_check()
+    @staff_check()
     async def archive_imm(self, ctx: commands.Context):
         """Archive map channel immediately"""
         map_channel = self.get_map_channel(ctx.channel.id)
