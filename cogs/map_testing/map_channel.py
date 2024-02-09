@@ -117,7 +117,7 @@ class MapChannel:
 
         if category_id != self.category_id:
             options['category'] = category = self.guild.get_channel(category_id)
-            options['position'] = category.channels[-1].position + 1 if state is (MapState.TESTING or MapState.RC) else 0
+            options['position'] = category.channels[-1].position + 1 if state in [MapState.TESTING, MapState.RC] else 0
 
         options['topic'] = f"{self.topic}"
 
