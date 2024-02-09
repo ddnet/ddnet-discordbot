@@ -169,8 +169,10 @@ class MapTesting(commands.Cog):
             subm = Submission(message)
             if map_channel.filename == str(subm):
                 by_mapper = str(author.id) in map_channel.mapper_mentions
+                # set bot as initial ready so the map only needs one ready to be moved to evaluated maps again
+                initial_ready = self.bot.user.mention
                 if by_mapper and map_channel.state in (MapState.WAITING, MapState.READY):
-                    await map_channel.set_state(state=MapState.TESTING)
+                    await map_channel.set_state(state=MapState.RC, ready_state_set_by=initial_ready)
 
                 if by_mapper or is_staff(author) or author == self.bot.user:
                     await self.upload_submission(subm)
