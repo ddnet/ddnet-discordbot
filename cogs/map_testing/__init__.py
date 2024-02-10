@@ -656,7 +656,7 @@ class MapTesting(commands.Cog):
 
         thread = await channel.create_thread(name=f'Promote {trial_tester.global_name}', message=None, invitable=False)
         await thread.send(
-            f'<@&930665860408946708> \n'
+            f'<@&{ROLE_TESTER> \n'
             f'{interaction.user.mention} suggests to promote {trial_tester.global_name} to Tester. Opinions?'
         )
 
