@@ -7,6 +7,7 @@ from typing import List, Optional
 
 import discord
 from discord.ext import commands, tasks
+from discord import app_commands
 
 from cogs.map_testing.log import TestLog
 from cogs.map_testing.map_channel import MapChannel, MapState
@@ -646,6 +647,25 @@ class MapTesting(commands.Cog):
             await ctx.message.add_reaction(':oop:395753983379243028')
             log.error('Failed archiving channel #%s', map_channel)
 
+    @app_commands.command(name='promote', description="Creates a private thread to discuss the promotion")
+    @app_commands.describe(trial_tester='@mention the trial tester to promote')
+    async def create_thread(self, interaction: discord.Interaction, trial_tester: discord.Member):
+        await interaction.response.defer(ephemeral=True, thinking=True)  # noqa
+
+        channel = interaction.channel
+
+        thread = await channel.create_thread(name=f'Promote {trial_tester.global_name}', message=None, invitable=False)
+        await thread.send(
+            f'<@&930665860408946708> \n'
+            f'{interaction.user.mention} suggests to promote {trial_tester.global_name} to Tester. Opinions?'
+        )
+
+        await interaction.followup.send(  # noqa
+            f"<@{interaction.user.id}> your thread has been created: {thread.jump_url}", ephemeral=True)
+        log.info(f'{interaction.user} (ID: {interaction.user.id}) created a thread in {interaction.channel.name}')
+
+        if interaction.response.is_done():  # noqa
+            return
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(MapTesting(bot))

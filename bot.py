@@ -61,6 +61,8 @@ class DDNet(commands.Bot):
 
     async def on_ready(self):
         log.info('Logged in as %s (ID: %d)', self.user, self.user.id)
+        synced = await self.tree.sync()
+        log.info(f"Slash CMDs Synced: {str(len(synced))} Commands")
 
     async def on_resumed(self):
         log.info('Resumed')
