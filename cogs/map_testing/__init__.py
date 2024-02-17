@@ -191,6 +191,8 @@ class MapTesting(commands.Cog):
                         await message.reply("Error log in the attached file", file=file, mention_author=False)
                 else:
                     await subm.message.add_reaction("👌")
+                if not (message.content or message.author.bot):
+                    await map_channel.send('Include a changelog after uploading map updates (preferably with screenshots).')
             else:
                 await map_channel.send('Map filename must match channel name.')
 
