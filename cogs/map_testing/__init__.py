@@ -127,7 +127,8 @@ class MapTesting(commands.Cog):
     async def upload_submission(self, subm: Submission):
         try:
             await self.ddnet_upload('map', await subm.buffer(), str(subm))
-        except RuntimeError:
+        except RuntimeError as e:
+            log.error(f'RuntimeError: {e}')
             await subm.set_state(SubmissionState.ERROR)
         else:
             await subm.set_state(SubmissionState.UPLOADED)
@@ -146,6 +147,7 @@ class MapTesting(commands.Cog):
             if released:
                 raise ValueError('A map with that name is already released')
         except ValueError as exc:
+            log.error(f'RuntimeError: {exc}')
             await isubm.respond(exc)
             await isubm.set_state(SubmissionState.ERROR)
         else:
@@ -250,7 +252,8 @@ class MapTesting(commands.Cog):
             isubm = InitialSubmission(message)
             try:
                 isubm.validate()
-            except ValueError:
+            except ValueError as e:
+                log.error(f'ValueError: {e}')
                 return
 
             self._active_submissions.add(message.id)
@@ -343,7 +346,8 @@ class MapTesting(commands.Cog):
 
         try:
             await self.ddnet_upload('log', BytesIO(js.encode('utf-8')), testlog.name)
-        except RuntimeError:
+        except RuntimeError as e:
+            log.error(f'RuntimeError: {e}')
             failed = True
 
         for asset_type, assets in testlog.assets.items():
@@ -361,7 +365,8 @@ class MapTesting(commands.Cog):
 
                 try:
                     await self.ddnet_upload(asset_type, BytesIO(bytes_), filename)
-                except RuntimeError:
+                except RuntimeError as e:
+                    log.error(f'RuntimeError: {e}')
                     failed = True
                     continue
 
