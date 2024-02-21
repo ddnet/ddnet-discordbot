@@ -211,12 +211,11 @@ class MapTesting(commands.Cog):
         if not ('attachments' in data and data['attachments'] and data['attachments'][0]['filename'].endswith('.map')):
             return
 
-        # don't handle already processed submissions
-        if 'reactions' in data and data['reactions'][0]['emoji']['name'] == str(SubmissionState.PROCESSED):
-            return
-
         channel = self.bot.get_channel(payload.channel_id)
         message = self.bot.get_message(payload.message_id) or await channel.fetch_message(payload.message_id)
+
+        if any(str(SubmissionState.PROCESSED) == reaction.emoji for reaction in message.reactions):
+            return
 
         isubm = InitialSubmission(message)
         await self.validate_submission(isubm)
