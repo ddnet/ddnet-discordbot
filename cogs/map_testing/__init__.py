@@ -387,7 +387,7 @@ class MapTesting(commands.Cog):
         to_archive = []
         for map_channel in self.map_channels:
             # keep the channel until its map is released, including a short grace period
-            if map_channel.state in (MapState.TESTING, MapState.READY) or map_channel in recent_releases:
+            if map_channel.state in (MapState.TESTING, MapState.RC, MapState.READY) or map_channel in recent_releases:
                 continue
 
             # don't tele waiting maps before 60 days have passed
