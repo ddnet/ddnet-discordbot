@@ -122,7 +122,7 @@ class GuildLog(commands.Cog):
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
         if not before.guild or before.guild.id != GUILD_DDNET or before.is_system() or before.channel.id == CHAN_LOGS or \
                 before.channel.category.id == CAT_INTERNAL or before.author.bot or before.channel.name.startswith(
-            ('complaint-', 'other-', 'rename-')):
+            ('complaint-', 'admin-mail-', 'rename-')):
             return
 
         if before.content == after.content:
