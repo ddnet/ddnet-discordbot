@@ -27,8 +27,8 @@ TESTING_SUBM        = 455392372663123989
 ADMIN               = 293495272892399616
 DISCORD_MOD         = 737776812234506270
 MODERATOR           = 252523225810993153
-TESTING_LEAD        = 746414504488861747
 TESTER              = 293543421426008064
+TRIAL_TESTER        = 1193593067744284744
 SKIN_DB_CREW        = 390516461741015040
 WIKI_CONTRIBUTOR    = 1085663898910339072
 DEV                 = 293541515781996568
@@ -114,10 +114,10 @@ welcome_ddnet_roles = f"""
 <@&{DISCORD_MOD}>: People who keep our Discord server in check.
 <@&{MODERATOR}>: People who moderate our in-game & discord server(s).
 
-<@&{TESTING_LEAD}>: - Test Leads are team leaders overseeing the Tester team.
-<@&{TESTER}>: - Testers assess map suitability for our map pool, ensuring quality and reporting bugs to submitters.
+<@&{TESTER}>: Testers assess map suitability for our map pool, ensuring quality and reporting bugs to submitters.
+<@&{TRIAL_TESTER}>: Much like the previous role, all incoming Testers will begin as Trial Testers.
 
-<@&{SKIN_DB_CREW}>: - The Skin Database Crew manages our skin database, ensuring suitability and quality.
+<@&{SKIN_DB_CREW}>: The Skin Database Crew manages our skin database, ensuring suitability and quality.
 
 **「Achievement Roles」**
 <@&{WIKI_CONTRIBUTOR}>: Can be earned for Wiki contributions that are deemed significant.
@@ -125,7 +125,7 @@ welcome_ddnet_roles = f"""
 <@&{TOURNAMENT_WINNER}>: Assigned to users who have won tournaments.
 
 **「Other」**
-<@&{TESTING}>: - All users can obtain this role in <#{TESTING_INFO}> to access all existing testing channels.
+<@&{TESTING}>: All users can obtain this role in <#{TESTING_INFO}> to access all existing testing channels.
 """
 
 welcome_community_links = """
