@@ -4,7 +4,8 @@
 import discord
 from discord.ext import commands
 
-WH_RECORDS = 338945741714227201
+from config import WH_RECORDS
+
 
 class Records(commands.Cog):
     def __init__(self, bot: commands.Bot):

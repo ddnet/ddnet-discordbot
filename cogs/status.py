@@ -10,8 +10,7 @@ import discord
 from discord.ext import commands
 
 from data.countryflags import COUNTRYFLAGS, FLAG_UNK
-from utils.menu import Pages
-from utils.text import clean_content, escape
+from utils.text import escape
 
 log = logging.getLogger(__name__)
 
@@ -48,7 +47,7 @@ class Player:
         else:
             return '{0:02d}:{1:02d}'.format(*divmod(abs(self.score), 60))
 
-    def format(self, time_score: bool=False) -> str:
+    def format(self, time_score: bool = False) -> str:
         if self.url is None:
             line = [f'**{escape(self.name)}**']
         else:

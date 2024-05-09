@@ -9,7 +9,6 @@ from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
 from utils.image import save, wrap_new
-from utils.misc import executor
 
 DIR = 'data/assets'
 

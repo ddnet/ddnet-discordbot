@@ -9,22 +9,23 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-log = logging.getLogger(__name__)
+from config import CHAN_DEV
 
-CHAN_DEVELOPER = 293493549758939136
+log = logging.getLogger(__name__)
 
 _ISSUE_RE = r'(?:(?P<owner>\w+)/)?(?P<repo>[\w-]*)#(?P<id>[5-9]\d|\d{3,})\b'
 _REF_RE = r'[-\w]+'
+
 
 def filter_empty(obj: dict) -> dict:
     return {k: v for k, v in obj.items() if v}
 
 
 class BuildStatus(enum.Enum):
-    UNKNOWN     = '❔'
-    PENDING     = '🟡'
-    FAILED      = '🔴'
-    SUCCESS     = '🟢'
+    UNKNOWN = '❔'
+    PENDING = '🟡'
+    FAILED = '🔴'
+    SUCCESS = '🟢'
 
     def __str__(self) -> str:
         return self.value
@@ -37,13 +38,10 @@ class GithubException(commands.CommandError):
 class GithubRatelimit(GithubException):
     def __init__(self, reset: int):
         self.timestamp = datetime.utcfromtimestamp(reset)
-
-        message = f'Currently rate limited until {self.timestamp} UTC'
-        super().__init__(message)
+        super().__init__(f'Currently rate limited until {self.timestamp} UTC')
 
 
-class GithubBase():
-
+class GithubBase:
     bot = None
 
     async def _fetch(self, url: str) -> dict:
@@ -59,12 +57,13 @@ class GithubBase():
             elif resp.status == 404:
                 raise GithubException('Couldn\'t find that')
             else:
-                log.error('Failed fetching %r from Github: %s (status code: %d %s)', url, js['message'], resp.status, resp.reason)
+                log.error('Failed fetching %r from Github: %s (status code: %d %s)', url, js['message'], resp.status,
+                          resp.reason)
                 raise GithubException('Failed fetching Github')
 
 
 class Commit(GithubBase):
-    def __init__(self, owner: str='ddnet', repo: str='ddnet', ref: str='master'):
+    def __init__(self, owner: str = 'ddnet', repo: str = 'ddnet', ref: str = 'master'):
         self.url = f'repos/{owner}/{repo}/commits/{ref}/check-suites'
         self.master = ref == 'master'
 
@@ -107,8 +106,8 @@ class Issue(GithubBase):
         self.id = id
 
     @classmethod
-    async def retrieve(cls, *, owner: str='ddnet', repo: str='ddnet', id: str):
-        self = cls(owner, repo , id)
+    async def retrieve(cls, *, owner: str = 'ddnet', repo: str = 'ddnet', id: str):
+        self = cls(owner, repo, id)
         self.data = await self._fetch(f'repos/{owner}/{repo}/issues/{id}')
         return self
 
@@ -140,8 +139,8 @@ class Github(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.channel.id != CHAN_DEVELOPER or (message.content and message.content[0] == self.bot.command_prefix) \
-		or message.author.bot or self.ratelimited():
+        if message.channel.id != CHAN_DEV or (message.content and message.content[0] == self.bot.command_prefix) \
+                or message.author.bot or self.ratelimited():
             return
 
         codeblocks = re.findall(r"```(?:\w+\n)?([\s\S]+?)```|`(?:\w+)?(.+?)`", message.content, flags=re.DOTALL)
@@ -169,7 +168,7 @@ class Github(commands.Cog):
 
     @commands.command(usage='[pr|commit]')
     @commands.check(is_ratelimited)
-    async def build_status(self, ctx: commands.Context, commit: Commit=Commit()):
+    async def build_status(self, ctx: commands.Context, commit: Commit = Commit()):
         """Show the build status of a PR/commit"""
         status = await commit.get_status()
         await ctx.send(status)

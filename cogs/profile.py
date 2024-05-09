@@ -2,11 +2,11 @@ from datetime import datetime
 from io import BytesIO
 from typing import Dict, List
 
-import logging
 import asyncpg
 import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from discord.utils import utcnow
 
 from utils.color import clamp_luminance
 from utils.image import auto_font, center, round_rectangle, save
@@ -31,37 +31,49 @@ class Profile(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+        self.font_48 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 46)
+        self.font_36 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 36)
+        self.font_32 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 32)
+        self.font_26 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 26)
+        self.font_24 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
+        self.font_22 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 22)
+        self.font_20 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 20)
+        self.font_16 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
+        self.font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
+        self.font_normal = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
+        self.font_bold = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 34)
+        self.font_big = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 48)
+
+        self.hours_background = Image.open(f'{DIR}/hours_background.png')
+        self.points_background = Image.open(f'{DIR}/points_background.png')
+
+        self.thresholds = {
+            18000: ('justice_2', (184, 81, 50)),
+            16000: ('back_in_the_days_3', (156, 162, 142)),
+            14000: ('heartcore', (86, 79, 81)),
+            12000: ('aurora', (55, 103, 156)),
+            10000: ('narcissistic', (122, 32, 43)),
+            9000: ('aim_10', (93, 128, 144)),
+            8000: ('barren', (196, 172, 140)),
+            7000: ('back_in_time', (148, 156, 161)),
+            6000: ('nostalgia', (161, 140, 148)),
+            5000: ('sweet_shot', (229, 148, 166)),
+            4000: ('chained', (183, 188, 198)),
+            3000: ('intothenight', (60, 76, 89)),
+            2000: ('darkvine', (145, 148, 177)),
+            1000: ('crimson_woods', (108, 12, 12)),
+            1: ('kobra_4', (148, 167, 75)),
+            0: ('stronghold', (156, 188, 220)),
+        }.items()
+
     @executor
     def generate_profile_image(self, data: asyncpg.Record) -> BytesIO:
-        font_normal = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
-        font_bold = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 34)
-        font_big = ImageFont.truetype(f'{DIR}/fonts/bold.ttf', 48)
-
         now = datetime.utcnow()
         if data['day'] == now.day and data['month'] == now.month:
             img = 'birthday'
             color = (54, 70, 137)
         else:
-            thresholds = {
-                18000: ('justice_2', (184, 81, 50)),
-                16000: ('back_in_the_days_3', (156, 162, 142)),
-                14000: ('heartcore', (86, 79, 81)),
-                12000: ('aurora', (55, 103, 156)),
-                10000: ('narcissistic', (122, 32, 43)),
-                9000:  ('aim_10', (93, 128, 144)),
-                8000:  ('barren', (196, 172, 140)),
-                7000:  ('back_in_time', (148, 156, 161)),
-                6000:  ('nostalgia', (161, 140, 148)),
-                5000:  ('sweet_shot', (229, 148, 166)),
-                4000:  ('chained', (183, 188, 198)),
-                3000:  ('intothenight', (60, 76, 89)),
-                2000:  ('darkvine', (145, 148, 177)),
-                1000:  ('crimson_woods', (108, 12, 12)),
-                1:     ('kobra_4', (148, 167, 75)),
-                0:     ('stronghold', (156, 188, 220)),
-            }
-
-            img, color = next(e for t, e in thresholds.items() if data['total_points'] >= t)
+            img, color = next(e for t, e in self.thresholds if data['total_points'] >= t)
 
         base = Image.open(f'{DIR}/profile_backgrounds/{img}.png')
 
@@ -86,8 +98,8 @@ class Profile(commands.Cog):
         flag_w, flag_h = flag.size
 
         name = ' ' + data['name']
-        w, _ = font_bold.getsize(name)
-        _, h = font_bold.getsize('yA')  # hardcoded to align names
+        w, _ = self.font_bold.getsize(name)
+        _, h = self.font_bold.getsize('yA')  # hardcoded to align names
 
         name_height = 50
         radius = int(name_height / 2)
@@ -101,7 +113,7 @@ class Profile(commands.Cog):
         base.alpha_composite(flag, dest=dest)
 
         xy = (x + flag_w, margin + center(h, name_height))
-        canv.text(xy, name, fill='white', font=font_bold)
+        canv.text(xy, name, fill='white', font=self.font_bold)
 
         # draw points
         points_width = (width - margin * 2) / 3
@@ -113,22 +125,22 @@ class Profile(commands.Cog):
         canv.line(xy, fill='white', width=3)
 
         text = f'#{data["total_rank"]}'
-        w, h = font_big.getsize(text)
+        w, h = self.font_big.getsize(text)
         xy = (margin + center(w, points_width), y)
-        canv.text(xy, text, fill='white', font=font_big)
+        canv.text(xy, text, fill='white', font=self.font_big)
 
         offset = h * 0.25  # true drawn height is only 3 / 4
 
         text = str(data['total_points'])
-        w, h = font_bold.getsize(text)
+        w, h = self.font_bold.getsize(text)
         suffix = plural(data['total_points'], ' point').upper()
-        w2, h2 = font_normal.getsize(suffix)
+        w2, h2 = self.font_normal.getsize(suffix)
 
         x = margin + center(w + w2, points_width)
         y = height - margin - offset
 
-        canv.text((x, y - h), text, fill=color, font=font_bold)
-        canv.text((x + w, y - h2), suffix, fill=color, font=font_normal)
+        canv.text((x, y - h), text, fill=color, font=self.font_bold)
+        canv.text((x + w, y - h2), suffix, fill=color, font=self.font_normal)
 
         # draw ranks
         types = {
@@ -136,19 +148,19 @@ class Profile(commands.Cog):
             'RANK ': (data['solo_rank'], data['solo_points'])
         }
 
-        _, h = font_bold.getsize('A')
+        _, h = self.font_bold.getsize('A')
         yy = (margin + name_height + inner + h * 1.25, height - margin - h * 0.5)
 
         for (type_, (rank, points)), y in zip(types.items(), yy):
-            line = [(type_, 'white', font_normal)]
+            line = [(type_, 'white', self.font_normal)]
             if rank is None:
-                line.append(('UNRANKED', (150, 150, 150), font_bold))
+                line.append(('UNRANKED', (150, 150, 150), self.font_bold))
             else:
                 line.extend((
-                    (f'#{rank}', 'white', font_bold),
-                    ('   ', 'white', font_bold),  # border placeholder
-                    (str(points), color, font_bold),
-                    (plural(points, ' point').upper(), color, font_normal),
+                    (f'#{rank}', 'white', self.font_bold),
+                    ('   ', 'white', self.font_bold),  # border placeholder
+                    (str(points), color, self.font_bold),
+                    (plural(points, ' point').upper(), color, self.font_normal),
                 ))
 
             x = width - margin
@@ -164,7 +176,7 @@ class Profile(commands.Cog):
         return save(base.convert('RGB'))
 
     @commands.command()
-    async def profile(self, ctx: commands.Context, *, player: clean_content=None):
+    async def profile(self, ctx: commands.Context, *, player: clean_content = None):
 
         player = player or ctx.author.display_name
 
@@ -183,7 +195,6 @@ class Profile(commands.Cog):
 
     @executor
     def generate_points_image(self, data: Dict[str, List[asyncpg.Record]]) -> BytesIO:
-        font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
 
         color_light = (100, 100, 100)
         color_dark = (50, 50, 50)
@@ -199,8 +210,8 @@ class Profile(commands.Cog):
             'royalblue',
             'olive',
         )
+        base = self.points_background.copy()
 
-        base = Image.open(f'{DIR}/points_background.png')
         canv = ImageDraw.Draw(base)
 
         width, height = base.size
@@ -239,11 +250,11 @@ class Profile(commands.Cog):
                 canv.line(xy, fill=color_dark, width=1)
 
             text = str(year - 1)
-            w, h = font_small.getsize(text)
+            w, h = self.font_small.getsize(text)
             area_width = x - prev_x
             if w <= area_width:
                 xy = (prev_x + center(w, area_width), height - margin + h)
-                canv.text(xy, text, fill=color_light, font=font_small)
+                canv.text(xy, text, fill=color_light, font=self.font_small)
 
             prev_x = x
 
@@ -258,7 +269,7 @@ class Profile(commands.Cog):
         }
 
         steps = next(s for t, s in thresholds.items() if total_points > t)
-        w, _ = font_small.getsize('00.0K')  # max points label width
+        w, _ = self.font_small.getsize('00.0K')  # max points label width
         points_margin = center(w, margin)
         for points in range(0, total_points + 1, int(steps / 5)):
             y = height - margin - points * points_mult
@@ -268,9 +279,9 @@ class Profile(commands.Cog):
                 canv.line(xy, fill=color_light, width=2)
 
                 text = humanize_points(points)
-                w, h = font_small.getsize(text)
+                w, h = self.font_small.getsize(text)
                 xy = (margin - points_margin - w, y + center(h))
-                canv.text(xy, text, fill=color_light, font=font_small)
+                canv.text(xy, text, fill=color_light, font=self.font_small)
             else:
                 canv.line(xy, fill=color_dark, width=1)
 
@@ -310,7 +321,7 @@ class Profile(commands.Cog):
         base.alpha_composite(plot, dest=(margin, margin - extra))
 
         # remove overlapping labels TODO: optimize
-        _, h = font_small.getsize('0')
+        _, h = self.font_small.getsize('0')
         offset = center(h)
         for _ in range(len(labels)):
             labels.sort()
@@ -328,7 +339,7 @@ class Profile(commands.Cog):
             points = int((height - margin - y) / points_mult)
             text = humanize_points(points)
             xy = (width - margin + points_margin, y + offset)
-            canv.text(xy, text, fill=color, font=font_small)
+            canv.text(xy, text, fill=color, font=self.font_small)
 
         # draw header
         def check(w: int, size: int) -> float:
@@ -381,15 +392,6 @@ class Profile(commands.Cog):
 
     @executor
     def generate_map_image(self, data: asyncpg.Record) -> BytesIO:
-        font_48 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 46)
-        font_36 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 36)
-        font_32 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 32)
-        font_26 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 26)
-        font_24 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 24)
-        font_22 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 22)
-        font_20 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 20)
-        font_16 = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
-
         name = data['name']
 
         color = data['color']
@@ -416,7 +418,7 @@ class Profile(commands.Cog):
         radius = int(name_height / 2)
 
         text = name if mappers is None else f'{name} by {mappers}'
-        font = auto_font(font_36, text, width - margin * 2 - radius * 2)
+        font = auto_font(self.font_36, text, width - margin * 2 - radius * 2)
         w, _ = font.getsize(text)
         _, h = font.getsize('yA')
 
@@ -459,14 +461,14 @@ class Profile(commands.Cog):
         stars = int((points - offset) / mult)
 
         lines = (
-            ((server.upper(), 'white', font_32),),
-            (('★' * stars + '☆' * (5 - stars), 'white', font_48),),
-            ((str(points), color, font_26),
-             (plural(points, ' point').upper(), 'white', font_20)),
-            ((str(finishers), color, font_26),
-             (plural(finishers, ' finisher').upper(), 'white', font_20)),
-            (('RELEASED ', 'white', font_16),
-             (timestamp.strftime('%b %d %Y').upper(), color, font_22))
+            ((server.upper(), 'white', self.font_32),),
+            (('★' * stars + '☆' * (5 - stars), 'white', self.font_48),),
+            ((str(points), color, self.font_26),
+             (plural(points, ' point').upper(), 'white', self.font_20)),
+            ((str(finishers), color, self.font_26),
+             (plural(finishers, ' finisher').upper(), 'white', self.font_20)),
+            (('RELEASED ', 'white', self.font_16),
+             (timestamp.strftime('%b %d %Y').upper(), color, self.font_22))
         )
 
         for line in lines:
@@ -501,7 +503,7 @@ class Profile(commands.Cog):
         # draw ranks
         ranks = data['ranks']
         if ranks:
-            font = font_24
+            font = self.font_24
 
             def humanize_time(time):
                 return '%02d:%05.2f' % divmod(abs(time), 60)
@@ -550,8 +552,6 @@ class Profile(commands.Cog):
 
     @executor
     def generate_hours_image(self, data: Dict[str, List[asyncpg.Record]]) -> BytesIO:
-        font_small = ImageFont.truetype(f'{DIR}/fonts/normal.ttf', 16)
-
         color_light = (100, 100, 100)
         colors = (
             'orange',
@@ -566,7 +566,7 @@ class Profile(commands.Cog):
             'olive',
         )
 
-        base = Image.open(f'{DIR}/hours_background.png')
+        base = self.hours_background.copy()
         canv = ImageDraw.Draw(base)
 
         width, height = base.size
@@ -583,17 +583,17 @@ class Profile(commands.Cog):
         x = margin
         y = height - margin
         hour_width = plot_width / 24
-        now = datetime.utcnow()
+        now = utcnow()
         for hour in range(25):
             xy = ((x, margin), (x, y - 1))  # fix overflow
             canv.line(xy, fill=color_light, width=1)
 
             if 0 <= hour <= 23:
                 text = str(hour)
-                w, h = font_small.getsize(text)
+                w, h = self.font_small.getsize(text)
                 xy = (x + center(w, hour_width), y + h)
                 color = 'green' if hour == now.hour else color_light
-                canv.text(xy, text, fill=color, font=font_small)
+                canv.text(xy, text, fill=color, font=self.font_small)
 
             x += hour_width
 
@@ -630,7 +630,7 @@ class Profile(commands.Cog):
         base.alpha_composite(plot, dest=(margin, margin - extra))
 
         # draw header
-        def check(w: int, size: int) -> int:
+        def check(w: int, size: int) -> float:
             return w + (size / 3) * (4 * len(data) - 2)
 
         font = auto_font((f'{DIR}/fonts/normal.ttf', 24), ''.join(data), plot_width, check=check)

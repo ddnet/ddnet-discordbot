@@ -7,8 +7,10 @@ from typing import Optional, Union
 import discord
 from discord.ext import commands
 
-VOTE_YES    = '<:f3:397431188941438976>'
-VOTE_NO     = '<:f4:397431204552376320>'
+from config import VOTE_NO_id, VOTE_YES_id
+
+VOTE_YES = f'<:f3:{VOTE_YES_id}>'
+VOTE_NO = f'<:f4:{VOTE_NO_id}>'
 
 
 class Votes(commands.Cog):
@@ -85,7 +87,7 @@ class Votes(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @commands.max_concurrency(1, commands.BucketType.channel)
-    async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str=None):
+    async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str = None):
         await self._kick(ctx, user, reason)
 
     @commands.command()
@@ -93,7 +95,7 @@ class Votes(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
-    async def actualkick(self, ctx: commands.Context, user: discord.Member, *, reason: str=None):
+    async def actualkick(self, ctx: commands.Context, user: discord.Member, *, reason: str = None):
         result = await self._kick(ctx, user, reason)
         if result > 0:
             await user.kick()

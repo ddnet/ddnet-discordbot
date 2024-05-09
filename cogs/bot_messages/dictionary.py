@@ -1,39 +1,13 @@
 # Okey this is a bit annoying. In order to have the bot link to the channels and roles, it needs the channel/role ids.
 
+from config import CHAN_WELCOME, CHAN_ANNOUNCEMENTS, CHAN_MAP_RELEASES, RECORDS, CHAN_DEV, BUGS, SHOWROOM, GENERAL, \
+    QUESTIONS, CHAN_WIKI, MAPPING, BOT_CMDS, TICKETS, CHAN_SKIN_INFO, CHAN_SKIN_SUBMIT, CHAN_TESTING_INFO, TESTING_SUBM, \
+    ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_MOD, ROLE_TESTER, TRIAL_TESTER, ROLE_SKIN_DB_CREW, WIKI_CONTRIBUTOR, DEV, \
+    TOURNAMENT_WINNER, TESTING
+
 # Channels
-WELCOME             = 1125706766999629854
-ANNOUNCEMENTS       = 420565311863914496
-MAP_RELEASES        = 392853737099624449
-RECORDS             = 338779500085116938
+OFF_TOPIC = 252358080522747904  # guild.id ???
 
-DEVELOPER           = 293493549758939136
-BUGS                = 757720336274948198
-
-GENERAL             = 342454474117218334
-SHOWROOM            = 295908390956433410
-QUESTIONS           = 745926398140612678
-WIKI                = 871738312849752104
-OFF_TOPIC           = 252358080522747904
-MAPPING             = 746534464984973323
-BOT_CMDS            = 500032072455290880
-
-TICKETS             = 1124657351442579486
-SKIN_INFO           = 985554143525601350
-SKIN_SUBM           = 985717921600929872
-TESTING_INFO        = 1201860080463511612
-TESTING_SUBM        = 455392372663123989
-
-# Roles
-ADMIN               = 293495272892399616
-DISCORD_MOD         = 737776812234506270
-MODERATOR           = 252523225810993153
-TESTER              = 293543421426008064
-TRIAL_TESTER        = 1193593067744284744
-SKIN_DB_CREW        = 390516461741015040
-WIKI_CONTRIBUTOR    = 1085663898910339072
-DEV                 = 293541515781996568
-TOURNAMENT_WINNER   = 400715872647249920
-TESTING             = 455814387169755176
 
 welcome_main = """
 Welcome to the official DDraceNetwork Discord Server!
@@ -58,20 +32,20 @@ welcome_rules = f"""
 
 welcome_channel_listing = f"""
 **「INFO CATEGORY」**
-<#{WELCOME}> - Welcome! Here you'll find basic information about our server and it's rules!
-<#{ANNOUNCEMENTS}> - Any announcements about the game are posted here, including game update notes.
-<#{MAP_RELEASES}> - Upcoming map releases are announcened in this channel!
+<#{CHAN_WELCOME}> - Welcome! Here you'll find basic information about our server and it's rules!
+<#{CHAN_ANNOUNCEMENTS}> - Any announcements about the game are posted here, including game update notes.
+<#{CHAN_MAP_RELEASES}> - Upcoming map releases are announcened in this channel!
 <#{RECORDS}> - Every new record done on our official servers are posted in this channel.
 
 **「Development」**
-<#{DEVELOPER}> - Get a glimpse into the exciting realm of game development!
+<#{CHAN_DEV}> - Get a glimpse into the exciting realm of game development!
 <#{BUGS}> - Here you can report bugs highlighting unintentional errors in the game.
 
 **「DDraceNetwork」**
 <#{GENERAL}> - This channel is for all Teeworlds, DDNet and related chat!
 <#{SHOWROOM}> - Post videos, screenshots, and other content from the game here!
 <#{QUESTIONS}> - Got Questions? Need Help? Ask Away!
-<#{WIKI}> - A channel for collaborative knowledge building and discussions.
+<#{CHAN_WIKI}> - A channel for collaborative knowledge building and discussions.
 <#{MAPPING}> - Mapping discussions, questions, and map rating requests.
 <#{OFF_TOPIC}> - Discuss anything unrelated to DDNet. Any languages allowed.
 <#{BOT_CMDS}> - Game and server stats commands. Type /help for more info.
@@ -88,11 +62,11 @@ Here's a quick overview of the available categories:
   * Note: No technical support.
 
 **「Skin Submissions」**
-<#{SKIN_INFO}> - Skin submission information and rules.
-<#{SKIN_SUBM}> - Share and evaluate user-submitted player skins for our official database.
+<#{CHAN_SKIN_INFO}> - Skin submission information and rules.
+<#{CHAN_SKIN_SUBMIT}> - Share and evaluate user-submitted player skins for our official database.
 
 **「Map Testing」**
-<#{TESTING_INFO}> - Discover the vital rules map creators must adhere to for their community-created maps to be released on DDNet in this channel.
+<#{CHAN_TESTING_INFO}> - Discover the vital rules map creators must adhere to for their community-created maps to be released on DDNet in this channel.
 <#{TESTING_SUBM}> - This is the channel where creators can upload their map creations for evaluation.
 """
 
@@ -110,14 +84,14 @@ welcome_ddnet_links = f"""
 
 welcome_ddnet_roles = f"""
 **「DDNet Staff」**
-<@&{ADMIN}>: The administrators of DDNet.
-<@&{DISCORD_MOD}>: People who keep our Discord server in check.
-<@&{MODERATOR}>: People who moderate our in-game & discord server(s).
+<@&{ROLE_ADMIN}>: The administrators of DDNet.
+<@&{ROLE_DISCORD_MOD}>: People who keep our Discord server in check.
+<@&{ROLE_MOD}>: People who moderate our in-game & discord server(s).
 
-<@&{TESTER}>: Testers assess map suitability for our map pool, ensuring quality and reporting bugs to submitters.
+<@&{ROLE_TESTER}>: Testers assess map suitability for our map pool, ensuring quality and reporting bugs to submitters.
 <@&{TRIAL_TESTER}>: Much like the previous role, all incoming Testers will begin as Trial Testers.
 
-<@&{SKIN_DB_CREW}>: The Skin Database Crew manages our skin database, ensuring suitability and quality.
+<@&{ROLE_SKIN_DB_CREW}>: The Skin Database Crew manages our skin database, ensuring suitability and quality.
 
 **「Achievement Roles」**
 <@&{WIKI_CONTRIBUTOR}>: Can be earned for Wiki contributions that are deemed significant.
@@ -125,7 +99,7 @@ welcome_ddnet_roles = f"""
 <@&{TOURNAMENT_WINNER}>: Assigned to users who have won tournaments.
 
 **「Other」**
-<@&{TESTING}>: All users can obtain this role in <#{TESTING_INFO}> to access all existing testing channels.
+<@&{TESTING}>: All users can obtain this role in <#{CHAN_TESTING_INFO}> to access all existing testing channels.
 """
 
 welcome_community_links = """

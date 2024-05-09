@@ -8,19 +8,13 @@ import re
 import json
 import os
 
-GUILD_DDNET       = 252358080522747904
-ROLE_MODERATOR    = 252523225810993153
-ROLE_ADMIN        = 293495272892399616
-CHAN_PLAYERFINDER = 1078979471761211462
-
-
-def is_staff(member: discord.Member) -> bool:
-    return any(r.id in (ROLE_ADMIN, ROLE_MODERATOR) for r in member.roles)
+from config import ROLE_ADMIN, ROLE_MOD, GUILD_DDNET, CHAN_PLAYERFINDER
+from utils.discord_utils import is_staff
 
 
 def check_conditions(ctx) -> bool:
     return ctx.guild is None or ctx.guild.id != GUILD_DDNET or ctx.channel.id != CHAN_PLAYERFINDER \
-           or not is_staff(ctx.author)
+           or not is_staff(ctx.author, (ROLE_ADMIN, ROLE_MOD))
 
 
 class PlayerFinder(commands.Cog):
@@ -217,11 +211,10 @@ class PlayerFinder(commands.Cog):
         matched_players = [name for name in players.keys() if name.strip() == player_name.strip()]
 
         if not matched_players:
-            await ctx.send(f'Player not in watchlist.')
-        else:
-            player_name = matched_players[0]
-            reason = players.get(player_name, "No reason provided")
-            await ctx.send(f"{player_name} was added with Reason: {reason}")
+            return await ctx.send(f'Player not in watchlist.')
+        player_name = matched_players[0]
+        reason = players.get(player_name, "No reason provided")
+        return await ctx.send(f"{player_name} was added with Reason: {reason}")
 
     @commands.command(hidden=True)
     async def edit_info(self, ctx: commands.Context, *, player_reason: str):
@@ -241,14 +234,13 @@ class PlayerFinder(commands.Cog):
             player_list = json.load(f)
 
         if player_name not in player_list:
-            await ctx.send(f'Player {player_name} not found.')
-        else:
-            player_list[player_name] = reason
+            return await ctx.send(f'Player {player_name} not found.')
+        player_list[player_name] = reason
 
-            with open(self.player_file, 'w', encoding='utf-8') as f:
-                json.dump(player_list, f)
+        with open(self.player_file, 'w', encoding='utf-8') as f:
+            json.dump(player_list, f)
 
-            await ctx.send(f'Reason for {player_name} updated to:\n{reason}')
+        return await ctx.send(f'Reason for {player_name} updated to:\n{reason}')
 
     @commands.command(name='clear', hidden=True)
     async def clear_entire_players_list(self, ctx: commands.Context):
@@ -271,9 +263,8 @@ class PlayerFinder(commands.Cog):
             for i, server in enumerate(player_info, 1):
                 server_name, server_address = server
                 message += f"{i}. Server: {server_name} — Link: <https://ddnet.org/connect-to/?addr={server_address}/>\n"
-            await ctx.send(message)
-        else:
-            await ctx.send(f"There is currently no player online with the name \"{player_name}\"")
+            return await ctx.send(message)
+        return await ctx.send(f"There is currently no player online with the name \"{player_name}\"")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -303,6 +294,7 @@ class PlayerFinder(commands.Cog):
         }
 
         player_embed = discord.Embed(color=0x00ff00)
+        player_embed.title = 'No players found in the current iteration.'
         if self.players_online_filtered:
             player_embed.title = 'Found players'
             for i, player_name in enumerate(self.players_online_filtered.keys(), start=1):
@@ -323,8 +315,6 @@ class PlayerFinder(commands.Cog):
                     value=server_field_value,
                     inline=False
                 )
-        else:
-            player_embed.title = 'No players found in the current iteration.'
 
         await self.send_message(player_embed)
 
@@ -341,15 +331,14 @@ class PlayerFinder(commands.Cog):
             return
 
         if not self.find_players.is_running():
-            await ctx.send("The player search process is not currently running.")
-        else:
-            if self.sent_messages:
-                last_message = self.sent_messages[-1]
-                await last_message.delete()
-                self.sent_messages.clear()
-            self.find_players.cancel()
-            self.players_online_filtered.clear()
-            await ctx.send("Process stopped.")
+            return await ctx.send("The player search process is not currently running.")
+        if self.sent_messages:
+            last_message = self.sent_messages[-1]
+            await last_message.delete()
+            self.sent_messages.clear()
+        self.find_players.cancel()
+        self.players_online_filtered.clear()
+        return await ctx.send("Process stopped.")
 
     @commands.command(name='start_search', hidden=True)
     async def start_player_search(self, ctx: commands.Context):
@@ -360,10 +349,9 @@ class PlayerFinder(commands.Cog):
             return
 
         if self.find_players.is_running():
-            await ctx.send("The player search process is already running.")
-        else:
-            self.find_players.start()
-            await ctx.send("Initializing search...")
+            return await ctx.send("The player search process is already running.")
+        self.find_players.start()
+        return await ctx.send("Initializing search...")
 
 
 async def setup(bot: commands.Bot):

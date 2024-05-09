@@ -7,6 +7,8 @@ import traceback
 from contextlib import redirect_stdout
 from io import StringIO
 from discord.ext import commands
+from discord.ext.commands import ExtensionNotFound, ExtensionAlreadyLoaded, NoEntryPointError, ExtensionFailed, \
+    ExtensionNotLoaded
 
 log = logging.getLogger(__name__)
 
@@ -19,8 +21,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         self._last_result = None
 
     async def cog_check(self, ctx: commands.Context) -> bool:
-        admin_id = self.bot.config.get('DDNET', 'ADMIN')
-        return ctx.author.id == int(admin_id)
+        return ctx.author.id == int(self.bot.config.get('DDNET', 'ADMIN'))
 
     async def paste_upload(self, content: str) -> str:
         url = 'https://paste.pr0.tips/'
@@ -28,7 +29,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         async with self.bot.session.post(url, data=data) as resp:
             return await resp.text()
 
-    async def send_or_paste(self, ctx: commands.Context, msg: str, paste_msg: str=None):
+    async def send_or_paste(self, ctx: commands.Context, msg: str, paste_msg: str = None):
         # TODO implement this in a subclass of Context
         if len(msg) > 2000:
             msg = await self.paste_upload(paste_msg or msg)
@@ -39,7 +40,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     async def load(self, ctx: commands.Context, *, extension: str):
         try:
             await self.bot.load_extension(extension)
-        except Exception:
+        except (ExtensionNotFound, ExtensionAlreadyLoaded, NoEntryPointError, ExtensionFailed):
             trace = traceback.format_exc()
             await self.send_or_paste(ctx, f'```py\n{trace}\n```', trace)
         else:
@@ -49,7 +50,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     async def unload(self, ctx: commands.Context, *, extension: str):
         try:
             await self.bot.unload_extension(extension)
-        except Exception:
+        except (ExtensionNotFound, ExtensionNotLoaded):
             trace = traceback.format_exc()
             await self.send_or_paste(ctx, f'```py\n{trace}\n```', trace)
         else:
@@ -59,7 +60,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
     async def reload(self, ctx: commands.Context, *, extension: str):
         try:
             await self.bot.reload_extension(extension)
-        except Exception:
+        except (ExtensionNotLoaded, ExtensionNotFound, NoEntryPointError, ExtensionFailed):
             trace = traceback.format_exc()
             await self.send_or_paste(ctx, f'```py\n{trace}\n```', trace)
         else:
@@ -106,7 +107,7 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         await self.send_or_paste(ctx, f'```py\n{content}\n```', content)
 
     @commands.command()
-    async def shutdown(self, ctx: commands.Context):
+    async def shutdown(self, _: commands.Context):
         await self.bot.close()
 
 

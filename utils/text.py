@@ -4,8 +4,8 @@
 import re
 from typing import List
 
-import discord
-from discord.ext import commands
+import discord_utils
+from discord_utils.ext import commands
 
 
 class clean_content(commands.clean_content):

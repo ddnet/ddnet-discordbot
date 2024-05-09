@@ -8,9 +8,7 @@ from discord.ext import commands
 from io import BytesIO
 from typing import Optional
 
-GUILD_DDNET     = 252358080522747904
-CHAN_ANSWERS    = 1190971438988001340
-TH_QUIZ         = 1190971707058561054
+from config import TH_QUIZ, CHAN_ANSWERS, GUILD_DDNET
 
 
 class Teeguesser(commands.Cog):

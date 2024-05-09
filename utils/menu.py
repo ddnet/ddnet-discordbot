@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 import discord
-from discord.ext import commands, menus
+from discord_utils.ext import commands, menus
 
 
 class Pages(menus.Menu):
@@ -21,7 +21,7 @@ class Pages(menus.Menu):
             'embed': self.pages[self.current_page]
         }
 
-    async def send_initial_message(self, ctx: commands.Context, channel: discord.TextChannel) -> discord.Message:
+    async def send_initial_message(self, ctx: commands.Context, _: discord.TextChannel) -> discord.Message:
         message = self.partial_message()
         return await ctx.send(**message)
 
@@ -31,9 +31,9 @@ class Pages(menus.Menu):
         await self.message.edit(**message)
 
     @menus.button('◀️')
-    async def on_previous_page(self, payload: discord.RawReactionActionEvent):
+    async def on_previous_page(self, _: discord.RawReactionActionEvent):
         await self.update_page(-1)
 
     @menus.button('▶️')
-    async def on_next_page(self, payload: discord.RawReactionActionEvent):
+    async def on_next_page(self, _: discord.RawReactionActionEvent):
         await self.update_page(1)

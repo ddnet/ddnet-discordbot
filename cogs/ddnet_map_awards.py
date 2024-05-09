@@ -16,12 +16,14 @@ import discord
 import json
 
 from discord.ext import commands
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from collections import Counter
 from itertools import groupby
 
-GUILD_DDNET = 252358080522747904
-ROLE_ADMIN  = 293495272892399616
+from discord.utils import utcnow
+
+from config import GUILD_DDNET, ROLE_ADMIN
+from utils.discord_utils import check_admin
 
 
 # taken from ddnet.py
@@ -59,7 +61,7 @@ class DDNetMapAwards(commands.Cog):
 
     @commands.command(name='export_maps', hidden=True)
     async def export_maps(self, ctx):
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
 
         query = (
@@ -89,8 +91,9 @@ class DDNetMapAwards(commands.Cog):
 
     @commands.command(name='poll', hidden=True)
     async def generate_poll_menu(self, ctx):
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
+
         with open('data/all_maps.json', 'r', encoding='utf-8') as json_file:
             all_maps_data = json.load(json_file)
 
@@ -108,8 +111,7 @@ class DDNetMapAwards(commands.Cog):
                 create_selects = CreateSelects(self.bot, server, maps, mapper)
                 view = await create_selects.create_view()
                 views.append(view)
-
-        now = datetime.now(timezone.utc)
+        now = utcnow()
         future_time_utc = now + timedelta(days=7)
         unix_timestamp = int(future_time_utc.timestamp())
 

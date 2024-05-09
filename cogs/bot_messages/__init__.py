@@ -2,15 +2,11 @@
 
 import discord
 import os
-import importlib
 
+from config import CHAN_WELCOME, CHAN_TESTING_INFO
+from utils.discord_utils import check_admin
 from . import dictionary
 from discord.ext import commands
-
-CHAN_WELCOME        = 1125706766999629854
-CHAN_TESTING_INFO   = 1201860080463511612
-GUILD_DDNET         = 252358080522747904
-ROLE_ADMIN          = 293495272892399616
 
 banners_dir = 'data/banners'
 
@@ -37,10 +33,9 @@ class BotMessages(commands.Cog):
             if description is not None:
                 await channel.send(content=description, allowed_mentions=discord.AllowedMentions(roles=False))
 
-
     @commands.command(hidden=True)
     async def welcome(self, ctx: commands.Context):
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
 
         await self.send_messages(ctx, CHAN_WELCOME, [
@@ -54,7 +49,7 @@ class BotMessages(commands.Cog):
 
     @commands.command(name='tinfo', hidden=True)
     async def testing_info(self, ctx: commands.Context):
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
 
         await self.send_messages(ctx, CHAN_TESTING_INFO, [
@@ -78,7 +73,7 @@ class BotMessages(commands.Cog):
         Usage: $update <message_id> <message_variable>
         The message variables can be found in 'cogs/bot_messages/dictionary.py'
         """
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
 
         channel_ids = [CHAN_WELCOME, CHAN_TESTING_INFO]

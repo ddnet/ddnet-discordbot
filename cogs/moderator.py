@@ -5,25 +5,15 @@ import re
 import discord
 from discord.ext import commands
 
-GUILD_DDNET      = 252358080522747904
-ROLE_ADMIN       = 293495272892399616
-ROLE_DISCORD_MOD = 737776812234506270
-ROLE_MOD         = 252523225810993153
-ROLE_TESTER      = 293543421426008064
-ROLE_DB_CREW     = 390516461741015040
-CHAN_DEV         = 293493549758939136
-CHAN_WIKI        = 871738312849752104
-CHAN_MODC        = 534520700548022272
-FORUM_CHANNEL    = 1019730229838758028
-
-
-def is_staff(member: discord.Member) -> bool:
-    return any(r.id in (ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_MOD, ROLE_TESTER, ROLE_DB_CREW) for r in member.roles)
+from config import ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_TESTER, ROLE_MOD, ROLE_SKIN_DB_CREW, GUILD_DDNET, CHAN_WIKI, CHAN_DEV, \
+    CHAN_MODC, FORUM_CHANNEL
+from utils.discord_utils import is_staff
 
 
 class Moderator(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.roles = (ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_MOD, ROLE_TESTER, ROLE_SKIN_DB_CREW)
 
     @commands.Cog.listener('on_message')
     async def spam_link_filter(self, message: discord.Message):
@@ -36,7 +26,7 @@ class Moderator(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
-        if member.guild.id != GUILD_DDNET or member.bot or not is_staff(member):
+        if member.guild.id != GUILD_DDNET or member.bot or not is_staff(member, self.roles):
             return
 
         channel = self.bot.get_channel(CHAN_MODC)
