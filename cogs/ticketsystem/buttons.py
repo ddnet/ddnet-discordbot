@@ -1,7 +1,7 @@
-import discord
 import json
 import logging
 
+import discord
 from discord.ui import Button, button
 from cogs.ticketsystem.close import CloseButton
 
@@ -30,7 +30,7 @@ class MainMenu(discord.ui.View):
         creator_data['ticket_num'] = ticket_num
         creator_data['inactivity_count'] = inactivity_count
 
-        with open(self.ticket_data_file, "w") as f:
+        with open(self.ticket_data_file, "w", encoding='utf-8') as f:
             json.dump(self.ticket_data, f, indent=4)
 
         user_ids = self.ticket_data["subscriptions"]["categories"].get(ticket_category, [])
@@ -50,7 +50,7 @@ class MainMenu(discord.ui.View):
         ticket_num = int(ticket_num)
         self.ticket_data["ticket_count"]["categories"][category] = int(ticket_num)
 
-        with open(self.ticket_data_file, 'w') as file:
+        with open(self.ticket_data_file, 'w', encoding='utf-8') as file:
             json.dump(self.ticket_data, file, indent=4)
 
         return ticket_num
@@ -73,7 +73,7 @@ class MainMenu(discord.ui.View):
         return False
 
     @discord.ui.button(label='Report', style=discord.ButtonStyle.danger, custom_id='MainMenu:report')
-    async def t_reports(self, interaction: discord.Interaction, button: Button):  # noqa
+    async def t_reports(self, interaction: discord.Interaction, _: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="report")
         if has_open_ticket:
@@ -115,40 +115,40 @@ class MainMenu(discord.ui.View):
         embed = discord.Embed(
             title="How to properly file a report", color=0xff0000)
         embed.add_field(
-            name=f'',
+            name='',
             value=f'Hello {interaction.user.mention}, thanks for reaching out!',
             inline=False
         )
         embed.add_field(
-            name=f'Follow this Format:',
-            value=f'```prolog\n1. Copy the Server Info by pressing ESC -> Server Info -> Copy Info in-game.```'
-                  f'```prolog\n2. Paste the Server Info you copied, by either using the keyboard shortcut '
-                  f'CTRL+V or by right-clicking and selecting "Paste".```'
-                  f'```prolog\n3. Describe the Problem you are having on the server.```'
+            name='Follow this Format:',
+            value='```prolog\n1. Copy the Server Info by pressing ESC -> Server Info -> Copy Info in-game.```'
+                  '```prolog\n2. Paste the Server Info you copied, by either using the keyboard shortcut '
+                  'CTRL+V or by right-clicking and selecting "Paste".```'
+                  '```prolog\n3. Describe the Problem you are having on the server.```'
         )
         embed.add_field(
-            name=f'What not to report:',
-            value=f'Do NOT file reports about server lags or DoS attacks.'
-                  f'\n\nDo NOT send moderator complaints here, create a "Complaint" ticket instead.'
-                  f'\n\nDo NOT add unnecessary videos or demos to your report.'
-                  f'\n\nDo NOT report players faking another player.',
+            name='What not to report:',
+            value='Do NOT file reports about server lags or DoS attacks.'
+                  '\n\nDo NOT send moderator complaints here, create a "Complaint" ticket instead.'
+                  '\n\nDo NOT add unnecessary videos or demos to your report.'
+                  '\n\nDo NOT report players faking another player.',
             inline=True
         )
         embed.add_field(
-            name=f'Here\'s an example of how your report should look like:',
-            value=f'\nDDNet GER10 [ger10.ddnet.org whitelist] - Moderate'
-                  f'\nAddress: ddnet://37.230.210.231:8320'
-                  f'\nMy IGN: nameless tee'
-                  f'\nTheres a blocker called "brainless tee" on my server',
+            name='Here\'s an example of how your report should look like:',
+            value='\nDDNet GER10 [ger10.ddnet.org whitelist] - Moderate'
+                  '\nAddress: ddnet://37.230.210.231:8320'
+                  '\nMy IGN: nameless tee'
+                  '\nTheres a blocker called "brainless tee" on my server',
             inline=False
         )
         embed.set_thumbnail(url='attachment://avatar.png')
 
         embed2 = discord.Embed(title='', colour=16776960)
         embed2.add_field(
-            name=f'',
-            value=f'\n\nIf you wish to close this ticket or opened this ticket by mistake, '
-                  f'use either the close button below or type `$close`.',
+            name='',
+            value='\n\nIf you wish to close this ticket or opened this ticket by mistake, '
+                  'use either the close button below or type `$close`.',
             inline=False
         )
 
@@ -166,7 +166,7 @@ class MainMenu(discord.ui.View):
             return
 
     @discord.ui.button(label='Rename', style=discord.ButtonStyle.blurple, custom_id='MainMenu:renames')
-    async def t_renames(self, interaction: discord.Interaction, button: Button):  # noqa
+    async def t_renames(self, interaction: discord.Interaction, _: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="rename")
         if has_open_ticket:
@@ -204,7 +204,7 @@ class MainMenu(discord.ui.View):
 
         embed = discord.Embed(title="Player Rename", colour=2210995)
         embed.add_field(
-            name=f'',
+            name='',
             value=f'Hello {interaction.user.mention},'
                   f'\n\nto initiate the process of moving your in-game points to a different name,'
                   f'\nwe require some essential information from you. Kindly provide answers to the '
@@ -225,9 +225,9 @@ class MainMenu(discord.ui.View):
 
         embed2 = discord.Embed(title='', colour=16776960)
         embed2.add_field(
-            name=f'',
-            value=f'\n\nIf you wish to close this ticket or opened this ticket by mistake, '
-                  f'use either the close button below or type `$close`.',
+            name='',
+            value='\n\nIf you wish to close this ticket or opened this ticket by mistake, '
+                  'use either the close button below or type `$close`.',
             inline=False
         )
 
@@ -248,7 +248,7 @@ class MainMenu(discord.ui.View):
             return
 
     @discord.ui.button(label='Ban Appeal', style=discord.ButtonStyle.blurple, custom_id='MainMenu:ban_appeal')
-    async def t_ban_appeal(self, interaction: discord.Interaction, button: Button):  # noqa
+    async def t_ban_appeal(self, interaction: discord.Interaction, _: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="ban_appeal")
         if has_open_ticket:
@@ -290,7 +290,7 @@ class MainMenu(discord.ui.View):
 
         embed = discord.Embed(title="Ban appeal", colour=2210995)
         embed.add_field(
-            name=f'',
+            name='',
             value=f'Hello {interaction.user.mention},'
                   f'\nin order to begin your ban appeal, we will need a few important pieces of information from you.'
                   f'\n\n**Please provide us with: **'
@@ -299,22 +299,22 @@ class MainMenu(discord.ui.View):
                   f'\n* The reason you\'ve been banned for.'
         )
         embed.add_field(
-            name=f'',
-            value=f"When writing your appeal, please aim to be clear and straightforward in your explanation. "
-                  f"It's important to be honest about what occurred and take ownership for any actions that may have "
-                  f"resulted in your ban. "
-                  f"Additionally, if you have any evidence, such as screenshots or chat logs that may support your "
-                  f"case, please include it in your appeal."
+            name='',
+            value="When writing your appeal, please aim to be clear and straightforward in your explanation. "
+                  "It's important to be honest about what occurred and take ownership for any actions that may have "
+                  "resulted in your ban. "
+                  "Additionally, if you have any evidence, such as screenshots or chat logs that may support your "
+                  "case, please include it in your appeal."
         )
 
         embed2 = discord.Embed(title='', colour=16776960)
         embed2.add_field(
-            name=f'',
-            value=f'Please keep in mind that it may take some time for us to review your appeal. '
-                  f'We kindly ask that you remain patient during this process. '
-                  f'If the moderators require any further information, please respond promptly to their request.'
-                  f'\n\nIf you wish to close this ticket or opened this ticket by mistake, '
-                  f'use either the close button below or type `$close`.',
+            name='',
+            value='Please keep in mind that it may take some time for us to review your appeal. '
+                  'We kindly ask that you remain patient during this process. '
+                  'If the moderators require any further information, please respond promptly to their request.'
+                  '\n\nIf you wish to close this ticket or opened this ticket by mistake, '
+                  'use either the close button below or type `$close`.',
             inline=False
         )
 
@@ -335,7 +335,7 @@ class MainMenu(discord.ui.View):
             return
 
     @discord.ui.button(label='Staff Complaint', style=discord.ButtonStyle.blurple, custom_id='MainMenu:complaints')
-    async def t_complaints(self, interaction: discord.Interaction, button: Button):  # noqa
+    async def t_complaints(self, interaction: discord.Interaction, _: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="complaint")
         if has_open_ticket:
@@ -374,7 +374,7 @@ class MainMenu(discord.ui.View):
 
         embed = discord.Embed(title="Complaint", colour=2210995)
         embed.add_field(
-            name=f'',
+            name='',
             value=f'Hello {interaction.user.mention},'
                   f'\napproach the process with clarity and objectivity. '
                   f'Here are some steps to help you write an effective complaint:'
@@ -391,9 +391,9 @@ class MainMenu(discord.ui.View):
 
         embed2 = discord.Embed(title='', colour=16776960)
         embed2.add_field(
-            name=f'',
-            value=f'\n\nIf you wish to close this ticket or opened this ticket by mistake, '
-                  f'use either the close button below or type `$close`.',
+            name='',
+            value='\n\nIf you wish to close this ticket or opened this ticket by mistake, '
+                  'use either the close button below or type `$close`.',
             inline=False
         )
 
@@ -414,7 +414,7 @@ class MainMenu(discord.ui.View):
             return
 
     @discord.ui.button(label='Admin-Mail', style=discord.ButtonStyle.blurple, custom_id='MainMenu:admin-mail')
-    async def t_admin_mail(self, interaction: discord.Interaction, button: Button):  # noqa
+    async def t_admin_mail(self, interaction: discord.Interaction, _: Button):  # noqa
         """Limits tickets per person to one"""
         has_open_ticket = await self.check_for_open_ticket(interaction, ticket_category="admin-mail")
         if has_open_ticket:
@@ -453,7 +453,7 @@ class MainMenu(discord.ui.View):
 
         embed = discord.Embed(title="Admin-Mail", colour=2210995)
         embed.add_field(
-            name=f'',
+            name='',
             value=f'Hello {interaction.user.mention},'
                   f'\nthanks for reaching out to us regarding your unique issue or request. '
                   f'\n\nPlease describe your request or issue in as much detail as possible. '
@@ -466,9 +466,9 @@ class MainMenu(discord.ui.View):
 
         embed2 = discord.Embed(title='', colour=16776960)
         embed2.add_field(
-            name=f'',
-            value=f'\n\nIf you wish to close this ticket or opened this ticket by mistake, '
-                  f'use either the close button below or type `$close`.',
+            name='',
+            value='\n\nIf you wish to close this ticket or opened this ticket by mistake, '
+                  'use either the close button below or type `$close`.',
             inline=False
         )
 

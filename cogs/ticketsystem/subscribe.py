@@ -1,7 +1,7 @@
-import discord
 import json
 
-from discord.ui import Button, button
+import discord
+from discord.ui import Button
 
 
 class SubscribeMenu(discord.ui.View):
@@ -24,7 +24,7 @@ class SubscribeMenu(discord.ui.View):
     async def subscriptions(self, interaction: discord.Interaction, select_item: discord.ui.Select):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        with open(self.subscribers, 'r') as file:
+        with open(self.subscribers, 'r', encoding='utf-8') as file:
             ticket_data = json.load(file)
 
         selected_values = interaction.data['values']
@@ -42,7 +42,7 @@ class SubscribeMenu(discord.ui.View):
 
         self.ticket_data.update(ticket_data)
 
-        with open('data/ticket-system/ticket_data.json', 'w') as file:
+        with open('data/ticket-system/ticket_data.json', 'w', encoding='utf-8') as file:
             json.dump(ticket_data, file, indent=4)
 
         subscribed_labels = [label for label, value in labels_values_dict.items() if
@@ -59,7 +59,7 @@ class SubscribeMenu(discord.ui.View):
     async def subscribe_all(self, interaction: discord.Interaction, _: Button):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        with open(self.subscribers, 'r') as file:
+        with open(self.subscribers, 'r', encoding='utf-8') as file:
             ticket_data = json.load(file)
 
         for category in ticket_data['subscriptions']['categories']:
@@ -68,7 +68,7 @@ class SubscribeMenu(discord.ui.View):
 
         self.ticket_data.update(ticket_data)
 
-        with open(self.subscribers, 'w') as file:
+        with open(self.subscribers, 'w', encoding='utf-8') as file:
             json.dump(self.ticket_data, file, indent=4)
 
         await interaction.followup.send('Subscribed you to all ticket categories.', ephemeral=True)
@@ -77,7 +77,7 @@ class SubscribeMenu(discord.ui.View):
     async def unsubscribe_all(self, interaction: discord.Interaction, _: Button):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        with open(self.subscribers, 'r') as file:
+        with open(self.subscribers, 'r', encoding='utf-8') as file:
             ticket_data = json.load(file)
 
         for category in ticket_data['subscriptions']['categories']:
@@ -86,7 +86,7 @@ class SubscribeMenu(discord.ui.View):
 
         self.ticket_data.update(ticket_data)
 
-        with open(self.subscribers, 'w') as file:
+        with open(self.subscribers, 'w', encoding='utf-8') as file:
             json.dump(ticket_data, file, indent=4)
 
         await interaction.followup.send('Unsubscribed you from all ticket categories.', ephemeral=True)

@@ -109,12 +109,11 @@ class Misc(commands.Cog):
             js = await resp.json()
             if resp.status == 200:
                 return js
-            elif resp.status == 404:
+            if resp.status == 404:
                 raise RuntimeError('Could not find that city')
-            else:
-                fmt = 'Failed to fetch weather data for city %r: %s (status code: %d %s)'
-                log.error(fmt, city, js['message'], resp.status, resp.reason)
-                raise RuntimeError('Could not fetch weather information')
+            fmt = 'Failed to fetch weather data for city %r: %s (status code: %d %s)'
+            log.error(fmt, city, js['message'], resp.status, resp.reason)
+            raise RuntimeError('Could not fetch weather information')
 
     @commands.command()
     async def weather(self, ctx: commands.Context, *, city: str):

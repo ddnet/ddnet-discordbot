@@ -5,8 +5,8 @@ from typing import Dict, List
 import asyncpg
 import discord
 from discord.ext import commands
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from discord.utils import utcnow
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from utils.color import clamp_luminance
 from utils.image import auto_font, center, round_rectangle, save
@@ -19,12 +19,11 @@ DIR = 'data/assets'
 def humanize_points(points: int) -> str:
     if points < 1000:
         return str(points)
-    else:
-        points = round(points / 1000, 1)
-        if points % 1 == 0:
-            points = int(points)
+    points = round(points / 1000, 1)
+    if points % 1 == 0:
+        points = int(points)
 
-        return f'{points}K'
+    return f'{points}K'
 
 
 class Profile(commands.Cog):
@@ -262,10 +261,10 @@ class Profile(commands.Cog):
         thresholds = {
             15000: 5000,
             10000: 2500,
-            5000:  2000,
-            3000:  1000,
-            1000:  500,
-            0:     250,
+            5000: 2000,
+            3000: 1000,
+            1000: 500,
+            0: 250,
         }
 
         steps = next(s for t, s in thresholds.items() if total_points > t)
@@ -445,20 +444,20 @@ class Profile(commands.Cog):
         y += inner
 
         servers = {
-            'Novice':       (1, 0),
-            'Moderate':     (2, 5),
-            'Brutal':       (3, 15),
-            'Insane':       (4, 30),
-            'Dummy':        (5, 5),
-            'DDmaX':        (4, 0),
-            'Oldschool':    (6, 0),
-            'Solo':         (4, 0),
-            'Race':         (2, 0),
-            'Fun':          (2, 0),
+            'Novice': (1, 0),
+            'Moderate': (2, 5),
+            'Brutal': (3, 15),
+            'Insane': (4, 30),
+            'Dummy': (5, 5),
+            'DDmaX': (4, 0),
+            'Oldschool': (6, 0),
+            'Solo': (4, 0),
+            'Race': (2, 0),
+            'Fun': (2, 0),
         }
 
-        mult, offset = servers[server]
-        stars = int((points - offset) / mult)
+        mult_, offset = servers[server]
+        stars = int((points - offset) / mult_)
 
         lines = (
             ((server.upper(), 'white', self.font_32),),
@@ -505,8 +504,9 @@ class Profile(commands.Cog):
         if ranks:
             font = self.font_24
 
-            def humanize_time(time):
-                return '%02d:%05.2f' % divmod(abs(time), 60)
+            def humanize_time(time_):
+                x_, y_ = divmod(abs(time_), 60)
+                return f'{x_:02d:}{y_:05.2f}'
 
             time_w, _ = font.getsize(humanize_time(max(r['time'] for r in ranks)))
             rank_w, _ = font.getsize(f'#{max(r["rank"] for r in ranks)}')
@@ -552,6 +552,9 @@ class Profile(commands.Cog):
 
     @executor
     def generate_hours_image(self, data: Dict[str, List[asyncpg.Record]]) -> BytesIO:
+        def mult(f):
+            return plot_height * 2 * (1 - f / max(hours)) + extra
+
         color_light = (100, 100, 100)
         colors = (
             'orange',
@@ -604,12 +607,7 @@ class Profile(commands.Cog):
         plot_canv = ImageDraw.Draw(plot)
 
         for hours, color in reversed(list(zip(data.values(), colors))):
-            hours = [
-                next((h['finishes'] for h in hours if h['hour'] == i), 0)
-                for i in range(24)
-            ]
-
-            mult = lambda f: plot_height * 2 * (1 - f / max(hours)) + extra
+            hours = [next((h['finishes'] for h in hours if h['hour'] == i), 0) for i in range(24)]
 
             x = -hour_width
             xy = [(x, mult(hours[-1]))]
@@ -683,7 +681,7 @@ class Profile(commands.Cog):
             await ctx.send('<players> contain unmatched or unescaped quotation mark')
 
     @commands.command()
-    async def total_time(self, ctx: commands.Context, *, player: clean_content=None):
+    async def total_time(self, ctx: commands.Context, *, player: clean_content = None):
         """Show the combined time of all finishes by a player"""
         player = player or ctx.author.display_name
 

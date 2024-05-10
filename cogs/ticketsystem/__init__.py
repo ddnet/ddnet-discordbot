@@ -1,13 +1,13 @@
-import discord
 import json
 import os
 import re
-import requests
 import logging
-
-from discord.ext import commands, tasks
 from datetime import datetime, timedelta, timezone
 from typing import Union
+
+import requests
+import discord
+from discord.ext import commands, tasks
 
 from cogs.ticketsystem.buttons import MainMenu
 from cogs.ticketsystem.close import CloseButton, process_ticket_closure
@@ -96,37 +96,37 @@ class TicketSystem(commands.Cog):
         )
         embed.add_field(
             name="Report",
-            value=f"If you encounter any behavior within the game that violates our rules, such as "
-                  f"**blocking, fun-voting, cheating, or any other form of misconduct**, you can open a "
-                  f"ticket in this given category to address the problem. \n\n"
-                  f"Note:\nRefrain from creating a ticket for server issues like DoS attacks or in-game lags",
+            value="If you encounter any behavior within the game that violates our rules, such as "
+                  "**blocking, fun-voting, cheating, or any other form of misconduct**, you can open a "
+                  "ticket in this given category to address the problem. \n\n"
+                  "Note:\nRefrain from creating a ticket for server issues like DoS attacks or in-game lags",
             inline=False
         )
         embed.add_field(
             name="Rename Request",
-            value=f"The rules for rename requests are: \n"
-                  f"- The original name should have 3k or more points on it \n"
-                  f"- Your last rename should be __at least one year ago__ \n"
-                  f"- You must be able to provide proof of owning the points being moved \n"
-                  f"- The names shouldn't be banned \n"
-                  f"- If you request a rename and then later change your mind, know that it won't be reverted until at"
-                  f" least one year has passed. Think carefully.",
+            value="The rules for rename requests are: \n"
+                  "- The original name should have 3k or more points on it \n"
+                  "- Your last rename should be __at least one year ago__ \n"
+                  "- You must be able to provide proof of owning the points being moved \n"
+                  "- The names shouldn't be banned \n"
+                  "- If you request a rename and then later change your mind, know that it won't be reverted until at"
+                  " least one year has passed. Think carefully.",
             inline=False
         )
         embed.add_field(
             name="Ban Appeal",
-            value=f"If you've been banned unfairly from our in-game servers, you are eligible to appeal the"
-                  f" decision. Please note that ban appeals are not guaranteed to be successful, and our "
-                  f"team reserves the right to deny any appeal at their discretion. \n\n"
-                  f"Note: Only file a ticket if you've been banned across all servers or from one of "
-                  f"our moderators.",
+            value="If you've been banned unfairly from our in-game servers, you are eligible to appeal the"
+                  " decision. Please note that ban appeals are not guaranteed to be successful, and our "
+                  "team reserves the right to deny any appeal at their discretion. \n\n"
+                  "Note: Only file a ticket if you've been banned across all servers or from one of "
+                  "our moderators.",
             inline=False
         )
         embed.add_field(
             name="Staff Complaint",
-            value=f"If a staff member's behavior in our community has caused you concern, you have the "
-                  f"option to make a complaint. Please note that complaints must be "
-                  f"based on specific incidents or behaviors and not on personal biases or general dissatisfaction.",
+            value="If a staff member's behavior in our community has caused you concern, you have the "
+                  "option to make a complaint. Please note that complaints must be "
+                  "based on specific incidents or behaviors and not on personal biases or general dissatisfaction.",
             inline=False
         )
         embed.add_field(
@@ -151,8 +151,8 @@ class TicketSystem(commands.Cog):
             return
 
         await ctx.send(
-            f'Choose the ticket categories you wish to receive notifications for, '
-            f'or use the Subscribe/Unsubscribe buttons to manage notifications for all categories.',
+            'Choose the ticket categories you wish to receive notifications for, '
+            'or use the Subscribe/Unsubscribe buttons to manage notifications for all categories.',
             view=SubscribeMenu(self.ticket_data)
         )
 
@@ -215,7 +215,7 @@ class TicketSystem(commands.Cog):
         ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
 
         if transcript_file:
-            await ticket_channel.send(f'Uploading files...')
+            await ticket_channel.send('Uploading files...')
             targets = {
                 'report': TH_REPORTS,
                 'ban_appeal': TH_BAN_APPEALS,
@@ -279,7 +279,7 @@ class TicketSystem(commands.Cog):
         except FileNotFoundError:
             pass
 
-        await ticket_channel.send(f'Done! Closing Ticket...')
+        await ticket_channel.send('Done! Closing Ticket...')
         await ctx.channel.delete()
 
         log.info(
@@ -319,12 +319,11 @@ class TicketSystem(commands.Cog):
                         f'this ticket yourself by typing $close.'
                         f'\n**To keep this ticket active, please reply to this message.**'
                     )
-                    pass
 
                 if inactivity_count[str(channel_id)] >= 6:
                     channels_to_remove.append((ticket_channel.id, ticket_user_id))
 
-        with open(self.ticket_data_file, "w") as f:
+        with open(self.ticket_data_file, "w", encoding='utf-8') as f:
             json.dump(self.ticket_data, f, indent=4)
 
         if channels_to_remove:
@@ -336,7 +335,7 @@ class TicketSystem(commands.Cog):
                                                          ticket_creator_id=ticket_creator_id)
 
                 if transcript_file:
-                    await ticket_channel.send(f'Uploading files...')
+                    await ticket_channel.send('Uploading files...')
                     targets = {
                         'report': TH_REPORTS,
                         'ban_appeal': TH_BAN_APPEALS,
@@ -395,7 +394,7 @@ class TicketSystem(commands.Cog):
                 except FileNotFoundError:
                     pass
 
-                await ticket_channel.send(f'Done! Closing Ticket...')
+                await ticket_channel.send('Done! Closing Ticket...')
                 await ticket_channel.delete()
 
                 log.info(
@@ -409,7 +408,7 @@ class TicketSystem(commands.Cog):
     @tasks.loop(hours=1)
     async def update_scores_topic(self):
         score_file = "data/ticket-system/scores.json"
-        with open(score_file, "r") as file:
+        with open(score_file, "r", encoding='utf-8') as file:
             scores = json.load(file)
 
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
@@ -430,7 +429,7 @@ class TicketSystem(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        with open(self.ticket_data_file, "r") as f:
+        with open(self.ticket_data_file, "r", encoding='utf-8') as f:
             self.ticket_data = json.load(f)
 
         self.bot.add_view(view=MainMenu(self.ticket_data))

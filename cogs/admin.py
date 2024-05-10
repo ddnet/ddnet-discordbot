@@ -20,9 +20,6 @@ class Admin(commands.Cog, command_attrs=dict(hidden=True)):
         self.bot = bot
         self._last_result = None
 
-    async def cog_check(self, ctx: commands.Context) -> bool:
-        return ctx.author.id == int(self.bot.config.get('DDNET', 'ADMIN'))
-
     async def paste_upload(self, content: str) -> str:
         url = 'https://paste.pr0.tips/'
         data = content.encode('utf-8')

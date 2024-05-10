@@ -70,7 +70,7 @@ Here's a quick overview of the available categories:
 <#{TESTING_SUBM}> - This is the channel where creators can upload their map creations for evaluation.
 """
 
-welcome_ddnet_links = f"""
+welcome_ddnet_links = """
 <https://ddnet.org/> - The official DDNet homepage
 <https://forum.ddnet.org/> - Our forums for staff applications, Events, Tutorials and more
 <https://wiki.ddnet.org/> - The official DDNet wiki, maintained by: <@!97739437772902400> and <@!846386020756226098>
@@ -129,7 +129,7 @@ welcome_community_links = """
 <https://discord.gg/8SDH76SfXM> - 好問題 𝔾ძωт :flag_tw:
 """
 
-testing_info_header = f"""
+testing_info_header = """
 # :ddnet: Map release requirements
 If you want to have your map released on DDNet, it has to follow the [mapping rules](https://ddnet.org/rules/).
 If you're looking for tips on how to improve your submission, be sure to check out our [guidelines](https://ddnet.org/guidelines/).

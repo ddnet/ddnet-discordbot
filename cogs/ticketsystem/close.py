@@ -1,9 +1,9 @@
-import discord
 import os
 import json
-import discord.ext
 import logging
 
+import discord
+import discord.ext
 from discord.ui import Button
 
 from config import ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_MOD, TH_REPORTS, TH_BAN_APPEALS, TH_RENAMES, TH_COMPLAINTS, \
@@ -27,21 +27,21 @@ def process_ticket_closure(self, ticket_channel_id, ticket_creator_id):
                 channel_ids.remove([channel_id, category])
                 break
     except KeyError:
-        log.info(f'Ticket data for {ticket_channel_id} does not exist')
+        log.info('Ticket data for %s does not exist' % ticket_channel_id)
 
     try:
         del ticket_data["inactivity_count"][str(ticket_channel_id)]
         ticket_data["ticket_num"] -= 1
     except KeyError:
         ticket_data.setdefault('channel_ids', []).append([int(ticket_channel_id), category])
-        log.info(f'Ticket data for {ticket_channel_id} does not exist')
+        log.info('Ticket data for %s does not exist' % ticket_channel_id)
 
     if ticket_data["ticket_num"] < 1:
         self.ticket_data["tickets"].pop(str(ticket_creator_id), None)
     else:
         self.ticket_data["tickets"][str(ticket_creator_id)] = ticket_data
 
-    with open(self.ticket_data_file, "w") as f:
+    with open(self.ticket_data_file, "w", encoding='utf-8') as f:
         json.dump(self.ticket_data, f, indent=4)
 
     return category
@@ -73,7 +73,7 @@ class ConfirmView(discord.ui.View):
         ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
 
         if transcript_file:
-            await ticket_channel.send(f'Uploading files...')
+            await ticket_channel.send('Uploading files...')
             targets = {
                 'report': TH_REPORTS,
                 'ban_appeal': TH_BAN_APPEALS,
@@ -135,7 +135,7 @@ class ConfirmView(discord.ui.View):
         except FileNotFoundError:
             pass
 
-        await ticket_channel.send(f'Done! Closing Ticket...')
+        await ticket_channel.send('Done! Closing Ticket...')
         await interaction.channel.delete()
 
         log.info(
@@ -173,53 +173,44 @@ class CloseButton(discord.ui.View):
         if not is_staff(interaction.user, roles):
             self.click_count += 1
             if self.click_count == 1:
-                await interaction.response.send_message(f'This button is for moderators only! Please read the '  # noqa
-                                                        f'instructions above!', ephemeral=True)
-                return
-            elif self.click_count == 2:
-                await interaction.response.send_message(f'Stop clicking me!', ephemeral=True)  # noqa
-                return
-            elif self.click_count == 3:
-                await interaction.response.send_message(f'If you wont stop, I\'ll close your ticket, '  # noqa
-                                                        f'last warning!', ephemeral=True)
-                return
-            elif self.click_count == 4:
-                await interaction.response.send_message(f':OOO You did not just do that!', ephemeral=True)  # noqa
-                return
-            elif self.click_count == 5:
-                await interaction.response.send_message(f'(╯°□°)╯︵ ┻━┻', ephemeral=True)  # noqa
-                return
-            elif self.click_count == 6:
-                await interaction.response.send_message(f'┬─┬ノ( º _ ºノ)', ephemeral=True)  # noqa
-                self.click_count = 4
-                return
+                return await interaction.response.send_message('This button is for moderators only! Please read the '  # noqa
+                                                        'instructions above!', ephemeral=True)
+            if self.click_count == 2:
+                return await interaction.response.send_message('Stop clicking me!', ephemeral=True)  # noqa
+            if self.click_count == 3:
+                return await interaction.response.send_message('If you wont stop, I\'ll close your ticket, '  # noqa
+                                                        'last warning!', ephemeral=True)
+            if self.click_count == 4:
+                return await interaction.response.send_message(':OOO You did not just do that!', ephemeral=True)  # noqa
+            if self.click_count == 5:
+                return await interaction.response.send_message('(╯°□°)╯︵ ┻━┻', ephemeral=True)  # noqa
+            self.click_count = 4
+            return await interaction.response.send_message('┬─┬ノ( º _ ºノ)', ephemeral=True)  # noqa
+        score_file = "data/ticket-system/scores.json"
+        with open(score_file, "r", encoding='utf-8') as file:
+            self.scores = json.load(file)
 
+        user_id = str(interaction.user.id)
+        if user_id in self.scores:
+            self.scores[user_id] += 1
         else:
-            score_file = "data/ticket-system/scores.json"
-            with open(score_file, "r") as file:
-                self.scores = json.load(file)
+            self.scores[user_id] = 1
 
-            user_id = str(interaction.user.id)
-            if user_id in self.scores:
-                self.scores[user_id] += 1
-            else:
-                self.scores[user_id] = 1
+        with open(score_file, "w", encoding='utf-8') as file:
+            json.dump(self.scores, file)
 
-            with open(score_file, "w") as file:
-                json.dump(self.scores, file)
+        close = CloseButton(interaction.client, self.ticket_data)
+        close.remove_item(close.t_moderator_check)
+        await interaction.message.edit(view=close)
 
-            close = CloseButton(interaction.client, self.ticket_data)
-            close.remove_item(close.t_moderator_check)
-            await interaction.message.edit(view=close)
+        await interaction.response.send_message(  # noqa
+            f'{interaction.user.mention}, thanks for taking care of this! Increased your score by 1.',
+            ephemeral=True,
+            allowed_mentions=discord.AllowedMentions(users=False)
+        )
 
-            await interaction.response.send_message(  # noqa
-                f'{interaction.user.mention}, thanks for taking care of this! Increased your score by 1.',
-                ephemeral=True,
-                allowed_mentions=discord.AllowedMentions(users=False)
-            )
-
-            await interaction.channel.send(
-                f'Hey, {interaction.user.mention} is on their way to'
-                f' help you with your report. Thank you for your patience!',
-                allowed_mentions=discord.AllowedMentions(users=False)
-            )
+        await interaction.channel.send(
+            f'Hey, {interaction.user.mention} is on their way to'
+            f' help you with your report. Thank you for your patience!',
+            allowed_mentions=discord.AllowedMentions(users=False)
+        )

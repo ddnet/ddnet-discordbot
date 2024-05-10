@@ -52,7 +52,7 @@ class MapTesting(commands.Cog):
         bot.loop.create_task(self.load_map_channels())
         self.auto_archive.start()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         self.auto_archive.cancel()
 
     async def load_map_channels(self):
@@ -76,8 +76,7 @@ class MapTesting(commands.Cog):
     def get_map_channel(self, channel_id: Optional[int] = None, **kwargs) -> Optional[MapChannel]:
         if channel_id is not None:
             return self._map_channels.get(channel_id)
-        else:
-            return discord.utils.get(self.map_channels, **kwargs)
+        return discord.utils.get(self.map_channels, **kwargs)
 
     async def ddnet_upload(self, asset_type: str, buf: BytesIO, filename: str):
         url = self.bot.config.get('DDNET', 'UPLOAD')
@@ -123,11 +122,10 @@ class MapTesting(commands.Cog):
         try:
             await self.ddnet_upload('map', await subm.buffer(), str(subm))
         except RuntimeError as e:
-            log.error(f'RuntimeError: {e}')
-            await subm.set_state(SubmissionState.ERROR)
-        else:
-            await subm.set_state(SubmissionState.UPLOADED)
-            await subm.pin()
+            log.error('RuntimeError: %s' % e)  # fixed W1203
+            return await subm.set_state(SubmissionState.ERROR)
+        await subm.set_state(SubmissionState.UPLOADED)
+        await subm.pin()
 
     async def validate_submission(self, isubm: InitialSubmission):
         try:
@@ -142,11 +140,10 @@ class MapTesting(commands.Cog):
             if released:
                 raise ValueError('A map with that name is already released')
         except ValueError as exc:
-            log.error(f'RuntimeError: {exc}')
+            log.error('RuntimeError: %s' % exc)
             await isubm.respond(exc)
-            await isubm.set_state(SubmissionState.ERROR)
-        else:
-            await isubm.set_state(SubmissionState.VALIDATED)
+            return await isubm.set_state(SubmissionState.ERROR)
+        await isubm.set_state(SubmissionState.VALIDATED)
 
     @commands.Cog.listener('on_message')
     async def handle_submission(self, message: discord.Message):
@@ -247,7 +244,7 @@ class MapTesting(commands.Cog):
             try:
                 isubm.validate()
             except ValueError as e:
-                log.error(f'ValueError: {e}')
+                log.error('ValueError: %s' % e)  # fixed W1203
                 return
 
             self._active_submissions.add(message.id)
@@ -341,7 +338,7 @@ class MapTesting(commands.Cog):
         try:
             await self.ddnet_upload('log', BytesIO(js.encode('utf-8')), testlog.name)
         except RuntimeError as e:
-            log.error(f'RuntimeError: {e}')
+            log.error('RuntimeError: %s' % e)  # fixed W1203
             failed = True
 
         for asset_type, assets in testlog.assets.items():
@@ -360,7 +357,7 @@ class MapTesting(commands.Cog):
                 try:
                     await self.ddnet_upload(asset_type, BytesIO(bytes_), filename)
                 except RuntimeError as e:
-                    log.error(f'RuntimeError: {e}')
+                    log.error('RuntimeError: %s' % e)  # fixed W1203
                     failed = True
                     continue
 

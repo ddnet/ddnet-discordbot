@@ -44,8 +44,10 @@ class GuildLog(commands.Cog):
 
     async def log_message(self, message: discord.Message):
         if not message.guild or message.guild.id != GUILD_DDNET or message.is_system() or \
-                message.channel.id in (CHAN_LOGS, CHAN_PLAYERFINDER) or message.channel.category.id == CAT_INTERNAL or \
                 message.channel.name.startswith(('complaint-', 'admin-mail-', 'rename-')):
+            return
+
+        if message.channel.id in (CHAN_LOGS, CHAN_PLAYERFINDER) or message.channel.category.id == CAT_INTERNAL:
             return
 
         embed = discord.Embed(title='Message deleted',
@@ -116,11 +118,9 @@ class GuildLog(commands.Cog):
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
         if not before.guild or before.guild.id != GUILD_DDNET or before.is_system() or \
-                before.channel.id == CHAN_LOGS or before.channel.category.id == CAT_INTERNAL or \
                 before.author.bot or before.channel.name.startswith(('complaint-', 'admin-mail-', 'rename-')):
             return
-
-        if before.content == after.content:
+        if before.channel.id == CHAN_LOGS or before.channel.category.id == CAT_INTERNAL or before.content == after.content:
             return
 
         desc = f'[Jump to message]({before.jump_url})'

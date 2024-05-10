@@ -1,9 +1,10 @@
-import discord
-from discord.ext import commands
 import re
 import logging
 import asyncio
 from io import BytesIO
+
+import discord
+from discord.ext import commands
 from PIL import Image
 
 from config import GUILD_DDNET, CHAN_SKIN_SUBMIT, CHAN_SKIN_INFO, ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_SKIN_DB_CREW, \
@@ -22,10 +23,10 @@ def check_image_format(message: discord.Message):
 def check_image_resolution(message: discord.Message):
     for attachment in message.attachments:
         if attachment.height in (128, 256) and attachment.width in (128, 256):
-            return f'- At least one of the attached skins must have a resolution of 256x128', 'Missing 256x128px skin'
+            return '- At least one of the attached skins must have a resolution of 256x128', 'Missing 256x128px skin'
 
         if attachment.height not in (128, 256) or attachment.width not in (256, 512):
-            return f'- One of the attached skins does not have the correct image resolution. Resolution must be 256x128, ''and if possible provide a 512x256 along with the 256x128', 'Bad image resolution'
+            return '- One of the attached skins does not have the correct image resolution. Resolution must be 256x128, ''and if possible provide a 512x256 along with the 256x128', 'Bad image resolution'
     return None, None
 
 
@@ -71,12 +72,11 @@ class SkinDB(commands.Cog):
         error_messages = []
         log_errors = []
         if len(message.attachments) == 0:
-            error_messages.append(
-                f'- Your submission is missing attachments. Attach all skins to your submission message.')
+            error_messages.append('- Your submission is missing attachments. Attach all skins to your submission message.')
             log_errors.append('Missing attachments')
 
         if not check_image_format(message):
-            error_messages.append(f'- Wrong image format. Only PNGs are allowed.')
+            error_messages.append('- Wrong image format. Only PNGs are allowed.')
             log_errors.append('Incorrect image format')
 
         check_message, error = check_image_resolution(message)

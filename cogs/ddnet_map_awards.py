@@ -12,14 +12,13 @@ This script is used to create a poll with the best maps in a given year.
 8. Remove this script from initial_extensions in bot.py, the selects menu (or the channel with the poll) and the generated data/user_selections.json
 """
 
-import discord
 import json
-
-from discord.ext import commands
 from datetime import datetime, timedelta
 from collections import Counter
 from itertools import groupby
 
+import discord
+from discord.ext import commands
 from discord.utils import utcnow
 
 from config import GUILD_DDNET, ROLE_ADMIN
@@ -38,10 +37,10 @@ def slugify2(name):
     return string
 
 
-def get_mapper_urls(maps_data, map_name):
+def get_mapper_urls(maps_data, map_name) -> list[str]:
     for map_info in maps_data:
         if map_info['map'] == map_name:
-            mappers = [mapper for mapper in map_info['mapper'].replace(' & ', ', ').split(', ')]
+            mappers = list(map_info['mapper'].replace(' & ', ', ').split(', '))
             print(mappers)
             return [f"[{mapper}](https://ddnet.org/mappers/{slugify2(mapper)})" for mapper in mappers]
 
@@ -127,10 +126,10 @@ class DDNetMapAwards(commands.Cog):
         if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
             return
 
-        with open('data/user_selections.json', 'r') as file:
+        with open('data/user_selections.json', 'r', encoding='utf-8') as file:
             user_selections = json.load(file)
 
-        with open('data/all_maps.json', 'r') as file:
+        with open('data/all_maps.json', 'r', encoding='utf-8') as file:
             all_maps = json.load(file)
 
         category_counts = {}

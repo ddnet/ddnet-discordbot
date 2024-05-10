@@ -203,16 +203,15 @@ class TestLog:
 
         if ext in ('webp', 'jpeg', 'jpg', 'png', 'gif'):
             return {'image': out}
-        elif ext in ('webm', 'mp4'):
+        if ext in ('webm', 'mp4'):
             return {'video': out}  # TODO: handle videos server-side
-        else:
-            size, unit = format_size(attachment.size)
-            out.update({
-                'filesize': size,
-                'filesize-units': unit
-            })
+        size, unit = format_size(attachment.size)
+        out.update({
+            'filesize': size,
+            'filesize-units': unit
+        })
 
-            return {'attachment': out}
+        return {'attachment': out}
 
     def _handle_reactions(self, reactions: List[discord.Reaction]) -> Dict:
         out = []
@@ -222,12 +221,11 @@ class TestLog:
             if reaction.is_custom_emoji:
                 if isinstance(emoji, str):
                     continue
-                else:
-                    self._emojis[f'{emoji.id}.png'] = str(emoji.url)
-                    chunk.update({
-                        'name': emoji.name,
-                        'id': emoji.id
-                    })
+                self._emojis[f'{emoji.id}.png'] = str(emoji.url)
+                chunk.update({
+                    'name': emoji.name,
+                    'id': emoji.id
+                })
             else:
                 chunk['emoji'] = emoji
 

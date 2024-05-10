@@ -50,16 +50,15 @@ class GithubBase:
             js = await resp.json()
             if resp.status == 200:
                 return js
-            elif resp.status == 403:
+            if resp.status == 403:
                 reset = int(resp.headers['X-Ratelimit-Reset'])
                 log.warning('We are being rate limited until %s', datetime.fromtimestamp(reset))
                 raise GithubRatelimit(reset)
-            elif resp.status == 404:
+            if resp.status == 404:
                 raise GithubException('Couldn\'t find that')
-            else:
-                log.error('Failed fetching %r from Github: %s (status code: %d %s)', url, js['message'], resp.status,
-                          resp.reason)
-                raise GithubException('Failed fetching Github')
+            log.error('Failed fetching %r from Github: %s (status code: %d %s)', url, js['message'], resp.status,
+                      resp.reason)
+            raise GithubException('Failed fetching Github')
 
 
 class Commit(GithubBase):

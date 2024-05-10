@@ -44,8 +44,7 @@ class Player:
     def time(self) -> str:
         if self.score == -9999:
             return '--:--'
-        else:
-            return '{0:02d}:{1:02d}'.format(*divmod(abs(self.score), 60))
+        return '{0:02d}:{1:02d}'.format(*divmod(abs(self.score), 60))
 
     def format(self, time_score: bool = False) -> str:
         if self.url is None:
@@ -102,17 +101,17 @@ class Server:
         gametype = self.gametype.lower()
         if self.gametype in ('DM', 'TDM', 'CTF'):
             return 0x82ff7f  # Vanilla
-        elif 'catch' in gametype:
+        if 'catch' in gametype:
             return 0xfcff7f  # Catch
-        elif any(t in gametype for t in ('idm', 'itdm', 'ictf')):
+        if any(t in gametype for t in ('idm', 'itdm', 'ictf')):
             return 0xff7f7f  # Instagib
-        elif 'fng' in gametype:
+        if 'fng' in gametype:
             return 0xfc7fff  # FNG
-        elif any(t in gametype for t in ('ddracenet', 'ddnet', 'blockz', 'infectionz')):
+        if any(t in gametype for t in ('ddracenet', 'ddnet', 'blockz', 'infectionz')):
             return 0x7ebffd  # DDNet
-        elif any(t in gametype for t in ('ddrace', 'mkrace')):
+        if any(t in gametype for t in ('ddrace', 'mkrace')):
             return 0xbf7fff  # DDRace
-        elif any(t in gametype for t in ('race', 'fastcap')):
+        if any(t in gametype for t in ('race', 'fastcap')):
             return 0x7fffe0  # Race
 
     @property
@@ -213,10 +212,9 @@ class ServerInfo:
     def status(self) -> str:
         if not self.online:
             return 'down'
-        elif self.is_under_attack():
+        if self.is_under_attack():
             return 'ddos'  # not necessarily correct but easy to understand
-        else:
-            return 'up'
+        return 'up'
 
     @property
     def flag(self) -> str:

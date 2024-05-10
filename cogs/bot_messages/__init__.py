@@ -1,12 +1,14 @@
 # This cog is primarily used to edit or send messages via bot
 
-import discord
 import os
 
+import discord
+from discord.ext import commands
+
+from . import dictionary
 from config import CHAN_WELCOME, CHAN_TESTING_INFO
 from utils.d_utils import check_admin
-from . import dictionary
-from discord.ext import commands
+
 
 banners_dir = 'data/banners'
 
@@ -81,7 +83,7 @@ class BotMessages(commands.Cog):
 
         var = getattr(dictionary, message_variable, None)
         if var is None:
-            await ctx.reply(f"Message variable not found.")
+            await ctx.reply("Message variable not found.")
             return
 
         for channel_id in channel_ids:

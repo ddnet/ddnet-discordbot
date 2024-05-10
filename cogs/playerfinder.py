@@ -1,12 +1,12 @@
-import discord
-from discord.ext import commands, tasks
-from collections import defaultdict
-from requests_futures.sessions import FuturesSession
-
 import asyncio
 import re
 import json
 import os
+from collections import defaultdict
+
+import discord
+from discord.ext import commands, tasks
+from requests_futures.sessions import FuturesSession
 
 from config import ROLE_ADMIN, ROLE_MOD, GUILD_DDNET, CHAN_PLAYERFINDER
 from utils.d_utils import is_staff
@@ -26,10 +26,10 @@ class PlayerFinder(commands.Cog):
         self.players_online_filtered = {}
         self.sent_messages = []
 
-    def cog_unload(self) -> None:
+    async def cog_unload(self) -> None:
         self.find_players.cancel()
 
-    def cog_load(self) -> None:
+    async def cog_load(self) -> None:
         self.find_players.start()
 
     @staticmethod
@@ -211,7 +211,7 @@ class PlayerFinder(commands.Cog):
         matched_players = [name for name in players.keys() if name.strip() == player_name.strip()]
 
         if not matched_players:
-            return await ctx.send(f'Player not in watchlist.')
+            return await ctx.send('Player not in watchlist.')
         player_name = matched_players[0]
         reason = players.get(player_name, "No reason provided")
         return await ctx.send(f"{player_name} was added with Reason: {reason}")

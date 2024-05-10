@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
-.idea
+.pylintrc
+.idea/
 .venv/
 config.ini
 *.log

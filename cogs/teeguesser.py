@@ -1,12 +1,12 @@
-import discord
 import random
 import os
 import json
 import asyncio
-
-from discord.ext import commands
 from io import BytesIO
 from typing import Optional
+
+import discord
+from discord.ext import commands
 
 from config import TH_QUIZ, CHAN_ANSWERS, GUILD_DDNET
 
@@ -36,7 +36,7 @@ class Teeguesser(commands.Cog):
         self.unveiled_indices = set()
 
     async def write_score(self, user_id, rounds=0, maps=0):
-        with open(self.score_file, "r") as file:
+        with open(self.score_file, "r", encoding='utf-8') as file:
             self.scores = json.load(file)
 
         user_id = str(user_id)
@@ -49,7 +49,7 @@ class Teeguesser(commands.Cog):
                 'maps_guessed': maps
             }
 
-        with open(self.score_file, "w") as file:
+        with open(self.score_file, "w", encoding='utf-8') as file:
             json.dump(self.scores, file)
 
     async def reset(self, full_reset: Optional[bool] = False):
@@ -66,7 +66,7 @@ class Teeguesser(commands.Cog):
             self.tiebreaker_final_round = False
 
     async def get_score(self, user_id):
-        with open(self.score_file, "r") as file:
+        with open(self.score_file, "r", encoding='utf-8') as file:
             self.scores = json.load(file)
 
         if user_id in self.scores:
@@ -74,8 +74,7 @@ class Teeguesser(commands.Cog):
             rounds_won = user_data.get('rounds_won')
             maps_guessed = user_data.get('maps_guessed')
             return rounds_won, maps_guessed
-        else:
-            return 0, 0
+        return 0, 0
 
     async def quiz_image(self):
         m_root = 'data/teeguesser/maps'
@@ -230,7 +229,7 @@ class Teeguesser(commands.Cog):
 
             await quiz_channel.purge()
 
-            await quiz_channel.send(f'Next round starting...', embed=self.scoreboard_embed())
+            await quiz_channel.send('Next round starting...', embed=self.scoreboard_embed())
             await asyncio.sleep(5)
 
             await self.start_round(quiz_channel)
@@ -327,7 +326,7 @@ class Teeguesser(commands.Cog):
 
     @staticmethod
     async def default_overwrites(channel):
-        for user, perms in channel.overwrites.items():
+        for user, _ in channel.overwrites.items():
             if isinstance(user, discord.Member):
                 await channel.set_permissions(user, overwrite=None)
 
