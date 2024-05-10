@@ -4,7 +4,7 @@ import discord
 import os
 
 from config import CHAN_WELCOME, CHAN_TESTING_INFO
-from utils.discord_utils import check_admin
+from utils.d_utils import check_admin
 from . import dictionary
 from discord.ext import commands
 

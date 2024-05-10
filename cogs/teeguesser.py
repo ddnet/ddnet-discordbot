@@ -364,7 +364,6 @@ class Teeguesser(commands.Cog):
             await ctx.reply('Quiz is already running.')
             return
 
-
         self.questions = int(r)
         self.questions_tiebreaker = int(rt)
 

@@ -12,26 +12,13 @@ from typing import Union
 from cogs.ticketsystem.buttons import MainMenu
 from cogs.ticketsystem.close import CloseButton, process_ticket_closure
 from cogs.ticketsystem.subscribe import SubscribeMenu
+from config import ROLE_MOD, ROLE_DISCORD_MOD, ROLE_ADMIN, GUILD_DDNET, CHAN_QUESTIONS, CHAN_BUGS, TH_REPORTS, \
+    TH_BAN_APPEALS, TH_RENAMES, TH_COMPLAINTS, TH_ADMIN_MAIL, CHAN_MODERATOR
+from utils.d_utils import is_staff, check_admin
 from utils.transcript import transcript
-
-GUILD_DDNET            = 252358080522747904
-CHAN_MODERATOR         = 345588928482508801
-CHAN_QUESTIONS         = 745926398140612678
-CHAN_BUGS              = 757720336274948198
-ROLE_ADMIN             = 293495272892399616
-ROLE_DISCORD_MODERATOR = 737776812234506270
-ROLE_MODERATOR         = 252523225810993153
-
-TH_REPORTS             = 1156218166914060288
-TH_BAN_APPEALS         = 1156218327564300289
-TH_RENAMES             = 1156218426633769032
-TH_COMPLAINTS          = 1156218705701785660
-TH_ADMIN_MAIL          = 1156218815164723261
 
 log = logging.getLogger('tickets')
 
-def is_staff(member: discord.Member) -> bool:
-    return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
 
 def extract_servers(tags, network):
     jsondata = requests.get("https://info.ddnet.org/info", timeout=1).json()
@@ -50,6 +37,7 @@ def extract_servers(tags, network):
             if server_lists is not None:
                 all_servers += server_lists
     return all_servers
+
 
 def server_link(addr):
     ddnet = extract_servers(['DDNet', 'Test', 'Tutorial'], "ddnet")
@@ -92,6 +80,7 @@ class TicketSystem(commands.Cog):
         self.update_scores_topic.start()
         self.mentions = set()
         self.verify_message = {}
+        self.roles = (ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_MOD)
 
     @commands.command(hidden=True)
     async def ticket_menu(self, ctx):
@@ -158,7 +147,7 @@ class TicketSystem(commands.Cog):
 
     @commands.command(hidden=True)
     async def subscribe_button(self, ctx):
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
 
         await ctx.send(
@@ -172,7 +161,7 @@ class TicketSystem(commands.Cog):
         """Adds a user or role to the ticket. Example:
         $invite <discord username or role>
         """
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or not is_staff(ctx.author):
+        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or not is_staff(ctx.author, self.roles):
             return
 
         if not ctx.channel.topic or not ctx.channel.topic.startswith("Ticket author:"):
@@ -215,7 +204,7 @@ class TicketSystem(commands.Cog):
 
         ticket_creator_id = int(ctx.channel.topic.split(": ")[1].strip("<@!>"))
 
-        if not is_staff(ctx.author) and ctx.author.id != ticket_creator_id:
+        if not is_staff(ctx.author, self.roles) and ctx.author.id != ticket_creator_id:
             await ctx.channel.send('This ticket does not belong to you.')
             return
 
@@ -262,15 +251,17 @@ class TicketSystem(commands.Cog):
             else:
                 await ticket_channel.send("Something went horribly wrong. Invalid ticket category.")
 
-        if is_staff(ctx.author):
+        if is_staff(ctx.author, self.roles):
             response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed by staff."
             if message:
                 response += f"\nThis is the message that has been left for you by our team:\n> {message}"
         else:
             response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed."
 
+        file_paths = []
         if transcript_file is not None:
             response += "\n**Transcript:**"
+            file_paths.append(transcript_file)
 
         try:
             if response:
@@ -279,9 +270,6 @@ class TicketSystem(commands.Cog):
         except discord.Forbidden:
             pass
 
-        file_paths = []
-        if transcript_file is not None:
-            file_paths.append(transcript_file)
         if zip_file is not None and isinstance(zip_file, list):
             file_paths.extend(zip_file)
         try:
@@ -472,7 +460,7 @@ class TicketSystem(commands.Cog):
                 content = result["errunknown"]
             elif message.channel.name.startswith('report-') and message.channel not in self.mentions:
                 server_link_message = result
-                at_mention_moderator = f'\n<@&{ROLE_MODERATOR}>'
+                at_mention_moderator = f'\n<@&{ROLE_MOD}>'
                 content = server_link_message + at_mention_moderator
                 self.mentions.add(message.channel)
             else:
@@ -496,7 +484,7 @@ class TicketSystem(commands.Cog):
         result = server_link(ipv4)
 
         if after.channel.name.startswith('report-') and after.channel not in self.mentions:
-            at_mention_moderator = f'<@&{ROLE_MODERATOR}>'
+            at_mention_moderator = f'<@&{ROLE_MOD}>'
             result += '\n' + at_mention_moderator
             self.mentions.add(after.channel)
 

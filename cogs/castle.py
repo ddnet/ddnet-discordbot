@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 from config import ROLE_TESTER, ROLE_MOD, ROLE_ADMIN, CHAN_CASTLE
-from utils.discord_utils import is_staff
+from utils.d_utils import is_staff
 
 
 def has_attachments(message: discord.Message):

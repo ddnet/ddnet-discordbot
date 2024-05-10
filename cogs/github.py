@@ -68,7 +68,7 @@ class Commit(GithubBase):
         self.master = ref == 'master'
 
     @classmethod
-    async def convert(cls, ctx: commands.Context, argument: str):
+    async def convert(cls, _: commands.Context, argument: str):
         match = re.match(_ISSUE_RE, argument)
         if match:
             issue = await Issue.retrieve(**filter_empty(match.groupdict()))

@@ -1,27 +1,24 @@
 import enum
 import re
-from typing import List
+from typing import Iterable
 
 import discord
-import asyncio
 
 from cogs.map_testing.submission import InitialSubmission
 from utils.text import human_join, sanitize
 
-import logging
-
-CAT_MAP_TESTING     = 449352010072850443
-CAT_WAITING_MAPPER  = 746076708196843530
-CAT_EVALUATED_MAPS  = 462954029643989003
+CAT_MAP_TESTING = 449352010072850443
+CAT_WAITING_MAPPER = 746076708196843530
+CAT_EVALUATED_MAPS = 462954029643989003
 
 
 class MapState(enum.Enum):
-    TESTING     = ''
-    RC          = '☑'
-    WAITING     = '💤'
-    READY       = '✅'
-    DECLINED    = '❌'
-    RELEASED    = '🆙'
+    TESTING = ''
+    RC = '☑'
+    WAITING = '💤'
+    READY = '✅'
+    DECLINED = '❌'
+    RELEASED = '🆙'
 
     def __str__(self) -> str:
         return self.value
@@ -48,7 +45,7 @@ class MapChannel:
         self.server = match.group('server')
 
     def __getattr__(self, attr: str):
-          return getattr(self._channel, attr)
+        return getattr(self._channel, attr)
 
     def __str__(self) -> str:
         return str(self.state) + self.emoji + self.filename
@@ -80,7 +77,7 @@ class MapChannel:
                  i is not None]
         return '\n'.join(topic)
 
-    async def update(self, name: str=None, mappers: List[str]=None, server: str=None):
+    async def update(self, name: str = None, mappers: Iterable[str] = None, server: str = None):
         prev_details = self.details
 
         if name is not None:

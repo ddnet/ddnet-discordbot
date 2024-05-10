@@ -1,11 +1,12 @@
 import json
 import re
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import discord
 
 from cogs.map_testing.map_channel import MapChannel
 from utils.misc import maybe_coroutine
+
 
 def format_size(size):
     for unit in ('B', 'KB', 'MB'):
@@ -149,12 +150,12 @@ class TestLog:
         out = [{'text': re.sub(url_re, r'\1', text)}]  # TODO: handle urls after codeblocks
 
         regexes = {
-            r'\`\`\`(?:[^\`]*?\n)?([^\`]+)\n?\`\`\`':   self._handle_multiline_codeblock,
-            r'(?:\`|\`\`)([^\`]+)(?:\`|\`\`)':          self._handle_inline_codeblock,
-            r'<(a)?:(.*):(\d*)>':                       self._handle_custom_emoji,
-            r'<@!?(\d+)>':                              self._handle_user_mention,
-            r'<#(\d+)>':                                self._handle_channel_mention,
-            r'<@&(\d+)>':                               self._handle_role_mention
+            r'\`\`\`(?:[^\`]*?\n)?([^\`]+)\n?\`\`\`': self._handle_multiline_codeblock,
+            r'(?:\`|\`\`)([^\`]+)(?:\`|\`\`)': self._handle_inline_codeblock,
+            r'<(a)?:(.*):(\d*)>': self._handle_custom_emoji,
+            r'<@!?(\d+)>': self._handle_user_mention,
+            r'<#(\d+)>': self._handle_channel_mention,
+            r'<@&(\d+)>': self._handle_role_mention
         }
 
         for regex, handler in regexes.items():

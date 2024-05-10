@@ -9,7 +9,7 @@ import json
 import os
 
 from config import ROLE_ADMIN, ROLE_MOD, GUILD_DDNET, CHAN_PLAYERFINDER
-from utils.discord_utils import is_staff
+from utils.d_utils import is_staff
 
 
 def check_conditions(ctx) -> bool:

@@ -26,6 +26,7 @@ def setup_logger(name, level, filename, propagate):
     logger.addHandler(handler)
     return logger
 
+
 logging.getLogger('discord').setLevel(logging.INFO)
 logging.getLogger('discord.http').setLevel(logging.WARNING)
 
@@ -34,6 +35,7 @@ setup_logger(None, logging.INFO, 'logs/bot.log', propagate=True)
 
 # tickets logger
 setup_logger('tickets', logging.INFO, 'logs/tickets.log', propagate=False)
+
 
 async def main():
     config = ConfigParser()
@@ -49,6 +51,7 @@ async def main():
 
     bot = DDNet(config=config, pool=pool, session=session)
     await bot.start(config.get('AUTH', 'DISCORD'))
+
 
 if __name__ == '__main__':
     loop.run_until_complete(main())

@@ -4,23 +4,15 @@ import json
 import discord.ext
 import logging
 
-from discord.ui import Button, button, View
+from discord.ui import Button
+
+from config import ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_MOD, TH_REPORTS, TH_BAN_APPEALS, TH_RENAMES, TH_COMPLAINTS, \
+    TH_ADMIN_MAIL
+from utils.d_utils import is_staff
 from utils.transcript import transcript
 
-ROLE_ADMIN             = 293495272892399616
-ROLE_DISCORD_MODERATOR = 737776812234506270
-ROLE_MODERATOR         = 252523225810993153
-
-TH_REPORTS             = 1156218166914060288
-TH_BAN_APPEALS         = 1156218327564300289
-TH_RENAMES             = 1156218426633769032
-TH_COMPLAINTS          = 1156218705701785660
-TH_ADMIN_MAIL          = 1156218815164723261
-
 log = logging.getLogger('tickets')
-
-def is_staff(member: discord.Member) -> bool:
-    return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
+roles = (ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_MOD)
 
 
 def process_ticket_closure(self, ticket_channel_id, ticket_creator_id):
@@ -61,15 +53,16 @@ class ConfirmView(discord.ui.View):
         self.bot = bot
         self.ticket_data_file = 'data/ticket-system/ticket_data.json'
         self.ticket_data = ticket_data
+        self.roles = roles
 
     @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green, custom_id='confirm:close_ticket')
-    async def confirm(self, interaction: discord.Interaction, button: Button):
+    async def confirm(self, interaction: discord.Interaction, _: Button):
 
         await interaction.response.defer(ephemeral=True, thinking=True)  # noqa
 
         ticket_creator_id = int(interaction.channel.topic.split(": ")[1].strip("<@!>"))
 
-        if not is_staff(interaction.user) and interaction.user.id != ticket_creator_id:
+        if not is_staff(interaction.user, self.roles) and interaction.user.id != ticket_creator_id:
             await interaction.channel.send('This ticket does not belong to you.')
             return
 
@@ -116,13 +109,15 @@ class ConfirmView(discord.ui.View):
             else:
                 await ticket_channel.send("Something went horribly wrong. Invalid ticket category.")
 
-        if is_staff(interaction.user):
+        if is_staff(interaction.user, self.roles):
             response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed by staff."
         else:
             response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed."
 
+        file_paths = []
         if transcript_file is not None:
             response += "\n**Transcript:**"
+            file_paths.append(transcript_file)
 
         try:
             if response:
@@ -131,9 +126,6 @@ class ConfirmView(discord.ui.View):
         except discord.Forbidden:
             pass
 
-        file_paths = []
-        if transcript_file is not None:
-            file_paths.append(transcript_file)
         if zip_file is not None and isinstance(zip_file, list):
             file_paths.extend(zip_file)
         try:
@@ -155,7 +147,7 @@ class ConfirmView(discord.ui.View):
             return
 
     @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red, custom_id='cancel:close_ticket')
-    async def cancel(self, interaction: discord.Interaction, button: Button):
+    async def cancel(self, interaction: discord.Interaction, _: Button):
         await interaction.response.defer()  # noqa
         await interaction.delete_original_response()
         await interaction.followup.send('Ticket closure cancelled.', ephemeral=True)
@@ -170,35 +162,35 @@ class CloseButton(discord.ui.View):
         self.scores = {}
 
     @discord.ui.button(label='Close', style=discord.ButtonStyle.blurple, custom_id='MainMenu:close_ticket')
-    async def t_close(self, interaction: discord.Interaction, button: Button):
+    async def t_close(self, interaction: discord.Interaction, _: Button):
         """Button which closes a Ticket"""
 
         await interaction.response.send_message('Are you sure you want to close the ticket?', ephemeral=True,  # noqa
                                                 view=ConfirmView(self.bot, self.ticket_data))
 
     @discord.ui.button(label='Resolve (For Moderators)', style=discord.ButtonStyle.red, custom_id='ModeratorButton')
-    async def t_moderator_check(self, interaction: discord.Interaction, button: Button):
-        if not is_staff(interaction.user):
+    async def t_moderator_check(self, interaction: discord.Interaction, _: Button):
+        if not is_staff(interaction.user, roles):
             self.click_count += 1
             if self.click_count == 1:
-                await interaction.response.send_message(f'This button is for moderators only! Please read the ' # noqa
+                await interaction.response.send_message(f'This button is for moderators only! Please read the '  # noqa
                                                         f'instructions above!', ephemeral=True)
                 return
             elif self.click_count == 2:
-                await interaction.response.send_message(f'Stop clicking me!', ephemeral=True) # noqa
+                await interaction.response.send_message(f'Stop clicking me!', ephemeral=True)  # noqa
                 return
             elif self.click_count == 3:
-                await interaction.response.send_message(f'If you wont stop, I\'ll close your ticket, ' # noqa
+                await interaction.response.send_message(f'If you wont stop, I\'ll close your ticket, '  # noqa
                                                         f'last warning!', ephemeral=True)
                 return
             elif self.click_count == 4:
-                await interaction.response.send_message(f':OOO You did not just do that!', ephemeral=True) # noqa
+                await interaction.response.send_message(f':OOO You did not just do that!', ephemeral=True)  # noqa
                 return
             elif self.click_count == 5:
-                await interaction.response.send_message(f'(╯°□°)╯︵ ┻━┻', ephemeral=True) # noqa
+                await interaction.response.send_message(f'(╯°□°)╯︵ ┻━┻', ephemeral=True)  # noqa
                 return
             elif self.click_count == 6:
-                await interaction.response.send_message(f'┬─┬ノ( º _ ºノ)', ephemeral=True) # noqa
+                await interaction.response.send_message(f'┬─┬ノ( º _ ºノ)', ephemeral=True)  # noqa
                 self.click_count = 4
                 return
 

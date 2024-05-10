@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions
 
 from config import ROLE_ADMIN, ROLE_TESTER, CHAN_COM_SUBMIT_MAPS
-from utils.discord_utils import is_staff
+from utils.d_utils import is_staff
 
 
 def has_attachments(message: discord.Message):
@@ -68,7 +68,7 @@ class MapEvent(commands.Cog):
     async def handle_unwanted_message(self, message: discord.Message):
         author = message.author
         channel = message.channel
-        if channel.id == CHAN_COM_SUBMIT_MAPS and not has_attachments(message) and not is_staff(author):
+        if channel.id == CHAN_COM_SUBMIT_MAPS and not has_attachments(message) and not is_staff(author, self.roles):
             if message.author.bot:
                 return
             if message.content.startswith('Mapper:'):

@@ -23,7 +23,7 @@ from itertools import groupby
 from discord.utils import utcnow
 
 from config import GUILD_DDNET, ROLE_ADMIN
-from utils.discord_utils import check_admin
+from utils.d_utils import check_admin
 
 
 # taken from ddnet.py

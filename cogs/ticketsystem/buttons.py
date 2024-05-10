@@ -2,15 +2,13 @@ import discord
 import json
 import logging
 
-from discord.ui import Button, button, View
+from discord.ui import Button, button
 from cogs.ticketsystem.close import CloseButton
 
-CAT_TICKETS            = 1124657181363556403
-ROLE_ADMIN             = 293495272892399616
-ROLE_DISCORD_MODERATOR = 737776812234506270
-ROLE_MODERATOR         = 252523225810993153
+from config import ROLE_DISCORD_MOD, ROLE_MOD, CAT_TICKETS
 
 log = logging.getLogger('tickets')
+
 
 class MainMenu(discord.ui.View):
     def __init__(self, ticket_data):
@@ -92,10 +90,10 @@ class MainMenu(discord.ui.View):
             interaction.guild.me: discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True),
-            interaction.guild.get_role(ROLE_MODERATOR): discord.PermissionOverwrite(
+            interaction.guild.get_role(ROLE_MOD): discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True),
-            interaction.guild.get_role(ROLE_DISCORD_MODERATOR): discord.PermissionOverwrite(
+            interaction.guild.get_role(ROLE_DISCORD_MOD): discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True)
         }
@@ -185,7 +183,7 @@ class MainMenu(discord.ui.View):
             interaction.guild.me: discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True),
-            interaction.guild.get_role(ROLE_DISCORD_MODERATOR): discord.PermissionOverwrite(
+            interaction.guild.get_role(ROLE_DISCORD_MOD): discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True)
         }
@@ -267,10 +265,10 @@ class MainMenu(discord.ui.View):
             interaction.guild.me: discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True),
-            interaction.guild.get_role(ROLE_MODERATOR): discord.PermissionOverwrite(
+            interaction.guild.get_role(ROLE_MOD): discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True),
-            interaction.guild.get_role(ROLE_DISCORD_MODERATOR): discord.PermissionOverwrite(
+            interaction.guild.get_role(ROLE_DISCORD_MOD): discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True)
         }
@@ -354,7 +352,7 @@ class MainMenu(discord.ui.View):
             interaction.guild.me: discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True),
-            interaction.guild.get_role(ROLE_DISCORD_MODERATOR): discord.PermissionOverwrite(
+            interaction.guild.get_role(ROLE_DISCORD_MOD): discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True)
         }
@@ -433,7 +431,7 @@ class MainMenu(discord.ui.View):
             interaction.guild.me: discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True),
-            interaction.guild.get_role(ROLE_DISCORD_MODERATOR): discord.PermissionOverwrite(
+            interaction.guild.get_role(ROLE_DISCORD_MOD): discord.PermissionOverwrite(
                 read_messages=True,
                 send_messages=True)
         }

@@ -6,11 +6,10 @@ import json
 import shutil
 import zipfile
 from collections import defaultdict
-from io import BytesIO
 
 import msgpack
-import requests
 from diskcache import Cache
+
 
 # This script has to run in py2 due to ddnet-scripts/servers/scripts/players.py
 def convert(ppack, cache):
@@ -18,16 +17,16 @@ def convert(ppack, cache):
 
     with open(ppack, "rb") as pack:
         unpacker = msgpack.Unpacker(pack, use_list=False, raw=True)
-        unpacker.skip()                         # Server types: `(type, ...)`
-        data['maps'] = unpacker.unpack()        # Maps: `{type: ((map, points, finishers), ...), ...}`
-        unpacker.skip()                         # Total points: `points`
-        data['points'] = unpacker.unpack()      # Points: `((player, points), ...)`
-        unpacker.skip()                         # Weekly points: `((player, points), ...)`
-        unpacker.skip()                         # Monthly points: `((player, points), ...)`
-        unpacker.skip()                         # Yearly points: `((player, points), ...)`
-        data['teamrank'] = unpacker.unpack()    # Team rank points: `((player, points), ...)`
-        data['rank'] = unpacker.unpack()        # Solo rank points: `((player, points), ...)`
-        unpacker.skip()                         # Servers: `{type: (points, ((player, points), ...)), ...}`
+        unpacker.skip()  # Server types: `(type, ...)`
+        data['maps'] = unpacker.unpack()  # Maps: `{type: ((map, points, finishers), ...), ...}`
+        unpacker.skip()  # Total points: `points`
+        data['points'] = unpacker.unpack()  # Points: `((player, points), ...)`
+        unpacker.skip()  # Weekly points: `((player, points), ...)`
+        unpacker.skip()  # Monthly points: `((player, points), ...)`
+        unpacker.skip()  # Yearly points: `((player, points), ...)`
+        data['teamrank'] = unpacker.unpack()  # Team rank points: `((player, points), ...)`
+        data['rank'] = unpacker.unpack()  # Solo rank points: `((player, points), ...)`
+        unpacker.skip()  # Servers: `{type: (points, ((player, points), ...)), ...}`
 
     if not data:
         print("Empty or invalid msgpack")
@@ -91,6 +90,7 @@ def convert(ppack, cache):
 
     with open('players-file.json', 'w') as f:
         json.dump(out, f)
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:

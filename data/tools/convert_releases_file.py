@@ -2,17 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-import os
 import sys
 from pathlib import Path
 from datetime import datetime
-from io import BytesIO
-from typing import List, Tuple
-from urllib.parse import quote
+from typing import List, Any
 
 import asyncpg
 import msgpack
-import requests
 from colorthief import ColorThief
 from PIL import Image
 
@@ -39,16 +35,18 @@ VALID_TILES = (
 
 BG_SIZE = (800, 500)
 
+
 def get_tiles(packdir: Path, name: str) -> List[str]:
     pack = packdir / f"{name}.msgpack"
 
     with pack.open("rb") as p:
         unpacker = msgpack.Unpacker(p, use_list=False, raw=False)
-        unpacker.skip()             # width
-        unpacker.skip()             # height
-        tiles = unpacker.unpack()   # tiles
+        unpacker.skip()  # width
+        unpacker.skip()  # height
+        tiles = unpacker.unpack()  # tiles
 
     return [t for t in tiles if t in VALID_TILES]
+
 
 def get_background(thumbdir: Path, name: str) -> int:
     thumb = thumbdir / f"{normalize(name)}.png"
@@ -59,7 +57,8 @@ def get_background(thumbdir: Path, name: str) -> int:
         color = ColorThief(t).get_color(quality=1)
     return pack_rgb(color)
 
-def get_data(relfile: Path, packdir: Path, thumbdir: Path) -> List[Tuple[str, datetime, str, List[str], str]]:
+
+def get_data(relfile: Path, packdir: Path, thumbdir: Path) -> list[tuple[Any, datetime, Any | None, list[str], int]]:
     out = []
 
     with relfile.open("r") as f:
@@ -87,6 +86,7 @@ def get_data(relfile: Path, packdir: Path, thumbdir: Path) -> List[Tuple[str, da
 
     return out
 
+
 async def update_database(data):
     con = await asyncpg.connect()
     async with con.transaction():
@@ -100,6 +100,7 @@ async def update_database(data):
     await con.close()
 
     return f'stats_maps_static: INSERT {len(data)}'
+
 
 def main(relfile, packdir, thumbdir):
     data = get_data(relfile, packdir, thumbdir)

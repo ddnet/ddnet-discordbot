@@ -1,7 +1,7 @@
 import discord
 import json
 
-from discord.ui import Button, button, View
+from discord.ui import Button, button
 
 
 class SubscribeMenu(discord.ui.View):
@@ -56,7 +56,7 @@ class SubscribeMenu(discord.ui.View):
         await interaction.message.edit(view=self)
 
     @discord.ui.button(label='Subscribe All', style=discord.ButtonStyle.green, custom_id='Subscribe:All')
-    async def subscribe_all(self, interaction: discord.Interaction, button: Button):
+    async def subscribe_all(self, interaction: discord.Interaction, _: Button):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         with open(self.subscribers, 'r') as file:
@@ -74,7 +74,7 @@ class SubscribeMenu(discord.ui.View):
         await interaction.followup.send('Subscribed you to all ticket categories.', ephemeral=True)
 
     @discord.ui.button(label='Unsubscribe All', style=discord.ButtonStyle.green, custom_id='Unsubscribe:All')
-    async def unsubscribe_all(self, interaction: discord.Interaction, button: Button):
+    async def unsubscribe_all(self, interaction: discord.Interaction, _: Button):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         with open(self.subscribers, 'r') as file:

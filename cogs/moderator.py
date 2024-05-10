@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from config import ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_TESTER, ROLE_MOD, ROLE_SKIN_DB_CREW, GUILD_DDNET, CHAN_WIKI, CHAN_DEV, \
     CHAN_MODC, FORUM_CHANNEL
-from utils.discord_utils import is_staff
+from utils.d_utils import is_staff
 
 
 class Moderator(commands.Cog):

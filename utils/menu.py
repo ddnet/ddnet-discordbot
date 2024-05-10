@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 import discord
-from discord_utils.ext import commands, menus
+from d_utils.ext import commands, menus
 
 
 class Pages(menus.Menu):

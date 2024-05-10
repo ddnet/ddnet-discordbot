@@ -8,7 +8,7 @@ from PIL import Image
 
 from config import GUILD_DDNET, CHAN_SKIN_SUBMIT, CHAN_SKIN_INFO, ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_SKIN_DB_CREW, \
     f3_emoji, f4_emoji
-from utils.discord_utils import check_if_staff, is_staff
+from utils.d_utils import check_if_staff, is_staff
 from utils.image import crop_and_generate_image
 
 

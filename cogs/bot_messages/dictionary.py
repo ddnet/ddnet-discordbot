@@ -1,9 +1,9 @@
 # Okey this is a bit annoying. In order to have the bot link to the channels and roles, it needs the channel/role ids.
 
-from config import CHAN_WELCOME, CHAN_ANNOUNCEMENTS, CHAN_MAP_RELEASES, RECORDS, CHAN_DEV, BUGS, SHOWROOM, GENERAL, \
-    QUESTIONS, CHAN_WIKI, MAPPING, BOT_CMDS, TICKETS, CHAN_SKIN_INFO, CHAN_SKIN_SUBMIT, CHAN_TESTING_INFO, TESTING_SUBM, \
-    ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_MOD, ROLE_TESTER, TRIAL_TESTER, ROLE_SKIN_DB_CREW, WIKI_CONTRIBUTOR, DEV, \
-    TOURNAMENT_WINNER, TESTING
+from config import CHAN_WELCOME, CHAN_ANNOUNCEMENTS, CHAN_MAP_RELEASES, RECORDS, CHAN_DEV, CHAN_BUGS, SHOWROOM, GENERAL, \
+    CHAN_QUESTIONS, CHAN_WIKI, MAPPING, BOT_CMDS, TICKETS, CHAN_SKIN_INFO, CHAN_SKIN_SUBMIT, CHAN_TESTING_INFO, TESTING_SUBM, \
+    ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_MOD, ROLE_TESTER, ROLE_TRIAL_TESTER, ROLE_SKIN_DB_CREW, WIKI_CONTRIBUTOR, DEV, \
+    TOURNAMENT_WINNER, ROLE_TESTING
 
 # Channels
 OFF_TOPIC = 252358080522747904  # guild.id ???
@@ -39,12 +39,12 @@ welcome_channel_listing = f"""
 
 **「Development」**
 <#{CHAN_DEV}> - Get a glimpse into the exciting realm of game development!
-<#{BUGS}> - Here you can report bugs highlighting unintentional errors in the game.
+<#{CHAN_BUGS}> - Here you can report bugs highlighting unintentional errors in the game.
 
 **「DDraceNetwork」**
 <#{GENERAL}> - This channel is for all Teeworlds, DDNet and related chat!
 <#{SHOWROOM}> - Post videos, screenshots, and other content from the game here!
-<#{QUESTIONS}> - Got Questions? Need Help? Ask Away!
+<#{CHAN_QUESTIONS}> - Got Questions? Need Help? Ask Away!
 <#{CHAN_WIKI}> - A channel for collaborative knowledge building and discussions.
 <#{MAPPING}> - Mapping discussions, questions, and map rating requests.
 <#{OFF_TOPIC}> - Discuss anything unrelated to DDNet. Any languages allowed.
@@ -89,7 +89,7 @@ welcome_ddnet_roles = f"""
 <@&{ROLE_MOD}>: People who moderate our in-game & discord server(s).
 
 <@&{ROLE_TESTER}>: Testers assess map suitability for our map pool, ensuring quality and reporting bugs to submitters.
-<@&{TRIAL_TESTER}>: Much like the previous role, all incoming Testers will begin as Trial Testers.
+<@&{ROLE_TRIAL_TESTER}>: Much like the previous role, all incoming Testers will begin as Trial Testers.
 
 <@&{ROLE_SKIN_DB_CREW}>: The Skin Database Crew manages our skin database, ensuring suitability and quality.
 
@@ -99,7 +99,7 @@ welcome_ddnet_roles = f"""
 <@&{TOURNAMENT_WINNER}>: Assigned to users who have won tournaments.
 
 **「Other」**
-<@&{TESTING}>: All users can obtain this role in <#{CHAN_TESTING_INFO}> to access all existing testing channels.
+<@&{ROLE_TESTING}>: All users can obtain this role in <#{CHAN_TESTING_INFO}> to access all existing testing channels.
 """
 
 welcome_community_links = """

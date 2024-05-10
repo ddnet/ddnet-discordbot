@@ -1,7 +1,7 @@
 from typing import Iterable
 
 import discord
-from config import GUILD_DDNET, CHAN_SKIN_SUBMIT
+from config import GUILD_DDNET, CHAN_SKIN_SUBMIT, ROLE_ADMIN
 
 
 def is_staff(member: discord.Member, roles: Iterable) -> bool:
