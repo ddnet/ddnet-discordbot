@@ -164,7 +164,7 @@ class ServerInfo:
 
     Packets = namedtuple('Packets', 'rx tx')
 
-    PPS_THRESHOLD = 10000  # china got a lot players
+    PPS_THRESHOLD = 30000  # china got a lot players
     PPS_RATIO_MIN = 1000  # ratio is not reliable for low traffic
     PPS_RATIO_THRESHOLD = 2.5  # responding to less than half the traffic indicates junk traffic
 
