@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
 
-CHAN_VOICE_HIDDEN = 1082411813729210458
+from config import CHAN_VOICE_HIDDEN
+
 
 class Voice(commands.Cog):
     def __init__(self, bot):
@@ -18,6 +19,7 @@ class Voice(commands.Cog):
         elif before.channel == voice_channel and after.channel != voice_channel:
             overwrite = discord.PermissionOverwrite(view_channel=False)
             await voice_channel.set_permissions(member, overwrite=overwrite)
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Voice(bot))

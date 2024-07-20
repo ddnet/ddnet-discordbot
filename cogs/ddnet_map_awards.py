@@ -12,16 +12,17 @@ This script is used to create a poll with the best maps in a given year.
 8. Remove this script from initial_extensions in bot.py, the selects menu (or the channel with the poll) and the generated data/user_selections.json
 """
 
-import discord
 import json
-
-from discord.ext import commands
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from collections import Counter
 from itertools import groupby
 
-GUILD_DDNET = 252358080522747904
-ROLE_ADMIN  = 293495272892399616
+import discord
+from discord.ext import commands
+from discord.utils import utcnow
+
+from config import GUILD_DDNET, ROLE_ADMIN
+from utils.d_utils import check_admin
 
 
 # taken from ddnet.py
@@ -36,10 +37,10 @@ def slugify2(name):
     return string
 
 
-def get_mapper_urls(maps_data, map_name):
+def get_mapper_urls(maps_data, map_name) -> list[str]:
     for map_info in maps_data:
         if map_info['map'] == map_name:
-            mappers = [mapper for mapper in map_info['mapper'].replace(' & ', ', ').split(', ')]
+            mappers = list(map_info['mapper'].replace(' & ', ', ').split(', '))
             print(mappers)
             return [f"[{mapper}](https://ddnet.org/mappers/{slugify2(mapper)})" for mapper in mappers]
 
@@ -59,7 +60,7 @@ class DDNetMapAwards(commands.Cog):
 
     @commands.command(name='export_maps', hidden=True)
     async def export_maps(self, ctx):
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
 
         query = (
@@ -89,8 +90,9 @@ class DDNetMapAwards(commands.Cog):
 
     @commands.command(name='poll', hidden=True)
     async def generate_poll_menu(self, ctx):
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
+
         with open('data/all_maps.json', 'r', encoding='utf-8') as json_file:
             all_maps_data = json.load(json_file)
 
@@ -108,8 +110,7 @@ class DDNetMapAwards(commands.Cog):
                 create_selects = CreateSelects(self.bot, server, maps, mapper)
                 view = await create_selects.create_view()
                 views.append(view)
-
-        now = datetime.now(timezone.utc)
+        now = utcnow()
         future_time_utc = now + timedelta(days=7)
         unix_timestamp = int(future_time_utc.timestamp())
 
@@ -125,10 +126,10 @@ class DDNetMapAwards(commands.Cog):
         if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
             return
 
-        with open('data/user_selections.json', 'r') as file:
+        with open('data/user_selections.json', 'r', encoding='utf-8') as file:
             user_selections = json.load(file)
 
-        with open('data/all_maps.json', 'r') as file:
+        with open('data/all_maps.json', 'r', encoding='utf-8') as file:
             all_maps = json.load(file)
 
         category_counts = {}

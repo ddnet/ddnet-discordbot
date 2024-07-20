@@ -1,16 +1,14 @@
 # This cog is primarily used to edit or send messages via bot
 
-import discord
 import os
-import importlib
 
-from . import dictionary
+import discord
 from discord.ext import commands
 
-CHAN_WELCOME        = 1125706766999629854
-CHAN_TESTING_INFO   = 1201860080463511612
-GUILD_DDNET         = 252358080522747904
-ROLE_ADMIN          = 293495272892399616
+from . import dictionary
+from config import CHAN_WELCOME, CHAN_TESTING_INFO
+from utils.d_utils import check_admin
+
 
 banners_dir = 'data/banners'
 
@@ -37,10 +35,9 @@ class BotMessages(commands.Cog):
             if description is not None:
                 await channel.send(content=description, allowed_mentions=discord.AllowedMentions(roles=False))
 
-
     @commands.command(hidden=True)
     async def welcome(self, ctx: commands.Context):
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
 
         await self.send_messages(ctx, CHAN_WELCOME, [
@@ -54,7 +51,7 @@ class BotMessages(commands.Cog):
 
     @commands.command(name='tinfo', hidden=True)
     async def testing_info(self, ctx: commands.Context):
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
 
         await self.send_messages(ctx, CHAN_TESTING_INFO, [
@@ -78,7 +75,7 @@ class BotMessages(commands.Cog):
         Usage: $update <message_id> <message_variable>
         The message variables can be found in 'cogs/bot_messages/dictionary.py'
         """
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
 
         channel_ids = [CHAN_WELCOME, CHAN_TESTING_INFO]
@@ -86,7 +83,7 @@ class BotMessages(commands.Cog):
 
         var = getattr(dictionary, message_variable, None)
         if var is None:
-            await ctx.reply(f"Message variable not found.")
+            await ctx.reply("Message variable not found.")
             return
 
         for channel_id in channel_ids:

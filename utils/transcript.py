@@ -3,6 +3,7 @@ import zipfile
 
 MAX_ZIP_SIZE = 80 * 1024 * 1024
 
+
 async def transcript(bot, ticket_channel):
     messages = []
     attachments = []

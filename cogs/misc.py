@@ -10,13 +10,12 @@ import discord
 import psutil
 from discord.ext import commands
 
+from config import GH_URL
 from data.countryflags import FLAG_UNK
 from utils.misc import run_process_shell
 from utils.text import human_timedelta
 
 log = logging.getLogger(__name__)
-
-GH_URL = 'https://github.com/12pm/ddnet-discordbot'
 
 
 class Misc(commands.Cog):
@@ -25,7 +24,7 @@ class Misc(commands.Cog):
         self.process = psutil.Process()
         self.start_time = discord.utils.utcnow()
 
-    async def get_latest_commits(self, num: int=3) -> str:
+    async def get_latest_commits(self, num: int = 3) -> str:
         fmt = fr'[\`%h\`]({GH_URL}/commit/%H) %s (%ar)'
         cmd = f'git log master -{num} --no-merges --format="{fmt}"'
         stdout, _ = await run_process_shell(cmd)
@@ -110,12 +109,11 @@ class Misc(commands.Cog):
             js = await resp.json()
             if resp.status == 200:
                 return js
-            elif resp.status == 404:
+            if resp.status == 404:
                 raise RuntimeError('Could not find that city')
-            else:
-                fmt = 'Failed to fetch weather data for city %r: %s (status code: %d %s)'
-                log.error(fmt, city, js['message'], resp.status, resp.reason)
-                raise RuntimeError('Could not fetch weather information')
+            fmt = 'Failed to fetch weather data for city %r: %s (status code: %d %s)'
+            log.error(fmt, city, js['message'], resp.status, resp.reason)
+            raise RuntimeError('Could not fetch weather information')
 
     @commands.command()
     async def weather(self, ctx: commands.Context, *, city: str):

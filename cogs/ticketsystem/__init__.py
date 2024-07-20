@@ -1,37 +1,24 @@
-import discord
 import json
 import os
 import re
-import requests
 import logging
-
-from discord.ext import commands, tasks
 from datetime import datetime, timedelta, timezone
 from typing import Union
+
+import requests
+import discord
+from discord.ext import commands, tasks
 
 from cogs.ticketsystem.buttons import MainMenu
 from cogs.ticketsystem.close import CloseButton, process_ticket_closure
 from cogs.ticketsystem.subscribe import SubscribeMenu
+from config import ROLE_MOD, ROLE_DISCORD_MOD, ROLE_ADMIN, GUILD_DDNET, CHAN_QUESTIONS, CHAN_BUGS, TH_REPORTS, \
+    TH_BAN_APPEALS, TH_RENAMES, TH_COMPLAINTS, TH_ADMIN_MAIL, CHAN_MODERATOR
+from utils.d_utils import is_staff, check_admin
 from utils.transcript import transcript
-
-GUILD_DDNET            = 252358080522747904
-CHAN_MODERATOR         = 345588928482508801
-CHAN_QUESTIONS         = 745926398140612678
-CHAN_BUGS              = 757720336274948198
-ROLE_ADMIN             = 293495272892399616
-ROLE_DISCORD_MODERATOR = 737776812234506270
-ROLE_MODERATOR         = 252523225810993153
-
-TH_REPORTS             = 1156218166914060288
-TH_BAN_APPEALS         = 1156218327564300289
-TH_RENAMES             = 1156218426633769032
-TH_COMPLAINTS          = 1156218705701785660
-TH_ADMIN_MAIL          = 1156218815164723261
 
 log = logging.getLogger('tickets')
 
-def is_staff(member: discord.Member) -> bool:
-    return any(role.id in (ROLE_ADMIN, ROLE_DISCORD_MODERATOR, ROLE_MODERATOR) for role in member.roles)
 
 def extract_servers(tags, network):
     jsondata = requests.get("https://info.ddnet.org/info", timeout=1).json()
@@ -50,6 +37,7 @@ def extract_servers(tags, network):
             if server_lists is not None:
                 all_servers += server_lists
     return all_servers
+
 
 def server_link(addr):
     ddnet = extract_servers(['DDNet', 'Test', 'Tutorial'], "ddnet")
@@ -92,6 +80,7 @@ class TicketSystem(commands.Cog):
         self.update_scores_topic.start()
         self.mentions = set()
         self.verify_message = {}
+        self.roles = (ROLE_ADMIN, ROLE_DISCORD_MOD, ROLE_MOD)
 
     @commands.command(hidden=True)
     async def ticket_menu(self, ctx):
@@ -107,37 +96,37 @@ class TicketSystem(commands.Cog):
         )
         embed.add_field(
             name="Report",
-            value=f"If you encounter any behavior within the game that violates our rules, such as "
-                  f"**blocking, fun-voting, cheating, or any other form of misconduct**, you can open a "
-                  f"ticket in this given category to address the problem. \n\n"
-                  f"Note:\nRefrain from creating a ticket for server issues like DoS attacks or in-game lags",
+            value="If you encounter any behavior within the game that violates our rules, such as "
+                  "**blocking, fun-voting, cheating, or any other form of misconduct**, you can open a "
+                  "ticket in this given category to address the problem. \n\n"
+                  "Note:\nRefrain from creating a ticket for server issues like DoS attacks or in-game lags",
             inline=False
         )
         embed.add_field(
             name="Rename Request",
-            value=f"The rules for rename requests are: \n"
-                  f"- The original name should have 3k or more points on it \n"
-                  f"- Your last rename should be __at least one year ago__ \n"
-                  f"- You must be able to provide proof of owning the points being moved \n"
-                  f"- The names shouldn't be banned \n"
-                  f"- If you request a rename and then later change your mind, know that it won't be reverted until at"
-                  f" least one year has passed. Think carefully.",
+            value="The rules for rename requests are: \n"
+                  "- The original name should have 3k or more points on it \n"
+                  "- Your last rename should be __at least one year ago__ \n"
+                  "- You must be able to provide proof of owning the points being moved \n"
+                  "- The names shouldn't be banned \n"
+                  "- If you request a rename and then later change your mind, know that it won't be reverted until at"
+                  " least one year has passed. Think carefully.",
             inline=False
         )
         embed.add_field(
             name="Ban Appeal",
-            value=f"If you've been banned unfairly from our in-game servers, you are eligible to appeal the"
-                  f" decision. Please note that ban appeals are not guaranteed to be successful, and our "
-                  f"team reserves the right to deny any appeal at their discretion. \n\n"
-                  f"Note: Only file a ticket if you've been banned across all servers or from one of "
-                  f"our moderators.",
+            value="If you've been banned unfairly from our in-game servers, you are eligible to appeal the"
+                  " decision. Please note that ban appeals are not guaranteed to be successful, and our "
+                  "team reserves the right to deny any appeal at their discretion. \n\n"
+                  "Note: Only file a ticket if you've been banned across all servers or from one of "
+                  "our moderators.",
             inline=False
         )
         embed.add_field(
             name="Staff Complaint",
-            value=f"If a staff member's behavior in our community has caused you concern, you have the "
-                  f"option to make a complaint. Please note that complaints must be "
-                  f"based on specific incidents or behaviors and not on personal biases or general dissatisfaction.",
+            value="If a staff member's behavior in our community has caused you concern, you have the "
+                  "option to make a complaint. Please note that complaints must be "
+                  "based on specific incidents or behaviors and not on personal biases or general dissatisfaction.",
             inline=False
         )
         embed.add_field(
@@ -158,12 +147,12 @@ class TicketSystem(commands.Cog):
 
     @commands.command(hidden=True)
     async def subscribe_button(self, ctx):
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or ROLE_ADMIN not in [role.id for role in ctx.author.roles]:
+        if check_admin(ctx):
             return
 
         await ctx.send(
-            f'Choose the ticket categories you wish to receive notifications for, '
-            f'or use the Subscribe/Unsubscribe buttons to manage notifications for all categories.',
+            'Choose the ticket categories you wish to receive notifications for, '
+            'or use the Subscribe/Unsubscribe buttons to manage notifications for all categories.',
             view=SubscribeMenu(self.ticket_data)
         )
 
@@ -172,7 +161,7 @@ class TicketSystem(commands.Cog):
         """Adds a user or role to the ticket. Example:
         $invite <discord username or role>
         """
-        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or not is_staff(ctx.author):
+        if ctx.guild is None or ctx.guild.id != GUILD_DDNET or not is_staff(ctx.author, self.roles):
             return
 
         if not ctx.channel.topic or not ctx.channel.topic.startswith("Ticket author:"):
@@ -215,7 +204,7 @@ class TicketSystem(commands.Cog):
 
         ticket_creator_id = int(ctx.channel.topic.split(": ")[1].strip("<@!>"))
 
-        if not is_staff(ctx.author) and ctx.author.id != ticket_creator_id:
+        if not is_staff(ctx.author, self.roles) and ctx.author.id != ticket_creator_id:
             await ctx.channel.send('This ticket does not belong to you.')
             return
 
@@ -226,7 +215,7 @@ class TicketSystem(commands.Cog):
         ticket_category = process_ticket_closure(self, ticket_channel.id, ticket_creator_id=ticket_creator_id)
 
         if transcript_file:
-            await ticket_channel.send(f'Uploading files...')
+            await ticket_channel.send('Uploading files...')
             targets = {
                 'report': TH_REPORTS,
                 'ban_appeal': TH_BAN_APPEALS,
@@ -262,15 +251,17 @@ class TicketSystem(commands.Cog):
             else:
                 await ticket_channel.send("Something went horribly wrong. Invalid ticket category.")
 
-        if is_staff(ctx.author):
+        if is_staff(ctx.author, self.roles):
             response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed by staff."
             if message:
                 response += f"\nThis is the message that has been left for you by our team:\n> {message}"
         else:
             response = f"Your ticket (category \"{ticket_category.capitalize()}\") has been closed."
 
+        file_paths = []
         if transcript_file is not None:
             response += "\n**Transcript:**"
+            file_paths.append(transcript_file)
 
         try:
             if response:
@@ -279,9 +270,6 @@ class TicketSystem(commands.Cog):
         except discord.Forbidden:
             pass
 
-        file_paths = []
-        if transcript_file is not None:
-            file_paths.append(transcript_file)
         if zip_file is not None and isinstance(zip_file, list):
             file_paths.extend(zip_file)
         try:
@@ -291,7 +279,7 @@ class TicketSystem(commands.Cog):
         except FileNotFoundError:
             pass
 
-        await ticket_channel.send(f'Done! Closing Ticket...')
+        await ticket_channel.send('Done! Closing Ticket...')
         await ctx.channel.delete()
 
         log.info(
@@ -331,12 +319,11 @@ class TicketSystem(commands.Cog):
                         f'this ticket yourself by typing $close.'
                         f'\n**To keep this ticket active, please reply to this message.**'
                     )
-                    pass
 
                 if inactivity_count[str(channel_id)] >= 6:
                     channels_to_remove.append((ticket_channel.id, ticket_user_id))
 
-        with open(self.ticket_data_file, "w") as f:
+        with open(self.ticket_data_file, "w", encoding='utf-8') as f:
             json.dump(self.ticket_data, f, indent=4)
 
         if channels_to_remove:
@@ -348,7 +335,7 @@ class TicketSystem(commands.Cog):
                                                          ticket_creator_id=ticket_creator_id)
 
                 if transcript_file:
-                    await ticket_channel.send(f'Uploading files...')
+                    await ticket_channel.send('Uploading files...')
                     targets = {
                         'report': TH_REPORTS,
                         'ban_appeal': TH_BAN_APPEALS,
@@ -407,7 +394,7 @@ class TicketSystem(commands.Cog):
                 except FileNotFoundError:
                     pass
 
-                await ticket_channel.send(f'Done! Closing Ticket...')
+                await ticket_channel.send('Done! Closing Ticket...')
                 await ticket_channel.delete()
 
                 log.info(
@@ -421,7 +408,7 @@ class TicketSystem(commands.Cog):
     @tasks.loop(hours=1)
     async def update_scores_topic(self):
         score_file = "data/ticket-system/scores.json"
-        with open(score_file, "r") as file:
+        with open(score_file, "r", encoding='utf-8') as file:
             scores = json.load(file)
 
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
@@ -442,7 +429,7 @@ class TicketSystem(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        with open(self.ticket_data_file, "r") as f:
+        with open(self.ticket_data_file, "r", encoding='utf-8') as f:
             self.ticket_data = json.load(f)
 
         self.bot.add_view(view=MainMenu(self.ticket_data))
@@ -472,7 +459,7 @@ class TicketSystem(commands.Cog):
                 content = result["errunknown"]
             elif message.channel.name.startswith('report-') and message.channel not in self.mentions:
                 server_link_message = result
-                at_mention_moderator = f'\n<@&{ROLE_MODERATOR}>'
+                at_mention_moderator = f'\n<@&{ROLE_MOD}>'
                 content = server_link_message + at_mention_moderator
                 self.mentions.add(message.channel)
             else:
@@ -496,7 +483,7 @@ class TicketSystem(commands.Cog):
         result = server_link(ipv4)
 
         if after.channel.name.startswith('report-') and after.channel not in self.mentions:
-            at_mention_moderator = f'<@&{ROLE_MODERATOR}>'
+            at_mention_moderator = f'<@&{ROLE_MOD}>'
             result += '\n' + at_mention_moderator
             self.mentions.add(after.channel)
 

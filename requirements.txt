@@ -1,12 +1,12 @@
 aiohttp==3.8.5
 Pillow==9.5.0
-asyncpg
-colorthief
+asyncpg~=0.29.0
+colorthief~=0.2.1
 discord.py==2.2.2
 discord-ext-menus
-msgpack-python
-psutil
-requests
+msgpack-python~=0.5.6
+psutil~=5.9.8
+requests~=2.31.0
 uvloop
 requests_futures
 pip

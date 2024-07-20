@@ -9,16 +9,16 @@ from typing import Optional
 import discord
 
 from utils.misc import run_process_shell, run_process_exec
-from utils.text import human_join, sanitize
+from utils.text import sanitize
 
 log = logging.getLogger(__name__)
 
 
 class SubmissionState(enum.Enum):
-    VALIDATED   = '☑️'
-    UPLOADED    = '🆙'
-    PROCESSED   = '✅'
-    ERROR       = '❌'
+    VALIDATED = '☑️'
+    UPLOADED = '🆙'
+    PROCESSED = '✅'
+    ERROR = '❌'
 
     def __str__(self) -> str:
         return self.value
@@ -29,7 +29,7 @@ class Submission:
 
     DIR = 'data/map-testing'
 
-    def __init__(self, message: discord.Message, *, raw_bytes: Optional[bytes]=None):
+    def __init__(self, message: discord.Message, *, raw_bytes: Optional[bytes] = None):
         self.message = message
         self.author = message.author
         self.channel = message.channel
@@ -76,18 +76,17 @@ class Submission:
         try:
             dbg_stdout, dbg_stderr = await run_process_exec(f'{self.DIR}/twmap-check', "-vv", "--", tmp)
         except RuntimeError as exc:
-            ddnet_dbg_error = str(exc)
-            return log.error('Debugging failed of map %r (%d): %s', self.filename, self.message.id, ddnet_dbg_error)
+            return log.error('Debugging failed of map %r (%d): %s', self.filename, self.message.id, str(exc))
 
         output = dbg_stdout + dbg_stderr
 
         try:
             ddnet_dbg_stdout, ddnet_dbg_stderr = await run_process_exec(f'{self.DIR}/twmap-check-ddnet', "--", tmp)
         except RuntimeError as exc:
-            ddnet_dbg_error = str(exc)
-            log.error('DDNet checks failed of map %r (%d): %s', self.filename, self.message.id, ddnet_dbg_error)
-        if not ddnet_dbg_stderr:
-            output += ddnet_dbg_stdout
+            log.error('DDNet checks failed of map %r (%d): %s', self.filename, self.message.id, str(exc))
+        else:
+            if not ddnet_dbg_stderr:
+                output += ddnet_dbg_stdout
 
         # cleanup
         os.remove(tmp)
@@ -104,6 +103,7 @@ class Submission:
         with open(tmp, 'wb') as f:
             f.write(buf.getvalue())
 
+        stdout = None
         try:
             stdout, stderr = await run_process_exec(f'{self.DIR}/twmap-edit', tmp, edited_tmp, *args)
         except RuntimeError as exc:
@@ -125,24 +125,25 @@ class Submission:
 
         return stdout, file
 
+
 class InitialSubmission(Submission):
     __slots__ = Submission.__slots__ + ('name', 'mappers', 'server', 'map_channel')
 
     _FORMAT_RE = r'^\"(?P<name>.+)\" +by +(?P<mappers>.+) +\[(?P<server>.+)\]$'
 
     SERVER_TYPES = {
-        'Novice':       '👶',
-        'Moderate':     '🌸',
-        'Brutal':       '💪',
-        'Insane':       '💀',
-        'Dummy':        '♿',
-        'Oldschool':    '👴',
-        'Solo':         '⚡',
-        'Race':         '🏁',
-        'Fun':          '🎉',
+        'Novice': '👶',
+        'Moderate': '🌸',
+        'Brutal': '💪',
+        'Insane': '💀',
+        'Dummy': '♿',
+        'Oldschool': '👴',
+        'Solo': '⚡',
+        'Race': '🏁',
+        'Fun': '🎉',
     }
 
-    def __init__(self, message: discord.Message, *, raw_bytes: Optional[bytes]=None):
+    def __init__(self, message: discord.Message, *, raw_bytes: Optional[bytes] = None):
         super().__init__(message, raw_bytes=raw_bytes)
 
         self.name = None
@@ -167,7 +168,7 @@ class InitialSubmission(Submission):
 
     async def respond(self, error: Exception):
         try:
-            await self.author.send(error)
+            await self.author.send(str(error))
         except discord.Forbidden:
             pass
 
@@ -218,8 +219,8 @@ class InitialSubmission(Submission):
         self.map_channel = await MapChannel.from_submission(self, overwrites=overwrites)
 
         file = await self.get_file()
-        msg = f'{self.author.mention} this is your map\'s testing channel! '\
-               'Post map updates here and remember to follow our mapper rules: https://ddnet.org/rules'
+        msg = f'{self.author.mention} this is your map\'s testing channel! ' \
+              'Post map updates here and remember to follow our mapper rules: https://ddnet.org/rules'
         message = await self.map_channel.send(msg, file=file)
 
         thumbnail = await self.generate_thumbnail()

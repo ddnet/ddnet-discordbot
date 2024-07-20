@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 
+from config import CHAN_SKIN_INFO
+
 
 class HelpCommands(commands.Cog, name='Help Commands'):
     def __init__(self, bot):
@@ -27,15 +29,9 @@ class HelpCommands(commands.Cog, name='Help Commands'):
 
         embed = discord.Embed(
             title="DDNet config directory & settings_ddnet.cfg location:",
-            description="\n\n__**On Windows:**__"
-                        "\nOld: `%appdata%\Teeworlds`"
-                        "\nNew: `%appdata%\DDNet`"
-                        "\n\n__**On Linux:**__"
-                        "\nOld: `~/.teeworlds`"
-                        "\nNew: `~/.local/share/ddnet`"
-                        "\n\n__**On macOS:**__"
-                        "\nOld: `~/Library/Application Support/Teeworlds`"
-                        "\nNew: `~/Library/Application Support/DDNet`"
+            description="\n\n__**On Windows:**__\nOld: `%appdata%\Teeworlds\nNew: `%appdata%\DDNet`"
+                        "\n\n__**On Linux:**__\nOld: `~/.teeworlds`\nNew: `~/.local/share/ddnet`"
+                        "\n\n__**On macOS:**__\nOld: `~/Library/Application Support/Teeworlds`\nNew: `~/Library/Application Support/DDNet`"
                         "\n\nThe settings_ddnet.cfg file contains all your friends, control, player & game settings.",
             colour=discord.Colour.random())
 
@@ -77,7 +73,7 @@ class HelpCommands(commands.Cog, name='Help Commands'):
                         "\n\n**Method 2:**"
                         "\nYour skin gets added to the official SkinDB."
                         f"\n\n For more info on how to get your skin uploaded to the SkinDB, "
-                        f"visit this channel: <#{985554143525601350}>",
+                        f"visit this channel: <#{CHAN_SKIN_INFO}>",
             colour=discord.Colour.random())
 
         embed.set_thumbnail(url='attachment://avatar.png')

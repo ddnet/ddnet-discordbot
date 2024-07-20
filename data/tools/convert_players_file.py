@@ -8,8 +8,10 @@ from collections import defaultdict
 from datetime import datetime
 
 import asyncpg
+from discord.utils import utcnow
 
-TIMESTAMP = datetime.utcnow().strftime('%Y-%m-%d %H:%M')
+TIMESTAMP = utcnow().strftime('%Y-%m-%d %H:%M')
+
 
 async def main():
     with open('players-file.json', 'r') as f:
