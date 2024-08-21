@@ -164,7 +164,7 @@ class ServerInfo:
 
     Packets = namedtuple('Packets', 'rx tx')
 
-    PPS_THRESHOLD = 30000  # china got a lot players
+    PPS_THRESHOLD = 100000  # china got a lot players
     PPS_RATIO_MIN = 1000  # ratio is not reliable for low traffic
     PPS_RATIO_THRESHOLD = 2.5  # responding to less than half the traffic indicates junk traffic
 
@@ -209,7 +209,7 @@ class ServerInfo:
 
     def is_under_attack(self) -> bool:
         return self.packets.rx > self.PPS_THRESHOLD \
-            or self.packets.rx > self.PPS_RATIO_MIN and self.packets.rx / self.packets.tx > self.PPS_RATIO_THRESHOLD
+            or (self.packets.rx > self.PPS_RATIO_MIN and self.packets.rx / self.packets.tx > self.PPS_RATIO_THRESHOLD)
 
     @property
     def status(self) -> str:
