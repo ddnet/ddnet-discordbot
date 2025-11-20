@@ -1,0 +1,3 @@
+echo pseudofly: ON
+bind mouse2 "+hook; +toggle cl_dummy_hammer 1 0"
+bind c "echo pseudofly: OFF; cl_dummy_hammer 0; bind mouse2 +hook; bind c exec pseudofly.txt"

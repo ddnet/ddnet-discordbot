@@ -65,6 +65,27 @@ class HelpCommands(commands.Cog, name='Help Commands'):
         await ctx.send(file=bindconfig)
 
     @commands.command()
+    async def pseudofly(self, ctx: commands.Context):
+        file = discord.File('data/avatar.png', filename='avatar.png')
+        bindconfig = discord.File('data/pseudofly.txt', filename='pseudofly.txt')
+        embed = discord.Embed(
+            title="How to bind and configure pseudofly:",
+            description="It is __highly recommended to read__ the article below thoroughly, "
+                        "you may learn a bunch of useful things."
+                        "\n\n**URL:**"
+                        "\nhttps://wiki.ddnet.org/wiki/Pseudofly"
+                        "\n\nIf you prefer to not read the article:"
+                        "\n\nMove the attached text file to your config directory, "
+                        "and then type: `exec pseudofly.txt` into the ingame console (F1)."
+                        "\nTo toggle pseudofly on/off, press \"C\" on your keyboard.",
+            colour=discord.Colour.random())
+
+        embed.set_thumbnail(url='attachment://avatar.png')
+
+        await ctx.send(file=file, embed=embed)
+        await ctx.send(file=bindconfig)
+
+    @commands.command()
     async def skins(self, ctx: commands.Context):
         file = discord.File('data/avatar.png', filename='avatar.png')
 
